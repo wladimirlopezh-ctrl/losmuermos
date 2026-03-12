@@ -1272,18 +1272,18 @@ function saveDevolucion(){
   }
 }
 document.getElementById('devModal').addEventListener('click',e=>{if(e.target===document.getElementById('devModal'))closeDevModal();});
-function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null};}
+function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null,pins:PIN_POS};}
 function applyBackup(data){
   // Compatibilidad: si el JSON es solo DB (formato antiguo), lo acepta igual
   if(data.db){
     DB=data.db;
     CAMPS=data.camps||[];
     activeCampId=data.activeCampId||null;
+    if(data.pins) PIN_POS=data.pins;
   } else {
     DB=data; // formato antiguo — solo territorios
-    // No tocar CAMPS ni activeCampId
   }
-  save();saveCamps();
+  save();saveCamps();savePins();
   renderPins();updateAll();renderCampSidebar();
   if(dashVisible) renderDashboard();
 }
@@ -1559,11 +1559,11 @@ function renderCampReport(){
 
 function campTerWorked(c,n){
   const d=DB[n]; if(!d) return false;
-  // Revisa historial
+  // Solo cuenta si hay una devolución registrada en el historial dentro del rango de la campaña
   const hist=d.historial||[];
   if(hist.some(h=>dateInCamp(c,h.fecha))) return true;
-  // Revisa asignación actual
-  if((d.estado==='completado'||d.estado==='asignado') && dateInCamp(c,d.fechaAsig)) return true;
+  // También cuenta si el estado es 'completado' y fue devuelto dentro del rango
+  if(d.estado==='completado' && dateInCamp(c,d.fechaDev||'')) return true;
   return false;
 }
 
