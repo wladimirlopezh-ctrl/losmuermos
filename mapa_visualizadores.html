@@ -2519,21 +2519,35 @@ async function gistLoadRemote(id){
   const upd = document.getElementById('viewerLastUpdate');
   if(upd) upd.textContent = 'Cargando datos...';
   try{
-    // Usar API de GitHub para evitar caché del CDN raw
-    const apiUrl = `https://api.github.com/gists/${id}`;
-    const r = await fetch(apiUrl, { headers:{ Accept:'application/vnd.github.v3+json' } });
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const gist = await r.json();
-    const fileContent = gist.files?.[GIST_FILE_NAME]?.content;
-    if(!fileContent) throw new Error('Archivo no encontrado en el Gist');
+    // Intentar primero con URL raw con cache-bust (no consume rate limit)
+    const rawUrl = `https://gist.githubusercontent.com/raw/${id}/${GIST_FILE_NAME}?t=${Date.now()}`;
+    let fileContent = null;
+    try{
+      const rRaw = await fetch(rawUrl, {cache:'no-store'});
+      if(rRaw.ok) fileContent = await rRaw.text();
+    }catch(e2){}
+
+    // Si raw falla, usar API de GitHub
+    if(!fileContent){
+      const apiUrl = `https://api.github.com/gists/${id}?t=${Date.now()}`;
+      const r = await fetch(apiUrl, { cache:'no-store', headers:{ Accept:'application/vnd.github.v3+json' } });
+      if(!r.ok){
+        const errData = await r.json().catch(()=>({}));
+        throw new Error(`HTTP ${r.status}: ${errData.message||'sin respuesta'}`);
+      }
+      const gist = await r.json();
+      fileContent = gist.files?.[GIST_FILE_NAME]?.content;
+      if(!fileContent) throw new Error('Archivo no encontrado en el Gist');
+    }
+
     const data = JSON.parse(fileContent);
     applyBackup(data);
     const now = new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
     if(upd) upd.textContent = `Actualizado: ${now}`;
     toast('✅ Datos actualizados');
   }catch(e){
-    if(upd) upd.textContent = '⚠️ No se pudo actualizar';
-    toast('⚠️ Error al cargar datos: '+e.message);
+    if(upd) upd.textContent = '⚠️ Error: '+e.message;
+    toast('⚠️ Error al cargar: '+e.message);
   }
 }
 
