@@ -653,9 +653,12 @@ body.dark .top-enc-bar{background:#22263a;}
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="drive-modal" id="driveModal">
+<div class="drive-modal" id="driveModal" onclick="if(event.target===this)closeDriveModal()">
   <div class="drive-box">
-    <h3>☁️ Google Drive</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="margin:0">☁️ Google Drive</h3>
+      <button onclick="closeDriveModal()" style="width:26px;height:26px;border-radius:6px;border:1.5px solid var(--bdr);background:transparent;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;color:var(--gray)" title="Cerrar">✕</button>
+    </div>
     <p>Sincroniza los datos de territorios con una carpeta de Drive compartida de la congregación.</p>
     <div class="drive-status" id="driveStatus">No conectado. Inicia sesión para sincronizar.</div>
     <div class="drive-btns">
