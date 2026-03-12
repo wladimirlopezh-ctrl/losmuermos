@@ -470,7 +470,7 @@ body.dark .top-enc-bar{background:#22263a;}
   </div>
   <div class="hb">
     <button class="btn" id="darkBtn" onclick="toggleDark()" title="Modo oscuro/claro">🌙</button>
-    <button class="btn" id="dashBtn" onclick="toggleDash()" title="Dashboard">📈 Dashboard</button>
+    <button class="btn" id="dashBtn" onclick="toggleDash()" title="Informe">📋 Informe</button>
     <button class="btn" onclick="openCampModal()" title="Campañas">🏕 Campañas</button>
     <button class="btn warn" id="editBtn" onclick="toggleEditMode()">✏️ Mover pines</button>
     <button class="btn xl" onclick="exportExcel()" title="Exportar reporte Excel">
@@ -552,11 +552,6 @@ body.dark .top-enc-bar{background:#22263a;}
     </div>
     <div class="pb"><div class="pt">🗺 Cobertura por zona</div><div id="zonaGrid"></div></div>
   </div>
-
-  <!-- DASHBOARD PANEL -->
-  <div id="dashPanel" style="display:none;width:270px;flex-shrink:0;background:var(--w);border-left:1px solid var(--bdr);overflow-y:auto;flex-direction:column;">
-    <div id="dashContent"></div>
-  </div>
 </div>
 
 <div class="mover" id="modal">
@@ -632,10 +627,6 @@ body.dark .top-enc-bar{background:#22263a;}
   </div>
 </div>
 
-<!-- DASHBOARD PANEL (reemplaza panel R cuando está abierto) -->
-<div id="dashPanel" style="display:none;width:260px;flex-shrink:0;background:var(--w);border-left:1px solid var(--bdr);overflow-y:auto;flex-direction:column;">
-  <div id="dashContent"></div>
-</div>
 
 <div class="camp-modal" id="campModal">
   <div class="camp-box">
@@ -675,6 +666,11 @@ body.dark .top-enc-bar{background:#22263a;}
 </div>
 
 
+
+<!-- DASHBOARD FULL SCREEN -->
+<div id="dashOverlay" style="display:none;position:fixed;inset:0;z-index:800;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div id="dashContent"></div>
+</div>
 
 <script>
 // ── DATA ──
@@ -1640,37 +1636,134 @@ function exportCampExcel(campId){
 
 // ── DASHBOARD ──
 let dashVisible = false;
+let infTab = 'resumen'; // 'resumen' | 'campana'
+let infCampId = null;
 
 function toggleDash(){
   dashVisible = !dashVisible;
-  const panel = document.getElementById('dashPanel');
-  const panelR = document.getElementById('panelR');
+  const overlay = document.getElementById('dashOverlay');
   const btn = document.getElementById('dashBtn');
   if(dashVisible){
-    panel.style.display = 'flex';
-    panelR.style.display = 'none';
+    overlay.style.display = 'block';
     btn.classList.add('pri');
-    btn.title = 'Cerrar dashboard';
     renderDashboard();
+    overlay.scrollTop = 0;
   } else {
-    panel.style.display = 'none';
-    panelR.style.display = 'flex';
+    overlay.style.display = 'none';
     btn.classList.remove('pri');
-    btn.title = 'Dashboard';
   }
 }
 
 function renderDashboard(){
+  const el = document.getElementById('dashContent');
+  el.innerHTML = renderInfHeader() + (infTab==='resumen' ? renderInfResumen() : renderInfCampana());
+}
+
+function renderInfHeader(){
+  const now = new Date();
+  return `
+  <style>
+    .db-wrap{max-width:900px;margin:0 auto;padding:14px 16px 32px;}
+    .db-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;gap:10px;flex-wrap:wrap;}
+    .db-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:900;}
+    .db-sub{font-size:.65rem;color:var(--gray);margin-top:2px;}
+    .db-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1.5px solid var(--bdr);background:var(--w);cursor:pointer;font-size:.75rem;font-weight:600;color:#475569;}
+    .db-back:hover{border-color:var(--gd);color:var(--gd);}
+    body.dark .db-back{background:var(--w);color:#94a3b8;}
+    .inf-tabs{display:flex;gap:2px;background:#f1f5f9;border-radius:10px;padding:3px;margin:14px 0 16px;}
+    body.dark .inf-tabs{background:#1e2130;}
+    .inf-tab{flex:1;padding:8px 10px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-size:.72rem;font-weight:600;color:var(--gray);font-family:'DM Sans',sans-serif;transition:all .15s;text-align:center;}
+    .inf-tab.active{background:var(--w);color:var(--dark);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+    body.dark .inf-tab.active{background:#22263a;color:#e2e8f0;}
+    .db-grid{display:grid;gap:12px;}
+    .db-row4{grid-template-columns:repeat(4,1fr);}
+    .db-row2{grid-template-columns:1fr 1fr;}
+    .db-row3{grid-template-columns:1fr 1fr 1fr;}
+    @media(max-width:640px){
+      .db-wrap{padding:10px 12px 24px;}
+      .db-title{font-size:1.1rem;}
+      .db-row4{grid-template-columns:repeat(2,1fr);}
+      .db-row2{grid-template-columns:1fr 1fr;}
+      .db-row3{grid-template-columns:1fr 1fr;}
+    }
+    .dbc{background:var(--w);border-radius:12px;padding:14px 16px;border:1.5px solid var(--bdr);}
+    body.dark .dbc{background:var(--w);}
+    .dbc-t{font-size:.58rem;font-weight:700;color:var(--gray);letter-spacing:1.1px;text-transform:uppercase;margin-bottom:10px;}
+    .dbn{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:900;line-height:1;}
+    .dbl{font-size:.62rem;color:var(--gray);margin-top:3px;}
+    .db-ter-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;}
+    @media(max-width:640px){.db-ter-grid{grid-template-columns:repeat(7,1fr);gap:3px;}}
+    @media(max-width:360px){.db-ter-grid{grid-template-columns:repeat(6,1fr);}}
+    .db-ter-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:transform .1s;}
+    .db-ter-cell:active{transform:scale(.92);}
+    .db-ter-cell.disponible{background:rgba(34,197,94,.15);color:#15803d;border-color:rgba(34,197,94,.35);}
+    .db-ter-cell.asignado{background:rgba(245,158,11,.15);color:#92400e;border-color:rgba(245,158,11,.35);}
+    .db-ter-cell.completado{background:rgba(99,102,241,.15);color:#3730a3;border-color:rgba(99,102,241,.35);}
+    .db-ter-cell.urgente{background:rgba(239,68,68,.15);color:#991b1b;border-color:rgba(239,68,68,.35);}
+    body.dark .db-ter-cell.disponible{background:rgba(34,197,94,.12);color:#4ade80;}
+    body.dark .db-ter-cell.asignado{background:rgba(245,158,11,.12);color:#fbbf24;}
+    body.dark .db-ter-cell.completado{background:rgba(129,140,248,.12);color:#818cf8;}
+    body.dark .db-ter-cell.urgente{background:rgba(248,113,113,.12);color:#f87171;}
+    .db-spark{display:flex;align-items:flex-end;gap:3px;height:44px;}
+    .db-spark-bar{flex:1;border-radius:2px 2px 0 0;min-width:8px;transition:height .4s;}
+    .db-spark-lbl{font-size:.5rem;color:var(--gray);text-align:center;margin-top:2px;}
+    .db-zbar{height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden;flex:1;}
+    body.dark .db-zbar{background:#22263a;}
+    .db-zfill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1);}
+    .db-chip{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:.63rem;font-weight:700;cursor:pointer;border:1.5px solid;}
+    .db-chip-red{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:#dc2626;}
+    .db-mz-chip{padding:2px 5px;border-radius:3px;font-size:.58rem;font-weight:700;background:#fef3c7;color:#d97706;border:1px solid #fde68a;}
+    .db-ter-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .12s;border:1.5px solid var(--bdr);}
+    .db-ter-row:hover,.db-ter-row:active{background:#f8fafc;}
+    body.dark .db-ter-row:hover{background:#1e2130;}
+    .db-urgente-badge{font-size:.54rem;font-weight:700;color:#dc2626;padding:2px 5px;background:rgba(239,68,68,.1);border-radius:3px;border:1px solid rgba(239,68,68,.2);}
+    .db-prog-bar{height:10px;border-radius:5px;background:#f1f5f9;overflow:hidden;margin:4px 0 2px;}
+    body.dark .db-prog-bar{background:#22263a;}
+    .db-prog-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--gd),var(--gm));transition:width .6s;}
+    .db-ring{position:relative;width:72px;height:72px;flex-shrink:0;}
+    .db-ring svg{transform:rotate(-90deg);}
+    .db-ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:.95rem;font-weight:900;}
+    /* informe campaña */
+    .ic-camp-card{border-radius:10px;padding:12px 14px;border:1.5px solid var(--bdr);cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;align-items:center;gap:12px;}
+    .ic-camp-card:hover{border-color:var(--gd);box-shadow:0 2px 10px rgba(34,197,94,.12);}
+    .ic-camp-card.active-camp-card{border-color:rgba(34,197,94,.5);background:linear-gradient(135deg,rgba(27,67,50,.03),rgba(45,106,79,.05));}
+    .ic-badge{font-size:.58rem;padding:2px 6px;border-radius:4px;font-weight:700;}
+    .ic-badge.en-curso{background:rgba(34,197,94,.12);color:#15803d;border:1px solid rgba(34,197,94,.25);}
+    .ic-badge.finalizada{background:rgba(99,102,241,.1);color:#4f46e5;border:1px solid rgba(99,102,241,.2);}
+    .ic-badge.proxima{background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.2);}
+    .ic-ter-chip{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-size:.65rem;font-weight:700;border:1.5px solid;cursor:pointer;transition:transform .1s;}
+    .ic-ter-chip:active{transform:scale(.9);}
+    .ic-ter-chip.worked{background:rgba(34,197,94,.12);color:#15803d;border-color:rgba(34,197,94,.3);}
+    .ic-ter-chip.nowork{background:rgba(239,68,68,.08);color:#dc2626;border-color:rgba(239,68,68,.2);}
+    .ic-enc-bar{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
+    body.dark .ic-enc-bar{background:#22263a;}
+    .ic-enc-fill{height:100%;border-radius:3px;background:var(--indigo);}
+    .ic-enc-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc;font-size:.7rem;}
+    .ic-enc-row:last-child{border:none;}
+    body.dark .ic-enc-row{border-bottom-color:#22263a;}
+  </style>
+  <div class="db-wrap">
+    <div class="db-header">
+      <div>
+        <div class="db-title">📋 Informe</div>
+        <div class="db-sub">${now.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+      </div>
+      <button class="db-back" onclick="toggleDash()">🗺 Volver al mapa</button>
+    </div>
+    <div class="inf-tabs">
+      <button class="inf-tab ${infTab==='resumen'?'active':''}" onclick="infTab='resumen';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📊 Resumen general</button>
+      <button class="inf-tab ${infTab==='campana'?'active':''}" onclick="infTab='campana';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">🏕 Informe de campaña</button>
+    </div>`;
+}
+
+function renderInfResumen(){
   const now = new Date();
   const mesActual = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const anioActual = now.getFullYear();
-  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  // ── Datos generales ──
   const cnt={disponible:0,asignado:0,completado:0,urgente:0};
   for(let i=1;i<=33;i++) cnt[gs(i)]++;
 
-  // Trabajados este mes y este año
   let mesCount=0, anioCount=0;
   for(let n=1;n<=33;n++){
     const mw=DB[n]?.monthsWorked||{};
@@ -1681,220 +1774,373 @@ function renderDashboard(){
     }
   }
 
-  // Manzanas pendientes acumuladas
   let mzPendTotal=0, terConPend=[];
   for(let n=1;n<=33;n++){
     const p=DB[n]?.mzPendientes||[];
     if(p.length){mzPendTotal+=p.length;terConPend.push({n,mz:p});}
   }
 
-  // Sin trabajar más tiempo (urgentes + días sin actividad)
   const sinTrabArr=[];
   for(let n=1;n<=33;n++){
     const d=DB[n]||{};
-    const lastDate = d.fechaDev||d.fechaAsig||null;
-    const dias = lastDate ? Math.round((now-new Date(lastDate+'T12:00'))/86400000) : null;
+    const lastDate=d.fechaDev||d.fechaAsig||null;
+    const dias=lastDate?Math.round((now-new Date(lastDate+'T12:00'))/86400000):null;
     const st=gs(n);
-    if(st==='urgente'||st==='disponible') sinTrabArr.push({n,dias,st,enc:d.encargado||'—'});
+    if(st==='urgente'||st==='disponible') sinTrabArr.push({n,dias,st});
   }
   sinTrabArr.sort((a,b)=>(b.dias||9999)-(a.dias||9999));
 
-  // Progreso por zona
-  const zonaData = Object.entries(ZONES).map(([nombre,ters])=>{
+  const zonaData=Object.entries(ZONES).map(([nombre,ters])=>{
     const trab=ters.filter(n=>{const mw=DB[n]?.monthsWorked||{};return Object.keys(mw).some(k=>k.startsWith(String(anioActual)));}).length;
-    const comp=ters.filter(n=>gs(n)==='completado').length;
-    const asig=ters.filter(n=>gs(n)==='asignado').length;
-    return {nombre,total:ters.length,trab,comp,asig};
+    return {nombre,total:ters.length,trab};
   });
+  const zonaCols=['#22c55e','#3b82f6','#f59e0b','#8b5cf6','#ec4899'];
 
-  // Campaña activa
-  const camp = activeCampId ? CAMPS.find(c=>c.id===activeCampId) : null;
-  const campPctData = camp ? campPct(camp) : null;
-
-  // Últimas 6 semanas de actividad (devoluciones)
   const semanas=[];
   for(let i=5;i>=0;i--){
-    const d=new Date(now); d.setDate(d.getDate()-i*7);
-    const ini=new Date(d); ini.setDate(ini.getDate()-6);
-    const fin=new Date(d);
+    const d=new Date(now);d.setDate(d.getDate()-i*7);
+    const ini=new Date(d);ini.setDate(ini.getDate()-6);
     let c=0;
     for(let n=1;n<=33;n++){
-      (DB[n]?.historial||[]).forEach(h=>{
-        const hd=new Date(h.fecha+'T12:00');
-        if(hd>=ini&&hd<=fin) c++;
-      });
+      (DB[n]?.historial||[]).forEach(h=>{const hd=new Date(h.fecha+'T12:00');if(hd>=ini&&hd<=d)c++;});
     }
-    semanas.push({lbl:['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getDay()]+' '+d.getDate(),c});
+    const dias=['D','L','M','X','J','V','S'];
+    semanas.push({lbl:dias[d.getDay()]+' '+d.getDate(),c});
   }
   const maxSem=Math.max(...semanas.map(s=>s.c),1);
 
-  // ── HTML ──
-  const el=document.getElementById('dashContent');
-  el.innerHTML=`
-  <!-- HEADER FIJO -->
-  <div style="position:sticky;top:0;z-index:5;background:var(--w);border-bottom:1px solid var(--bdr);padding:10px 12px 8px;display:flex;align-items:center;justify-content:space-between;">
-    <div>
-      <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:900">📈 Dashboard</div>
-      <div style="font-size:.58rem;color:var(--gray)">${now.toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'})}</div>
-    </div>
-    <button onclick="toggleDash()" style="width:26px;height:26px;border-radius:6px;border:1.5px solid var(--bdr);background:var(--w);cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;color:var(--gray)" title="Cerrar">✕</button>
-  </div>
+  // Campaña activa (resumen rápido)
+  const camp=activeCampId?CAMPS.find(c=>c.id===activeCampId):null;
+  const campPctData=camp?campPct(camp):null;
 
-  <div style="padding:10px 12px;display:flex;flex-direction:column;gap:10px;">
-
-  <!-- 1. CAMPAÑA ACTIVA -->
-  ${camp?`
-  <div style="border:1.5px solid rgba(34,197,94,.35);border-radius:10px;padding:10px 11px;background:linear-gradient(135deg,rgba(27,67,50,.03),rgba(45,106,79,.06));">
-    <div style="font-size:.56rem;font-weight:700;color:#15803d;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px">🏕 Campaña activa</div>
-    <div style="font-family:'Playfair Display',serif;font-size:.84rem;font-weight:700;margin-bottom:1px">${camp.nombre}</div>
-    <div style="font-size:.58rem;color:var(--gray);margin-bottom:8px">📅 ${fmtDate(camp.inicio)} → ${fmtDate(camp.fin)}</div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-      <div style="flex:1">
-        <div style="display:flex;justify-content:space-between;font-size:.58rem;color:var(--gray);margin-bottom:3px">
-          <span>${campPctData.worked} de 33 territorios</span><span style="font-weight:700;color:var(--gd)">${campPctData.pct}%</span>
+  return `
+    ${camp?`
+    <div class="dbc" style="margin-bottom:12px;border-color:rgba(34,197,94,.35);background:linear-gradient(135deg,rgba(27,67,50,.03),rgba(45,106,79,.06))">
+      <div class="dbc-t">🏕 Campaña activa</div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:2px">${camp.nombre}</div>
+          <div style="font-size:.63rem;color:var(--gray);margin-bottom:8px">📅 ${fmtDate(camp.inicio)} → ${fmtDate(camp.fin)}</div>
+          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--gray);margin-bottom:3px">
+            <span>${campPctData.worked} de 33 territorios</span><span style="font-weight:700;color:var(--gd)">${campPctData.pct}%</span>
+          </div>
+          <div class="db-prog-bar"><div class="db-prog-fill" style="width:${campPctData.pct}%"></div></div>
         </div>
-        <div style="height:8px;border-radius:4px;background:#f1f5f9;overflow:hidden;">
-          <div style="height:100%;width:${campPctData.pct}%;background:linear-gradient(90deg,var(--gd),var(--gm));border-radius:4px;transition:width .6s;"></div>
+        <div style="text-align:center">
+          <div class="db-ring">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#f1f5f9" stroke-width="8"/>
+              <circle cx="36" cy="36" r="28" fill="none" stroke="var(--gd)" stroke-width="8"
+                stroke-dasharray="${Math.round(campPctData.pct/100*175.9)} 175.9" stroke-linecap="round"/>
+            </svg>
+            <div class="db-ring-pct" style="color:var(--gd)">${campPctData.pct}%</div>
+          </div>
         </div>
-        <div style="font-size:.56rem;color:var(--gray);margin-top:3px">${33-campPctData.worked} restantes</div>
       </div>
-      <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;color:var(--gd);line-height:1;margin-left:12px">${campPctData.pct}%</div>
-    </div>
-    ${(()=>{
-      const noTrab=[];
-      for(let n=1;n<=33;n++) if(!campTerWorked(camp,n)) noTrab.push(n);
-      return noTrab.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(34,197,94,.2);">
-        <div style="font-size:.55rem;color:var(--gray);margin-bottom:4px;font-weight:600">Pendientes en campaña</div>
-        <div style="display:flex;flex-wrap:wrap;gap:2px">${noTrab.map(n=>`<span onclick="toggleDash();setTimeout(()=>selectT(${n}),100)" style="cursor:pointer;padding:1px 5px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:3px;font-size:.6rem;font-weight:700;color:#dc2626">${n}</span>`).join('')}</div>
-      </div>`:'<div style="margin-top:6px;font-size:.65rem;color:#15803d;font-weight:600">🎉 ¡Todos los territorios trabajados!</div>';
-    })()}
-  </div>`:`
-  <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:12px;text-align:center;">
-    <div style="font-size:.72rem;color:var(--gray);margin-bottom:8px">Sin campaña activa</div>
-    <button class="btn pri" onclick="toggleDash();setTimeout(openCampModal,100)" style="font-size:.66rem">🏕 Activar campaña</button>
-  </div>`}
-
-  <!-- 2. KPIs GENERALES -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-    <div style="border:1.5px solid rgba(34,197,94,.3);border-radius:9px;padding:8px 10px;text-align:center;">
-      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#15803d;line-height:1">${cnt.disponible}</div>
-      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">Disponibles</div>
-    </div>
-    <div style="border:1.5px solid rgba(245,158,11,.3);border-radius:9px;padding:8px 10px;text-align:center;">
-      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#d97706;line-height:1">${cnt.asignado}</div>
-      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">Asignados</div>
-    </div>
-    <div style="border:1.5px solid rgba(99,102,241,.3);border-radius:9px;padding:8px 10px;text-align:center;">
-      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#4f46e5;line-height:1">${cnt.completado}</div>
-      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">Completados</div>
-    </div>
-    <div style="border:1.5px solid rgba(239,68,68,.3);border-radius:9px;padding:8px 10px;text-align:center;">
-      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#dc2626;line-height:1">${cnt.urgente}</div>
-      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">+12 meses</div>
-    </div>
-  </div>
-
-  <!-- 3. ACTIVIDAD ESTE MES / AÑO + SPARKLINE -->
-  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
-    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">📅 Actividad</div>
-    <div style="display:flex;gap:10px;margin-bottom:10px;">
-      <div style="flex:1;text-align:center;">
-        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:var(--gd);line-height:1">${mesCount}</div>
-        <div style="font-size:.57rem;color:var(--gray)">este mes</div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(34,197,94,.2);display:flex;justify-content:flex-end">
+        <button class="btn" style="font-size:.66rem" onclick="infTab='campana';infCampId='${camp.id}';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">
+          📋 Ver informe completo →
+        </button>
       </div>
-      <div style="width:1px;background:var(--bdr);"></div>
-      <div style="flex:1;text-align:center;">
-        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:var(--indigo);line-height:1">${anioCount}</div>
-        <div style="font-size:.57rem;color:var(--gray)">este año</div>
+    </div>`:`
+    <div class="dbc" style="margin-bottom:12px;border-style:dashed;text-align:center;padding:18px">
+      <div style="font-size:.78rem;font-weight:600;color:var(--gray);margin-bottom:10px">Sin campaña activa</div>
+      <button class="btn pri" onclick="toggleDash();setTimeout(openCampModal,120)" style="font-size:.7rem">🏕 Activar campaña</button>
+    </div>`}
+
+    <div class="db-grid db-row4" style="margin-bottom:12px">
+      <div class="dbc" style="text-align:center;border-color:rgba(34,197,94,.3)">
+        <div class="dbn" style="color:#15803d">${cnt.disponible}</div><div class="dbl">Disponibles</div>
+      </div>
+      <div class="dbc" style="text-align:center;border-color:rgba(245,158,11,.3)">
+        <div class="dbn" style="color:#d97706">${cnt.asignado}</div><div class="dbl">Asignados</div>
+      </div>
+      <div class="dbc" style="text-align:center;border-color:rgba(99,102,241,.3)">
+        <div class="dbn" style="color:#4f46e5">${cnt.completado}</div><div class="dbl">Completados</div>
+      </div>
+      <div class="dbc" style="text-align:center;border-color:rgba(239,68,68,.3)">
+        <div class="dbn" style="color:#dc2626">${cnt.urgente}</div><div class="dbl">+12 meses</div>
       </div>
     </div>
-    <div style="font-size:.55rem;color:var(--gray);margin-bottom:4px;text-transform:uppercase;letter-spacing:.7px">Devoluciones — últimas 6 semanas</div>
-    <div style="display:flex;align-items:flex-end;gap:3px;height:36px;">
-      ${semanas.map(s=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
-        <div style="width:100%;border-radius:2px 2px 0 0;height:${s.c?Math.max(4,Math.round(s.c/maxSem*28)):2}px;background:${s.c?'var(--gd)':'#e2e8f0'};transition:height .4s;"></div>
-        <div style="font-size:.48rem;color:var(--gray)">${s.c||'·'}</div>
-      </div>`).join('')}
-    </div>
-  </div>
 
-  <!-- 4. PROGRESO POR ZONA -->
-  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
-    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🗺 Por zona — ${anioActual}</div>
-    ${zonaData.map(z=>{
-      const pct=Math.round(z.trab/z.total*100);
-      const colores=['#22c55e','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
-      const ci=zonaData.indexOf(z)%colores.length;
-      return `<div style="margin-bottom:6px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-          <div style="font-size:.62rem;font-weight:600;color:var(--dark)">${z.nombre}</div>
-          <div style="font-size:.58rem;font-weight:700;color:var(--gray)">${z.trab}/${z.total}</div>
+    <div class="db-grid db-row2" style="margin-bottom:12px">
+      <div class="dbc">
+        <div class="dbc-t">📅 Actividad</div>
+        <div style="display:flex;gap:16px;margin-bottom:12px">
+          <div style="flex:1;text-align:center">
+            <div class="dbn" style="color:var(--gd);font-size:2.2rem">${mesCount}</div>
+            <div class="dbl">este mes</div>
+          </div>
+          <div style="width:1px;background:var(--bdr)"></div>
+          <div style="flex:1;text-align:center">
+            <div class="dbn" style="color:var(--indigo);font-size:2.2rem">${anioCount}</div>
+            <div class="dbl">este año</div>
+          </div>
         </div>
-        <div style="height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:${colores[ci]};border-radius:3px;transition:width .6s;"></div>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>
-
-  <!-- 5. MANZANAS PENDIENTES -->
-  <div style="border:1.5px solid ${mzPendTotal?'rgba(245,158,11,.35)':'var(--bdr)'};border-radius:10px;padding:10px 11px;${mzPendTotal?'background:rgba(254,243,199,.3);':''}">
-    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">⚠️ Manzanas pendientes</div>
-    ${mzPendTotal===0
-      ?'<div style="font-size:.7rem;color:#15803d;font-weight:600">✅ Sin manzanas pendientes</div>'
-      :`<div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px;">
-          <span style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:#d97706;line-height:1">${mzPendTotal}</span>
-          <span style="font-size:.62rem;color:var(--gray)">en ${terConPend.length} territorio${terConPend.length>1?'s':''}</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:3px;max-height:100px;overflow-y:auto;">
-          ${terConPend.map(t=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(245,158,11,.15);">
-            <span onclick="toggleDash();setTimeout(()=>selectT(${t.n}),100)" style="cursor:pointer;font-size:.65rem;font-weight:700;color:var(--gd);min-width:22px">T${t.n}</span>
-            <div style="display:flex;flex-wrap:wrap;gap:2px">${t.mz.map(m=>`<span style="padding:1px 4px;background:#fef3c7;border:1px solid #fde68a;border-radius:3px;font-size:.57rem;font-weight:700;color:#d97706">${m}</span>`).join('')}</div>
+        <div style="font-size:.56rem;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Devoluciones — últ. 6 semanas</div>
+        <div class="db-spark">
+          ${semanas.map(s=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+            <div class="db-spark-bar" style="height:${s.c?Math.max(5,Math.round(s.c/maxSem*36)):3}px;background:${s.c?'var(--gd)':'#e2e8f0'}"></div>
+            <div class="db-spark-lbl">${s.c||'·'}</div>
           </div>`).join('')}
-        </div>`}
-  </div>
-
-  <!-- 6. SIN TRABAJAR MÁS TIEMPO -->
-  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
-    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🔴 Sin trabajar — más tiempo</div>
-    ${sinTrabArr.length===0
-      ?'<div style="font-size:.7rem;color:#15803d;font-weight:600">✅ Al día</div>'
-      :`<div style="display:flex;flex-direction:column;gap:3px">
-        ${sinTrabArr.slice(0,8).map(t=>`
-          <div onclick="toggleDash();setTimeout(()=>selectT(${t.n}),100)" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:7px;border:1.5px solid ${t.st==='urgente'?'rgba(239,68,68,.25)':'var(--bdr)'};background:${t.st==='urgente'?'rgba(239,68,68,.04)':'transparent'}">
-            <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${t.st==='urgente'?'#dc2626':'#94a3b8'};min-width:22px;text-align:center">${t.n}</div>
-            <div style="flex:1">
-              <div style="font-size:.62rem;font-weight:600;color:var(--dark)">Territorio ${t.n}</div>
-              <div style="font-size:.57rem;color:${t.dias!=null&&t.dias>365?'#dc2626':'var(--gray)'}">${t.dias!=null?t.dias+' días sin trabajar':'Sin historial'}</div>
+        </div>
+      </div>
+      <div class="dbc" style="${mzPendTotal?'border-color:rgba(245,158,11,.35);background:rgba(254,243,199,.1)':''}">
+        <div class="dbc-t">⚠️ Manzanas pendientes</div>
+        ${mzPendTotal===0
+          ?'<div style="margin-top:8px"><div style="font-size:1.6rem;margin-bottom:4px">✅</div><div style="font-size:.75rem;color:#15803d;font-weight:600">Sin pendientes</div></div>'
+          :`<div style="display:flex;align-items:baseline;gap:5px;margin-bottom:8px">
+              <span class="dbn" style="color:#d97706;font-size:2.2rem">${mzPendTotal}</span>
+              <span style="font-size:.65rem;color:var(--gray)">en ${terConPend.length} terr.</span>
             </div>
-            ${t.st==='urgente'?'<span style="font-size:.55rem;color:#dc2626;font-weight:700">URGENTE</span>':''}
-          </div>`).join('')}
-        ${sinTrabArr.length>8?`<div style="font-size:.6rem;color:var(--gray);text-align:center;padding:4px">y ${sinTrabArr.length-8} más…</div>`:''}
-      </div>`}
-  </div>
-
-  <!-- 7. GRILLA ESTADO TERRITORIOS -->
-  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
-    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🗂 Estado — todos los territorios</div>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;">
-      ${Array.from({length:33},(_,i)=>i+1).map(n=>{
-        const st=gs(n);
-        const col={disponible:'rgba(34,197,94,.5)',asignado:'rgba(245,158,11,.5)',completado:'rgba(99,102,241,.5)',urgente:'rgba(239,68,68,.5)'}[st]||'#ddd';
-        const tc={disponible:'#15803d',asignado:'#92400e',completado:'#3730a3',urgente:'#991b1b'}[st]||'#555';
-        return `<div onclick="toggleDash();setTimeout(()=>selectT(${n}),100)" title="T${n} — ${SL[st]}" style="cursor:pointer;aspect-ratio:1;border-radius:5px;background:${col.replace('.5','.15')};border:1.5px solid ${col};display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:${tc};transition:transform .1s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform=''">${n}</div>`;
-      }).join('')}
+            <div style="display:flex;flex-direction:column;gap:4px;max-height:110px;overflow-y:auto">
+              ${terConPend.map(t=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(245,158,11,.12)">
+                <span style="font-size:.68rem;font-weight:700;color:var(--gd);cursor:pointer;min-width:24px" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">T${t.n}</span>
+                <div style="display:flex;flex-wrap:wrap;gap:2px">${t.mz.map(m=>`<span class="db-mz-chip">${m}</span>`).join('')}</div>
+              </div>`).join('')}
+            </div>`}
+      </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(34,197,94,.5)"></div>Disp.</div>
-      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(245,158,11,.5)"></div>Asig.</div>
-      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(99,102,241,.5)"></div>Comp.</div>
-      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(239,68,68,.5)"></div>+12m</div>
-    </div>
-  </div>
 
-  </div>`; // fin padding wrapper
+    <div class="dbc" style="margin-bottom:12px">
+      <div class="dbc-t">🗺 Progreso por zona — ${anioActual}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${zonaData.map((z,i)=>{
+          const pct=Math.round(z.trab/z.total*100);
+          return `<div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="font-size:.7rem;font-weight:600;color:var(--dark)">${z.nombre}</div>
+              <div style="font-size:.63rem;color:var(--gray);font-weight:700">${z.trab}/${z.total} <span style="color:${zonaCols[i%zonaCols.length]};font-weight:900">${pct}%</span></div>
+            </div>
+            <div class="db-zbar"><div class="db-zfill" style="width:${pct}%;background:${zonaCols[i%zonaCols.length]}"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="dbc" style="margin-bottom:12px">
+      <div class="dbc-t">🔴 Sin trabajar — más tiempo</div>
+      ${sinTrabArr.length===0
+        ?'<div style="font-size:.75rem;color:#15803d;font-weight:600;padding:4px 0">✅ Todos los territorios han sido trabajados recientemente</div>'
+        :`<div class="db-grid db-row2" style="gap:6px">
+          ${sinTrabArr.slice(0,10).map(t=>`
+            <div class="db-ter-row" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+              <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:${t.st==='urgente'?'#dc2626':'#94a3b8'};min-width:26px;text-align:center">${t.n}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:.65rem;font-weight:600;color:var(--dark)">Territorio ${t.n}</div>
+                <div style="font-size:.58rem;color:${t.dias!=null&&t.dias>365?'#dc2626':'var(--gray)'};">${t.dias!=null?t.dias+' días sin trabajar':'Sin historial'}</div>
+              </div>
+              ${t.st==='urgente'?'<span class="db-urgente-badge">URGENTE</span>':''}
+            </div>`).join('')}
+          </div>
+          ${sinTrabArr.length>10?`<div style="font-size:.62rem;color:var(--gray);text-align:center;padding:8px 0">y ${sinTrabArr.length-10} más…</div>`:''}`}
+    </div>
+
+    <div class="dbc">
+      <div class="dbc-t">🗂 Estado de todos los territorios</div>
+      <div class="db-ter-grid" style="margin-bottom:10px">
+        ${Array.from({length:33},(_,i)=>i+1).map(n=>{
+          const st=gs(n);
+          return `<div class="db-ter-cell ${st}" onclick="toggleDash();setTimeout(()=>selectT(${n}),120)" title="T${n} — ${SL[st]}">${n}</div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(34,197,94,.5)"></div>Disponible</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(245,158,11,.5)"></div>Asignado</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(99,102,241,.5)"></div>Completado</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(239,68,68,.5)"></div>+12 meses</div>
+      </div>
+    </div>
+
+  </div>`;
 }
 
+function renderInfCampana(){
+  // Sin campañas
+  if(!CAMPS.length) return `
+    <div style="text-align:center;padding:40px 20px">
+      <div style="font-size:2.5rem;margin-bottom:12px">🏕</div>
+      <div style="font-size:.85rem;font-weight:600;color:var(--gray);margin-bottom:14px">No hay campañas registradas</div>
+      <button class="btn pri" onclick="toggleDash();setTimeout(openCampModal,120)">Crear primera campaña</button>
+    </div>
+  </div>`;
 
+  // Selector de campaña si no hay una seleccionada
+  if(!infCampId){
+    const now=new Date();
+    return `
+    <div style="margin-bottom:16px">
+      <div style="font-size:.68rem;color:var(--gray);margin-bottom:10px">Selecciona una campaña para ver su informe detallado:</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+      ${[...CAMPS].sort((a,b)=>new Date(b.inicio)-new Date(a.inicio)).map(c=>{
+        const p=campPct(c);
+        const ini=new Date(c.inicio+'T12:00'), fin=new Date(c.fin+'T12:00');
+        const estado = now<ini?'proxima':now<=fin?'en-curso':'finalizada';
+        const estadoLbl = {proxima:'Próxima',['en-curso']:'En curso',finalizada:'Finalizada'}[estado];
+        const isActive = c.id===activeCampId;
+        return `<div class="ic-camp-card ${isActive?'active-camp-card':''}" onclick="infCampId='${c.id}';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">
+              <div style="font-family:'Playfair Display',serif;font-size:.9rem;font-weight:700">${c.nombre}</div>
+              <span class="ic-badge ${estado}">${estadoLbl}</span>
+              ${isActive?'<span class="ic-badge en-curso">● Activa</span>':''}
+            </div>
+            <div style="font-size:.62rem;color:var(--gray);margin-bottom:6px">📅 ${fmtDate(c.inicio)} → ${fmtDate(c.fin)}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="height:5px;flex:1;background:#f1f5f9;border-radius:3px;overflow:hidden"><div style="height:100%;width:${p.pct}%;background:var(--gd);border-radius:3px"></div></div>
+              <div style="font-size:.62rem;font-weight:700;color:var(--gd)">${p.pct}%</div>
+            </div>
+          </div>
+          <div style="color:var(--gray);font-size:.85rem">›</div>
+        </div>`;
+      }).join('')}
+      </div>
+    </div>
+  </div>`;
+  }
+
+  // Informe detallado de una campaña
+  const c=CAMPS.find(x=>x.id===infCampId);
+  if(!c) return '<div class="de">Campaña no encontrada</div></div>';
+
+  const now=new Date();
+  const p=campPct(c);
+  const fi=fmtDate(c.inicio), ff=fmtDate(c.fin);
+  const ini=new Date(c.inicio+'T12:00'), fin=new Date(c.fin+'T12:00');
+  const estado = now<ini?'proxima':now<=fin?'en-curso':'finalizada';
+  const estadoLbl = {proxima:'Próxima',['en-curso']:'En curso',finalizada:'Finalizada'}[estado];
+
+  const worked=[], notWorked=[];
+  for(let n=1;n<=33;n++){
+    if(campTerWorked(c,n)) worked.push(n); else notWorked.push(n);
+  }
+
+  // Publicadores
+  const encMap={};
+  for(let n=1;n<=33;n++){
+    const d=DB[n];if(!d)continue;
+    (d.historial||[]).forEach(h=>{
+      if(h.enc&&dateInCamp(c,h.fecha)) encMap[h.enc]=(encMap[h.enc]||[]).concat(n);
+    });
+    if(d.enc&&d.estado!=='disponible'&&dateInCamp(c,d.fechaAsig))
+      encMap[d.enc]=(encMap[d.enc]||[]).concat(n);
+  }
+  const encs=Object.entries(encMap)
+    .map(([enc,ns])=>[enc,[...new Set(ns)]])
+    .sort((a,b)=>b[1].length-a[1].length);
+  const maxEnc=encs.length?encs[0][1].length:1;
+
+  // Días transcurridos / totales
+  const diasTotales=Math.max(1,Math.round((fin-ini)/86400000));
+  const diasTranscurridos=estado==='finalizada'?diasTotales:estado==='proxima'?0:Math.round((now-ini)/86400000);
+  const pctDias=Math.min(100,Math.round(diasTranscurridos/diasTotales*100));
+
+  return `
+    <!-- Volver al selector -->
+    <div style="margin-bottom:14px">
+      <button class="db-back" onclick="infCampId=null;renderDashboard();document.getElementById('dashOverlay').scrollTop=0">← Todas las campañas</button>
+    </div>
+
+    <!-- Encabezado campaña -->
+    <div class="dbc" style="margin-bottom:12px;border-color:rgba(34,197,94,.35);background:linear-gradient(135deg,rgba(27,67,50,.03),rgba(45,106,79,.06))">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
+            <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900">${c.nombre}</div>
+            <span class="ic-badge ${estado}">${estadoLbl}</span>
+            ${c.id===activeCampId?'<span class="ic-badge en-curso">● Activa</span>':''}
+          </div>
+          <div style="font-size:.65rem;color:var(--gray)">📅 ${fi} → ${ff}${c.obs?'  ·  '+c.obs:''}</div>
+        </div>
+        <button class="btn" onclick="exportCampExcel('${c.id}')" style="font-size:.66rem;flex-shrink:0">📊 Excel</button>
+      </div>
+
+      <!-- KPIs campaña -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+        <div style="text-align:center;padding:10px 6px;border-radius:9px;border:1.5px solid rgba(34,197,94,.25);background:rgba(34,197,94,.04)">
+          <div class="dbn" style="color:var(--gd);font-size:1.6rem">${p.worked}</div>
+          <div class="dbl">Trabajados</div>
+        </div>
+        <div style="text-align:center;padding:10px 6px;border-radius:9px;border:1.5px solid rgba(239,68,68,.25);background:rgba(239,68,68,.04)">
+          <div class="dbn" style="color:#dc2626;font-size:1.6rem">${33-p.worked}</div>
+          <div class="dbl">Pendientes</div>
+        </div>
+        <div style="text-align:center;padding:10px 6px;border-radius:9px;border:1.5px solid rgba(99,102,241,.25);background:rgba(99,102,241,.04)">
+          <div class="dbn" style="color:var(--indigo);font-size:1.6rem">${p.pct}%</div>
+          <div class="dbl">Cobertura</div>
+        </div>
+      </div>
+
+      <!-- Barra progreso territorios -->
+      <div style="margin-bottom:${estado!=='proxima'?'12px':'0'}">
+        <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--gray);margin-bottom:4px">
+          <span>Progreso territorial</span><span style="font-weight:700;color:var(--gd)">${p.worked}/33</span>
+        </div>
+        <div class="db-prog-bar"><div class="db-prog-fill" style="width:${p.pct}%"></div></div>
+      </div>
+
+      <!-- Barra tiempo (solo si en curso o finalizada) -->
+      ${estado!=='proxima'?`
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--gray);margin-bottom:4px">
+          <span>Tiempo ${estado==='finalizada'?'total':'transcurrido'}</span>
+          <span style="font-weight:700;color:var(--gray)">${diasTranscurridos}/${diasTotales} días</span>
+        </div>
+        <div style="height:7px;border-radius:4px;background:#f1f5f9;overflow:hidden;">
+          <div style="height:100%;width:${pctDias}%;background:${estado==='finalizada'?'var(--indigo)':'#f59e0b'};border-radius:4px;transition:width .6s;"></div>
+        </div>
+      </div>`:''}
+    </div>
+
+    <!-- Grilla territorios -->
+    <div class="dbc" style="margin-bottom:12px">
+      <div class="dbc-t">🗂 Territorios en esta campaña</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:.6rem;font-weight:600;color:#15803d;margin-bottom:5px">✅ Trabajados (${worked.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
+          ${worked.length
+            ? worked.map(n=>`<div class="ic-ter-chip worked" onclick="toggleDash();setTimeout(()=>selectT(${n}),120)" title="Territorio ${n}">${n}</div>`).join('')
+            : '<div style="font-size:.68rem;color:var(--gray)">Ninguno aún</div>'}
+        </div>
+        <div style="font-size:.6rem;font-weight:600;color:#dc2626;margin-bottom:5px">❌ Pendientes (${notWorked.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${notWorked.length
+            ? notWorked.map(n=>`<div class="ic-ter-chip nowork" onclick="toggleDash();setTimeout(()=>selectT(${n}),120)" title="Territorio ${n}">${n}</div>`).join('')
+            : '<div style="font-size:.68rem;color:#15803d;font-weight:600">🎉 ¡Todos trabajados!</div>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Publicadores participantes -->
+    ${encs.length?`
+    <div class="dbc" style="margin-bottom:12px">
+      <div class="dbc-t">👥 Publicadores (${encs.length})</div>
+      <div style="display:flex;flex-direction:column">
+        ${encs.map(([enc,ns])=>`
+          <div class="ic-enc-row">
+            <div style="min-width:0;flex:1">
+              <div style="font-size:.7rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${enc}</div>
+              <div style="font-size:.58rem;color:var(--gray);margin-top:1px">T${ns.join(', T')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+              <div class="ic-enc-bar"><div class="ic-enc-fill" style="width:${Math.round(ns.length/maxEnc*100)}%"></div></div>
+              <div style="font-size:.7rem;font-weight:700;color:var(--indigo);min-width:20px;text-align:right">${ns.length}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`:
+    `<div class="dbc" style="margin-bottom:12px;text-align:center;padding:20px">
+      <div style="font-size:.75rem;color:var(--gray)">Sin publicadores registrados aún en esta campaña</div>
+    </div>`}
+
+    ${c.obj?`
+    <div class="dbc">
+      <div class="dbc-t">🎯 Objetivo</div>
+      <div style="font-size:.75rem;color:var(--dark);line-height:1.5">${c.obj}</div>
+    </div>`:''}
+
+  </div>`;
+}
 // ── MODO OSCURO ──
 function toggleDark(){
   const isDark=document.body.classList.toggle('dark');
