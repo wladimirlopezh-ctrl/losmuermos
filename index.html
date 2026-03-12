@@ -113,6 +113,77 @@ header{
 .zb:hover{background:#f1f5f9;}
 .zoom-lbl{position:absolute;bottom:14px;left:14px;background:rgba(255,255,255,.88);border:1px solid var(--bdr);border-radius:6px;padding:3px 8px;font-size:.68rem;font-weight:700;color:#475569;z-index:10;}
 
+/* ── DASHBOARD ── */
+.dash-view{display:none;height:calc(100vh - 50px);overflow-y:auto;background:var(--bg);padding:16px 20px;}
+.dash-view.on{display:block;}
+.layout.dash-hidden{display:none;}
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.dash-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:900;color:var(--dark);}
+.dash-sub{font-size:.7rem;color:var(--gray);margin-top:1px;}
+.dash-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.dash-kpi{background:var(--w);border-radius:12px;padding:12px 14px;border:1.5px solid var(--bdr);position:relative;overflow:hidden;}
+body.dark .dash-kpi{background:var(--w);}
+.dash-kpi-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;}
+.dash-kpi-n{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;line-height:1.1;margin-top:4px;}
+.dash-kpi-l{font-size:.65rem;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.dash-kpi-sub{font-size:.62rem;color:var(--gray);margin-top:2px;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.dash-card{background:var(--w);border-radius:12px;padding:14px 16px;border:1.5px solid var(--bdr);}
+body.dark .dash-card{background:var(--w);}
+.dash-card-title{font-size:.6rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.dash-full{grid-column:1/-1;}
+.dz-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.dz-row:last-child{margin-bottom:0;}
+.dz-label{font-size:.68rem;font-weight:600;width:130px;flex-shrink:0;color:var(--dark);}
+.dz-bar{flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;}
+body.dark .dz-bar{background:#22263a;}
+.dz-fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.dz-pct{font-size:.66rem;font-weight:700;width:34px;text-align:right;flex-shrink:0;}
+.dash-donut-wrap{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;}
+.dash-donut-legend{display:flex;flex-direction:column;gap:6px;}
+.ddl-item{display:flex;align-items:center;gap:6px;font-size:.7rem;}
+.ddl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ddl-val{font-weight:700;margin-left:auto;min-width:22px;text-align:right;}
+.dash-pub-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #f8fafc;}
+body.dark .dash-pub-row{border-bottom-color:#22263a;}
+.dash-pub-row:last-child{border:none;}
+.dash-pub-name{font-size:.72rem;font-weight:600;flex:1;}
+.dash-pub-bar{width:80px;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
+body.dark .dash-pub-bar{background:#22263a;}
+.dash-pub-fill{height:100%;border-radius:3px;background:var(--gd);}
+.dash-pub-cnt{font-size:.66rem;font-weight:700;color:var(--gd);min-width:28px;text-align:right;}
+.ter-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;}
+.ter-cell{border-radius:5px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;cursor:pointer;transition:transform .12s;}
+.ter-cell:hover{transform:scale(1.18);z-index:2;}
+.ter-cell.disponible{background:var(--green);}
+.ter-cell.asignado{background:var(--amber);}
+.ter-cell.completado{background:var(--indigo);}
+.ter-cell.urgente{background:var(--red);}
+.month-row{display:flex;align-items:center;gap:4px;margin-bottom:5px;}
+.month-row:last-child{margin-bottom:0;}
+.month-lbl{font-size:.6rem;color:var(--gray);width:28px;flex-shrink:0;font-weight:600;}
+.month-bar-wrap{flex:1;height:14px;background:#f1f5f9;border-radius:3px;overflow:hidden;position:relative;}
+body.dark .month-bar-wrap{background:#22263a;}
+.month-bar-fill{height:100%;border-radius:3px;background:var(--gd);opacity:.85;transition:width .5s;}
+.month-bar-cnt{position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:.58rem;font-weight:700;color:var(--dark);}
+.camp-dash{background:linear-gradient(135deg,var(--gd),var(--gm));border-radius:12px;padding:14px 16px;color:#fff;margin-bottom:14px;}
+.camp-dash-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:2px;}
+.camp-dash-dates{font-size:.66rem;opacity:.8;margin-bottom:10px;}
+.camp-dash-kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.cdkpi{text-align:center;}
+.cdkpi-n{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;line-height:1;}
+.cdkpi-l{font-size:.58rem;opacity:.75;}
+.camp-prog-wrap{background:rgba(255,255,255,.2);border-radius:6px;height:10px;overflow:hidden;}
+.camp-prog-fill{height:100%;background:#fff;border-radius:6px;transition:width .6s;}
+.dash-act-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #f8fafc;font-size:.7rem;}
+body.dark .dash-act-row{border-bottom-color:#22263a;}
+.dash-act-row:last-child{border:none;}
+.dash-act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dash-act-ter{font-weight:700;width:28px;flex-shrink:0;}
+.dash-act-enc{flex:1;color:var(--gray);font-size:.66rem;}
+.dash-act-fecha{font-size:.62rem;color:var(--gray);}
+.btn.dash-active{background:var(--gd);color:#fff;border-color:var(--gd);}
+
 /* PANEL SECTIONS */
 .pb{padding:10px 11px;border-bottom:1px solid #f1f5f9;}
 .pb:last-child{border-bottom:none;}
@@ -262,6 +333,51 @@ body.dark .rpt-enc-row{border-bottom-color:#22263a;}
 body.dark .prog-wrap{background:#22263a;}
 .prog-fill{height:100%;border-radius:4px;background:var(--gd);transition:width .5s;}
 
+/* DASHBOARD */
+.dash-panel{display:none;flex-direction:column;width:280px;flex-shrink:0;background:var(--w);border-left:1px solid var(--bdr);overflow-y:auto;}
+.dash-panel.open{display:flex;}
+.dash-panel::-webkit-scrollbar{width:3px;}
+.dash-panel::-webkit-scrollbar-thumb{background:#dde;border-radius:2px;}
+body.dark .dash-panel::-webkit-scrollbar-thumb{background:#2a2f3e;}
+.dash-head{padding:10px 12px 6px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.dash-head-title{font-family:'Playfair Display',serif;font-size:.88rem;font-weight:700;}
+.dash-sect{padding:10px 12px;border-bottom:1px solid #f1f5f9;}
+body.dark .dash-sect{border-bottom-color:#22263a;}
+.dash-sect:last-child{border-bottom:none;}
+.dash-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;}
+.dash-kpi{border-radius:8px;padding:7px 9px;border:1.5px solid var(--bdr);background:var(--w);}
+body.dark .dash-kpi{background:#22263a;}
+.dash-kpi-n{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:900;line-height:1;}
+.dash-kpi-l{font-size:.58rem;color:var(--gray);margin-top:1px;}
+.dash-ring-wrap{display:flex;align-items:center;gap:10px;margin-top:6px;}
+.dash-ring{position:relative;width:64px;height:64px;flex-shrink:0;}
+.dash-ring svg{transform:rotate(-90deg);}
+.dash-ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:.85rem;font-weight:900;}
+.dash-zona-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.68rem;}
+.dash-zona-bar{flex:1;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
+body.dark .dash-zona-bar{background:#22263a;}
+.dash-zona-fill{height:100%;border-radius:3px;background:var(--gd);transition:width .6s;}
+.dash-ter-row{display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #f8fafc;font-size:.68rem;}
+.dash-ter-row:last-child{border:none;}
+body.dark .dash-ter-row{border-bottom-color:#1e2130;}
+.dash-ter-num{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.62rem;color:#fff;flex-shrink:0;}
+.dash-mz-chip{display:inline-flex;padding:1px 5px;border-radius:3px;font-size:.58rem;font-weight:700;background:#fef3c7;color:#d97706;border:1px solid #fde68a;}
+.dash-cal-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:5px;}
+.dash-cal-cell{aspect-ratio:1;border-radius:2px;background:#f1f5f9;position:relative;cursor:default;}
+body.dark .dash-cal-cell{background:#22263a;}
+.dash-cal-cell.h0{background:#f1f5f9;}
+body.dark .dash-cal-cell.h0{background:#22263a;}
+.dash-cal-cell.h1{background:rgba(34,197,94,.25);}
+.dash-cal-cell.h2{background:rgba(34,197,94,.55);}
+.dash-cal-cell.h3{background:rgba(34,197,94,.8);}
+.dash-cal-cell.h4{background:#22c55e;}
+.dash-cal-lbl{font-size:.5rem;color:var(--gray);text-align:center;}
+.dash-toggle{display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:7px;border:1.5px solid var(--bdr);background:var(--w);cursor:pointer;font-size:.7rem;font-weight:600;color:#475569;transition:all .15s;}
+.dash-toggle:hover{border-color:var(--gd);color:var(--gd);}
+.dash-toggle.active{background:var(--gd);color:#fff;border-color:var(--gd);}
+body.dark .dash-toggle{background:var(--w);color:#94a3b8;}
+body.dark .dash-toggle.active{background:var(--gd);color:#fff;}
+
 /* DEVOLUCIÓN / HISTORIAL */
 .dev-modal{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
 .dev-modal.open{display:flex;}
@@ -284,6 +400,65 @@ body.dark .hist-item{border-bottom-color:#22263a;}
 .mz-btn.pendiente{background:#fef3c7;border-color:#f59e0b;color:#d97706;}
 body.dark .mz-btn{background:#22263a;border-color:var(--bdr);color:var(--gray);}
 body.dark .mz-btn.pendiente{background:#3d2f10;border-color:#f59e0b;color:#fbbf24;}
+
+/* ── DASHBOARD ── */
+.dash-overlay{display:none;position:fixed;inset:0;z-index:500;background:var(--bg);overflow-y:auto;padding:16px;}
+.dash-overlay.open{display:block;}
+body.dark .dash-overlay{background:var(--bg);}
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.dash-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;}
+.dash-sub{font-size:.7rem;color:var(--gray);margin-top:2px;}
+.dash-grid{display:grid;gap:12px;}
+.dash-row2{grid-template-columns:1fr 1fr;}
+.dash-row3{grid-template-columns:1fr 1fr 1fr;}
+.dash-row4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:700px){.dash-row2,.dash-row3,.dash-row4{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.dash-row2,.dash-row3,.dash-row4{grid-template-columns:1fr;}}
+.dcard{background:var(--w);border-radius:12px;padding:14px 16px;border:1.5px solid var(--bdr);}
+body.dark .dcard{background:var(--w);}
+.dcard-title{font-size:.6rem;font-weight:700;color:var(--gray);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.dkpi-n{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;line-height:1;}
+.dkpi-l{font-size:.65rem;color:var(--gray);margin-top:3px;}
+.dkpi-sub{font-size:.62rem;margin-top:2px;font-weight:600;}
+.dbar-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.dbar-lbl{font-size:.67rem;width:80px;flex-shrink:0;color:var(--dark);font-weight:500;}
+.dbar-track{flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden;}
+body.dark .dbar-track{background:#22263a;}
+.dbar-fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.dbar-val{font-size:.63rem;font-weight:700;color:var(--gray);width:30px;text-align:right;}
+.dter-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:3px;}
+.dter-cell{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:transform .1s;}
+.dter-cell:hover{transform:scale(1.15);z-index:2;}
+.dter-cell.disponible{background:rgba(34,197,94,.15);color:#15803d;border-color:rgba(34,197,94,.3);}
+.dter-cell.asignado{background:rgba(245,158,11,.15);color:#d97706;border-color:rgba(245,158,11,.3);}
+.dter-cell.completado{background:rgba(99,102,241,.15);color:#4f46e5;border-color:rgba(99,102,241,.3);}
+.dter-cell.urgente{background:rgba(239,68,68,.15);color:#dc2626;border-color:rgba(239,68,68,.3);}
+body.dark .dter-cell.disponible{background:rgba(34,197,94,.12);color:#4ade80;}
+body.dark .dter-cell.asignado{background:rgba(245,158,11,.12);color:#fbbf24;}
+body.dark .dter-cell.completado{background:rgba(129,140,248,.12);color:#818cf8;}
+body.dark .dter-cell.urgente{background:rgba(248,113,113,.12);color:#f87171;}
+.dleg{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.dleg-item{display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray);}
+.dleg-dot{width:8px;height:8px;border-radius:2px;}
+.dspark{display:flex;align-items:flex-end;gap:2px;height:40px;}
+.dspark-bar{flex:1;border-radius:2px 2px 0 0;min-width:6px;transition:height .4s;}
+.dspark-lbl{font-size:.5rem;color:var(--gray);text-align:center;margin-top:2px;}
+.donut-wrap{display:flex;align-items:center;gap:14px;}
+.donut-legend{display:flex;flex-direction:column;gap:5px;}
+.donut-leg-item{display:flex;align-items:center;gap:6px;font-size:.66rem;}
+.donut-leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.camp-prog-bar{height:10px;border-radius:5px;background:#f1f5f9;overflow:hidden;margin:4px 0 2px;}
+body.dark .camp-prog-bar{background:#22263a;}
+.camp-prog-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--gd),var(--gm));transition:width .6s;}
+.act-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc;font-size:.68rem;}
+.act-row:last-child{border:none;}
+body.dark .act-row{border-bottom-color:#22263a;}
+.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.top-enc-row{display:flex;align-items:center;gap:7px;padding:4px 0;}
+.top-enc-bar{flex:1;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
+body.dark .top-enc-bar{background:#22263a;}
+.top-enc-fill{height:100%;border-radius:3px;background:var(--indigo);}
+
 </style>
 </head>
 <body>
@@ -295,6 +470,7 @@ body.dark .mz-btn.pendiente{background:#3d2f10;border-color:#f59e0b;color:#fbbf2
   </div>
   <div class="hb">
     <button class="btn" id="darkBtn" onclick="toggleDark()" title="Modo oscuro/claro">🌙</button>
+    <button class="btn" id="dashBtn" onclick="toggleDash()" title="Dashboard">📈 Dashboard</button>
     <button class="btn" onclick="openCampModal()" title="Campañas">🏕 Campañas</button>
     <button class="btn warn" id="editBtn" onclick="toggleEditMode()">✏️ Mover pines</button>
     <button class="btn xl" onclick="exportExcel()" title="Exportar reporte Excel">
@@ -358,7 +534,7 @@ body.dark .mz-btn.pendiente{background:#3d2f10;border-color:#f59e0b;color:#fbbf2
     <div class="zoom-lbl" id="zoomLbl">100%</div>
   </div>
 
-  <div class="panel R">
+  <div class="panel R" id="panelR">
     <div class="pb" id="detPanel"><div class="pt">📍 Detalle</div><div class="de">👆 Toca un territorio en el mapa</div></div>
     <div class="pb"><div class="pt">🕐 Actividad reciente</div><div id="actList"></div></div>
     <div class="pb">
@@ -375,6 +551,11 @@ body.dark .mz-btn.pendiente{background:#3d2f10;border-color:#f59e0b;color:#fbbf2
       </div>
     </div>
     <div class="pb"><div class="pt">🗺 Cobertura por zona</div><div id="zonaGrid"></div></div>
+  </div>
+
+  <!-- DASHBOARD PANEL -->
+  <div id="dashPanel" style="display:none;width:270px;flex-shrink:0;background:var(--w);border-left:1px solid var(--bdr);overflow-y:auto;flex-direction:column;">
+    <div id="dashContent"></div>
   </div>
 </div>
 
@@ -449,6 +630,11 @@ body.dark .mz-btn.pendiente{background:#3d2f10;border-color:#f59e0b;color:#fbbf2
       <button class="bsm" id="dev_save_btn" onclick="saveDevolucion()" style="background:var(--indigo);color:#fff">📬 Registrar devolución</button>
     </div>
   </div>
+</div>
+
+<!-- DASHBOARD PANEL (reemplaza panel R cuando está abierto) -->
+<div id="dashPanel" style="display:none;width:260px;flex-shrink:0;background:var(--w);border-left:1px solid var(--bdr);overflow-y:auto;flex-direction:column;">
+  <div id="dashContent"></div>
 </div>
 
 <div class="camp-modal" id="campModal">
@@ -1433,6 +1619,263 @@ function exportCampExcel(campId){
   XLSX.writeFile(wb,`informe_${slug}.xlsx`);
   toast('📊 Informe Excel exportado');
 }
+
+// ── DASHBOARD ──
+let dashVisible = false;
+
+function toggleDash(){
+  dashVisible = !dashVisible;
+  const panel = document.getElementById('dashPanel');
+  const panelR = document.getElementById('panelR');
+  const btn = document.getElementById('dashBtn');
+  if(dashVisible){
+    panel.style.display = 'flex';
+    panelR.style.display = 'none';
+    btn.classList.add('pri');
+    btn.title = 'Cerrar dashboard';
+    renderDashboard();
+  } else {
+    panel.style.display = 'none';
+    panelR.style.display = 'flex';
+    btn.classList.remove('pri');
+    btn.title = 'Dashboard';
+  }
+}
+
+function renderDashboard(){
+  const now = new Date();
+  const mesActual = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const anioActual = now.getFullYear();
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // ── Datos generales ──
+  const cnt={disponible:0,asignado:0,completado:0,urgente:0};
+  for(let i=1;i<=33;i++) cnt[gs(i)]++;
+
+  // Trabajados este mes y este año
+  let mesCount=0, anioCount=0;
+  for(let n=1;n<=33;n++){
+    const mw=DB[n]?.monthsWorked||{};
+    if(mw[mesActual]) mesCount++;
+    for(let m=1;m<=12;m++){
+      const k=`${anioActual}-${String(m).padStart(2,'0')}`;
+      if(mw[k]){anioCount++;break;}
+    }
+  }
+
+  // Manzanas pendientes acumuladas
+  let mzPendTotal=0, terConPend=[];
+  for(let n=1;n<=33;n++){
+    const p=DB[n]?.mzPendientes||[];
+    if(p.length){mzPendTotal+=p.length;terConPend.push({n,mz:p});}
+  }
+
+  // Sin trabajar más tiempo (urgentes + días sin actividad)
+  const sinTrabArr=[];
+  for(let n=1;n<=33;n++){
+    const d=DB[n]||{};
+    const lastDate = d.fechaDev||d.fechaAsig||null;
+    const dias = lastDate ? Math.round((now-new Date(lastDate+'T12:00'))/86400000) : null;
+    const st=gs(n);
+    if(st==='urgente'||st==='disponible') sinTrabArr.push({n,dias,st,enc:d.encargado||'—'});
+  }
+  sinTrabArr.sort((a,b)=>(b.dias||9999)-(a.dias||9999));
+
+  // Progreso por zona
+  const zonaData = Object.entries(ZONES).map(([nombre,ters])=>{
+    const trab=ters.filter(n=>{const mw=DB[n]?.monthsWorked||{};return Object.keys(mw).some(k=>k.startsWith(String(anioActual)));}).length;
+    const comp=ters.filter(n=>gs(n)==='completado').length;
+    const asig=ters.filter(n=>gs(n)==='asignado').length;
+    return {nombre,total:ters.length,trab,comp,asig};
+  });
+
+  // Campaña activa
+  const camp = activeCampId ? CAMPS.find(c=>c.id===activeCampId) : null;
+  const campPctData = camp ? campPct(camp) : null;
+
+  // Últimas 6 semanas de actividad (devoluciones)
+  const semanas=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now); d.setDate(d.getDate()-i*7);
+    const ini=new Date(d); ini.setDate(ini.getDate()-6);
+    const fin=new Date(d);
+    let c=0;
+    for(let n=1;n<=33;n++){
+      (DB[n]?.historial||[]).forEach(h=>{
+        const hd=new Date(h.fecha+'T12:00');
+        if(hd>=ini&&hd<=fin) c++;
+      });
+    }
+    semanas.push({lbl:['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getDay()]+' '+d.getDate(),c});
+  }
+  const maxSem=Math.max(...semanas.map(s=>s.c),1);
+
+  // ── HTML ──
+  const el=document.getElementById('dashContent');
+  el.innerHTML=`
+  <!-- HEADER FIJO -->
+  <div style="position:sticky;top:0;z-index:5;background:var(--w);border-bottom:1px solid var(--bdr);padding:10px 12px 8px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:900">📈 Dashboard</div>
+      <div style="font-size:.58rem;color:var(--gray)">${now.toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'})}</div>
+    </div>
+    <button onclick="toggleDash()" style="width:26px;height:26px;border-radius:6px;border:1.5px solid var(--bdr);background:var(--w);cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;color:var(--gray)" title="Cerrar">✕</button>
+  </div>
+
+  <div style="padding:10px 12px;display:flex;flex-direction:column;gap:10px;">
+
+  <!-- 1. CAMPAÑA ACTIVA -->
+  ${camp?`
+  <div style="border:1.5px solid rgba(34,197,94,.35);border-radius:10px;padding:10px 11px;background:linear-gradient(135deg,rgba(27,67,50,.03),rgba(45,106,79,.06));">
+    <div style="font-size:.56rem;font-weight:700;color:#15803d;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px">🏕 Campaña activa</div>
+    <div style="font-family:'Playfair Display',serif;font-size:.84rem;font-weight:700;margin-bottom:1px">${camp.nombre}</div>
+    <div style="font-size:.58rem;color:var(--gray);margin-bottom:8px">📅 ${fmtDate(camp.inicio)} → ${fmtDate(camp.fin)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;font-size:.58rem;color:var(--gray);margin-bottom:3px">
+          <span>${campPctData.worked} de 33 territorios</span><span style="font-weight:700;color:var(--gd)">${campPctData.pct}%</span>
+        </div>
+        <div style="height:8px;border-radius:4px;background:#f1f5f9;overflow:hidden;">
+          <div style="height:100%;width:${campPctData.pct}%;background:linear-gradient(90deg,var(--gd),var(--gm));border-radius:4px;transition:width .6s;"></div>
+        </div>
+        <div style="font-size:.56rem;color:var(--gray);margin-top:3px">${33-campPctData.worked} restantes</div>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;color:var(--gd);line-height:1;margin-left:12px">${campPctData.pct}%</div>
+    </div>
+    ${(()=>{
+      const noTrab=[];
+      for(let n=1;n<=33;n++) if(!campTerWorked(camp,n)) noTrab.push(n);
+      return noTrab.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(34,197,94,.2);">
+        <div style="font-size:.55rem;color:var(--gray);margin-bottom:4px;font-weight:600">Pendientes en campaña</div>
+        <div style="display:flex;flex-wrap:wrap;gap:2px">${noTrab.map(n=>`<span onclick="toggleDash();setTimeout(()=>selectT(${n}),100)" style="cursor:pointer;padding:1px 5px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:3px;font-size:.6rem;font-weight:700;color:#dc2626">${n}</span>`).join('')}</div>
+      </div>`:'<div style="margin-top:6px;font-size:.65rem;color:#15803d;font-weight:600">🎉 ¡Todos los territorios trabajados!</div>';
+    })()}
+  </div>`:`
+  <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:12px;text-align:center;">
+    <div style="font-size:.72rem;color:var(--gray);margin-bottom:8px">Sin campaña activa</div>
+    <button class="btn pri" onclick="toggleDash();setTimeout(openCampModal,100)" style="font-size:.66rem">🏕 Activar campaña</button>
+  </div>`}
+
+  <!-- 2. KPIs GENERALES -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+    <div style="border:1.5px solid rgba(34,197,94,.3);border-radius:9px;padding:8px 10px;text-align:center;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#15803d;line-height:1">${cnt.disponible}</div>
+      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">Disponibles</div>
+    </div>
+    <div style="border:1.5px solid rgba(245,158,11,.3);border-radius:9px;padding:8px 10px;text-align:center;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#d97706;line-height:1">${cnt.asignado}</div>
+      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">Asignados</div>
+    </div>
+    <div style="border:1.5px solid rgba(99,102,241,.3);border-radius:9px;padding:8px 10px;text-align:center;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#4f46e5;line-height:1">${cnt.completado}</div>
+      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">Completados</div>
+    </div>
+    <div style="border:1.5px solid rgba(239,68,68,.3);border-radius:9px;padding:8px 10px;text-align:center;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#dc2626;line-height:1">${cnt.urgente}</div>
+      <div style="font-size:.57rem;color:var(--gray);margin-top:2px">+12 meses</div>
+    </div>
+  </div>
+
+  <!-- 3. ACTIVIDAD ESTE MES / AÑO + SPARKLINE -->
+  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
+    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">📅 Actividad</div>
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <div style="flex:1;text-align:center;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:var(--gd);line-height:1">${mesCount}</div>
+        <div style="font-size:.57rem;color:var(--gray)">este mes</div>
+      </div>
+      <div style="width:1px;background:var(--bdr);"></div>
+      <div style="flex:1;text-align:center;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:var(--indigo);line-height:1">${anioCount}</div>
+        <div style="font-size:.57rem;color:var(--gray)">este año</div>
+      </div>
+    </div>
+    <div style="font-size:.55rem;color:var(--gray);margin-bottom:4px;text-transform:uppercase;letter-spacing:.7px">Devoluciones — últimas 6 semanas</div>
+    <div style="display:flex;align-items:flex-end;gap:3px;height:36px;">
+      ${semanas.map(s=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
+        <div style="width:100%;border-radius:2px 2px 0 0;height:${s.c?Math.max(4,Math.round(s.c/maxSem*28)):2}px;background:${s.c?'var(--gd)':'#e2e8f0'};transition:height .4s;"></div>
+        <div style="font-size:.48rem;color:var(--gray)">${s.c||'·'}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- 4. PROGRESO POR ZONA -->
+  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
+    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🗺 Por zona — ${anioActual}</div>
+    ${zonaData.map(z=>{
+      const pct=Math.round(z.trab/z.total*100);
+      const colores=['#22c55e','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
+      const ci=zonaData.indexOf(z)%colores.length;
+      return `<div style="margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+          <div style="font-size:.62rem;font-weight:600;color:var(--dark)">${z.nombre}</div>
+          <div style="font-size:.58rem;font-weight:700;color:var(--gray)">${z.trab}/${z.total}</div>
+        </div>
+        <div style="height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${colores[ci]};border-radius:3px;transition:width .6s;"></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <!-- 5. MANZANAS PENDIENTES -->
+  <div style="border:1.5px solid ${mzPendTotal?'rgba(245,158,11,.35)':'var(--bdr)'};border-radius:10px;padding:10px 11px;${mzPendTotal?'background:rgba(254,243,199,.3);':''}">
+    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">⚠️ Manzanas pendientes</div>
+    ${mzPendTotal===0
+      ?'<div style="font-size:.7rem;color:#15803d;font-weight:600">✅ Sin manzanas pendientes</div>'
+      :`<div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px;">
+          <span style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:#d97706;line-height:1">${mzPendTotal}</span>
+          <span style="font-size:.62rem;color:var(--gray)">en ${terConPend.length} territorio${terConPend.length>1?'s':''}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;max-height:100px;overflow-y:auto;">
+          ${terConPend.map(t=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(245,158,11,.15);">
+            <span onclick="toggleDash();setTimeout(()=>selectT(${t.n}),100)" style="cursor:pointer;font-size:.65rem;font-weight:700;color:var(--gd);min-width:22px">T${t.n}</span>
+            <div style="display:flex;flex-wrap:wrap;gap:2px">${t.mz.map(m=>`<span style="padding:1px 4px;background:#fef3c7;border:1px solid #fde68a;border-radius:3px;font-size:.57rem;font-weight:700;color:#d97706">${m}</span>`).join('')}</div>
+          </div>`).join('')}
+        </div>`}
+  </div>
+
+  <!-- 6. SIN TRABAJAR MÁS TIEMPO -->
+  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
+    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🔴 Sin trabajar — más tiempo</div>
+    ${sinTrabArr.length===0
+      ?'<div style="font-size:.7rem;color:#15803d;font-weight:600">✅ Al día</div>'
+      :`<div style="display:flex;flex-direction:column;gap:3px">
+        ${sinTrabArr.slice(0,8).map(t=>`
+          <div onclick="toggleDash();setTimeout(()=>selectT(${t.n}),100)" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:7px;border:1.5px solid ${t.st==='urgente'?'rgba(239,68,68,.25)':'var(--bdr)'};background:${t.st==='urgente'?'rgba(239,68,68,.04)':'transparent'}">
+            <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${t.st==='urgente'?'#dc2626':'#94a3b8'};min-width:22px;text-align:center">${t.n}</div>
+            <div style="flex:1">
+              <div style="font-size:.62rem;font-weight:600;color:var(--dark)">Territorio ${t.n}</div>
+              <div style="font-size:.57rem;color:${t.dias!=null&&t.dias>365?'#dc2626':'var(--gray)'}">${t.dias!=null?t.dias+' días sin trabajar':'Sin historial'}</div>
+            </div>
+            ${t.st==='urgente'?'<span style="font-size:.55rem;color:#dc2626;font-weight:700">URGENTE</span>':''}
+          </div>`).join('')}
+        ${sinTrabArr.length>8?`<div style="font-size:.6rem;color:var(--gray);text-align:center;padding:4px">y ${sinTrabArr.length-8} más…</div>`:''}
+      </div>`}
+  </div>
+
+  <!-- 7. GRILLA ESTADO TERRITORIOS -->
+  <div style="border:1.5px solid var(--bdr);border-radius:10px;padding:10px 11px;">
+    <div style="font-size:.56rem;font-weight:700;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🗂 Estado — todos los territorios</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;">
+      ${Array.from({length:33},(_,i)=>i+1).map(n=>{
+        const st=gs(n);
+        const col={disponible:'rgba(34,197,94,.5)',asignado:'rgba(245,158,11,.5)',completado:'rgba(99,102,241,.5)',urgente:'rgba(239,68,68,.5)'}[st]||'#ddd';
+        const tc={disponible:'#15803d',asignado:'#92400e',completado:'#3730a3',urgente:'#991b1b'}[st]||'#555';
+        return `<div onclick="toggleDash();setTimeout(()=>selectT(${n}),100)" title="T${n} — ${SL[st]}" style="cursor:pointer;aspect-ratio:1;border-radius:5px;background:${col.replace('.5','.15')};border:1.5px solid ${col};display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:${tc};transition:transform .1s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform=''">${n}</div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(34,197,94,.5)"></div>Disp.</div>
+      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(245,158,11,.5)"></div>Asig.</div>
+      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(99,102,241,.5)"></div>Comp.</div>
+      <div style="display:flex;align-items:center;gap:3px;font-size:.57rem;color:var(--gray)"><div style="width:7px;height:7px;border-radius:2px;background:rgba(239,68,68,.5)"></div>+12m</div>
+    </div>
+  </div>
+
+  </div>`; // fin padding wrapper
+}
+
 
 // ── MODO OSCURO ──
 function toggleDark(){
