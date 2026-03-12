@@ -402,10 +402,16 @@ function gdEnsureToken(cb){
 }
 
 async function gdFindFile(name){
-  const q=`name='${name}' and '${GD_FOLDER_ID}' in parents and trashed=false`;
-  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)`,{headers:{Authorization:'Bearer '+gdToken}});
-  const data=await r.json();
-  return data.files&&data.files.length?data.files[0]:null;
+  // Busca en la carpeta configurada primero
+  const q1=`name='${name}' and '${GD_FOLDER_ID}' in parents and trashed=false`;
+  const r1=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q1)}&fields=files(id,name,modifiedTime)`,{headers:{Authorization:'Bearer '+gdToken}});
+  const d1=await r1.json();
+  if(d1.files&&d1.files.length)return d1.files[0];
+  // Fallback: busca en todo Drive por nombre
+  const q2=`name='${name}' and trashed=false`;
+  const r2=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q2)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime+desc`,{headers:{Authorization:'Bearer '+gdToken}});
+  const d2=await r2.json();
+  return d2.files&&d2.files.length?d2.files[0]:null;
 }
 
 async function gdSaveFile(name,content){
