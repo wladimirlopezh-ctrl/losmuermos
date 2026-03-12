@@ -493,6 +493,39 @@ function terrDBToMapFormat(){
   return map;
 }
 
+// Lee filas del programa semanal y extrae asignaciones de territorios
+function rowsToMapFormat(){
+  const rows=getRows();
+  const map={};
+  const today=new Date().toISOString().slice(0,10);
+  rows.forEach(r=>{
+    if(!r.ter||!r.enc)return;
+    const esContinuacion=/cont\.|continuaci[oó]n/i.test(r.ter);
+    const matches=r.ter.match(/\d+/g);
+    if(!matches)return;
+    matches.forEach(num=>{
+      const n=parseInt(num);
+      if(!n||n>33)return;
+      if(!map[n]){
+        const enc=r.enc.replace(/\n.*$/,'').replace(/Grupos?\s+\d+.*?:\s*/i,'').trim();
+        map[n]={
+          encargado:enc,
+          modalidad:'Casa en casa',
+          // Si es continuación, no asignamos fecha nueva (el mapa conservará la original)
+          fechaAsig:esContinuacion?null:today,
+          fechaDev:'',
+          estado:'asignado',
+          manzana:'',
+          obs:esContinuacion?'Continuación de semana anterior':'',
+          monthsWorked:{},
+          _esContinuacion:esContinuacion
+        };
+      }
+    });
+  });
+  return map;
+}
+
 // Convierte formato mapa → entradas TERR_DB (para importar al programa)
 function mapFormatToTerrDB(mapDB){
   const entries=[];
@@ -520,12 +553,21 @@ async function syncTerrToMapa(){
       // Leer mapa actual desde Drive
       let mapaDB={};
       try{const existing=await gdLoadFile(GD_FILE_TERR);if(existing)mapaDB=existing;}catch(e){}
-      // Mezclar: datos del programa sobreescriben encargado y fechaAsig en el mapa
-      const fromProg=terrDBToMapFormat();
-      Object.entries(fromProg).forEach(([n,d])=>{
+
+      // Fuente 1: pestaña Territorios (TERR_DB)
+      const fromTerrDB=terrDBToMapFormat();
+      // Fuente 2: filas del programa semanal
+      const fromRows=rowsToMapFormat();
+
+      // Mezclar: TERR_DB tiene prioridad (datos más completos), luego filas del programa
+      const merged={...fromRows,...fromTerrDB};
+
+      Object.entries(merged).forEach(([n,d])=>{
         if(!mapaDB[n])mapaDB[n]={monthsWorked:{}};
-        mapaDB[n].encargado=d.encargado;
-        mapaDB[n].fechaAsig=d.fechaAsig;
+        mapaDB[n].encargado=d.encargado||mapaDB[n].encargado||'';
+        // Solo sobreescribir fechaAsig si NO es continuación y hay fecha nueva
+        if(!d._esContinuacion&&d.fechaAsig)mapaDB[n].fechaAsig=d.fechaAsig;
+        else if(!mapaDB[n].fechaAsig&&d.fechaAsig)mapaDB[n].fechaAsig=d.fechaAsig;
         mapaDB[n].fechaDev=d.fechaDev||mapaDB[n].fechaDev||'';
         mapaDB[n].estado=d.estado||mapaDB[n].estado||'asignado';
         mapaDB[n].modalidad=d.modalidad||mapaDB[n].modalidad||'';
@@ -533,9 +575,11 @@ async function syncTerrToMapa(){
         mapaDB[n].obs=d.obs||mapaDB[n].obs||'';
         if(!mapaDB[n].monthsWorked)mapaDB[n].monthsWorked={};
       });
+
+      const count=Object.keys(merged).length;
       await gdSaveFile(GD_FILE_TERR,JSON.stringify(mapaDB,null,2));
-      driveSetStatus(`✅ Mapa actualizado — ${new Date().toLocaleTimeString()}`,'#81c995');
-      toast('🗺️ Territorios sincronizados con el mapa');
+      driveSetStatus(`✅ ${count} territorios sincronizados — ${new Date().toLocaleTimeString()}`,'#81c995');
+      toast(`🗺️ ${count} territorios enviados al mapa`);
     }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al sincronizar');}
   });
 }
