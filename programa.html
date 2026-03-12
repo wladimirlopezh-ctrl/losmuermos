@@ -1137,7 +1137,7 @@ const TERR_MANZANAS={
 
 // DB: array of assignment entries
 // {id, terrNum, manzana, encargado, modalidad, fechaAsig, fechaDev, estado, obs}
-let TERR_DB = JSON.parse(localStorage.getItem('terrDB')||'[]');
+let TERR_DB = (()=>{try{const d=JSON.parse(localStorage.getItem('terrDB')||'[]');return Array.isArray(d)?d:[];}catch(e){return [];}})();
 let terrEditId = null;
 let terrFilter = 'all';
 
@@ -1353,7 +1353,8 @@ function importTerrJSON(e){
   const r=new FileReader();
   r.onload=ev=>{
     try{
-      TERR_DB=JSON.parse(ev.target.result);
+      const parsed=JSON.parse(ev.target.result);
+      TERR_DB=Array.isArray(parsed)?parsed:[];
       saveTerr(); renderTerr();
       toast('✅ Territorios cargados');
     }catch{toast('❌ Error al leer el archivo');}
