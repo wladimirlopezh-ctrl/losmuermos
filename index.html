@@ -476,6 +476,9 @@ body.dark .top-enc-bar{background:#22263a;}
     <button class="btn xl" onclick="exportExcel()" title="Exportar reporte Excel">
       <span>📊</span> Excel
     </button>
+    <button class="btn" id="gistBtn" onclick="openGistModal()" title="Publicar datos para visualizadores">
+      🌐 Publicar <span class="sync-dot" id="gistDot" title="Sin configurar"></span>
+    </button>
     <button class="btn gd" onclick="openDriveModal()" title="Google Drive">
       <svg width="14" height="14" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
       Drive <span class="sync-dot" id="syncDot" title="Sin conectar"></span>
@@ -670,6 +673,75 @@ body.dark .top-enc-bar{background:#22263a;}
 <!-- DASHBOARD FULL SCREEN -->
 <div id="dashOverlay" style="display:none;position:fixed;inset:0;z-index:800;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;">
   <div id="dashContent"></div>
+</div>
+
+<!-- MODAL GIST / PUBLICAR -->
+<div class="drive-modal" id="gistModal" onclick="if(event.target===this)closeGistModal()">
+  <div class="drive-box" style="max-width:420px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h3 style="margin:0">🌐 Publicar para visualizadores</h3>
+      <button onclick="closeGistModal()" style="width:26px;height:26px;border-radius:6px;border:1.5px solid var(--bdr);background:transparent;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;color:var(--gray)">✕</button>
+    </div>
+
+    <!-- Vista: sin configurar -->
+    <div id="gistSetupView">
+      <p style="font-size:.74rem;color:var(--gray);margin-bottom:14px;line-height:1.5">
+        Permite que otros vean los datos actualizados abriendo el mismo archivo HTML, sin necesidad de iniciar sesión.
+      </p>
+
+      <div style="background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:14px;border:1px solid var(--bdr)">
+        <div style="font-size:.64rem;font-weight:700;color:var(--dark);margin-bottom:8px">⚙️ Configuración (una sola vez)</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label style="font-size:.63rem;font-weight:600;color:#475569;display:block;margin-bottom:3px">1. Token de GitHub <span style="font-weight:400;color:var(--gray)">(scope: gist)</span></label>
+            <input id="gistTokenInput" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              style="width:100%;box-sizing:border-box;padding:6px 9px;border-radius:7px;border:1.5px solid var(--bdr);background:var(--w);font-size:.72rem;font-family:'DM Sans',sans-serif;color:var(--dark)"/>
+            <div style="font-size:.58rem;color:var(--gray);margin-top:3px">
+              GitHub → Settings → Developer settings → Personal access tokens → New token → marcar solo <strong>gist</strong>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:.63rem;font-weight:600;color:#475569;display:block;margin-bottom:3px">2. ID del Gist <span style="font-weight:400;color:var(--gray)">(dejar vacío para crear uno nuevo)</span></label>
+            <input id="gistIdInput" placeholder="abc123def456... (opcional)"
+              style="width:100%;box-sizing:border-box;padding:6px 9px;border-radius:7px;border:1.5px solid var(--bdr);background:var(--w);font-size:.72rem;font-family:'DM Sans',sans-serif;color:var(--dark)"/>
+          </div>
+        </div>
+      </div>
+      <div class="drive-btns">
+        <button class="btn" onclick="closeGistModal()">Cancelar</button>
+        <button class="btn pri" onclick="gistSaveConfig()">💾 Guardar configuración</button>
+      </div>
+    </div>
+
+    <!-- Vista: configurado -->
+    <div id="gistReadyView" style="display:none">
+      <div class="drive-status" id="gistStatus">Listo para publicar.</div>
+      <div style="margin:10px 0;padding:10px 12px;border-radius:9px;background:#f0fdf4;border:1.5px solid rgba(34,197,94,.3)">
+        <div style="font-size:.6rem;font-weight:700;color:#15803d;margin-bottom:4px">🔗 Enlace para visualizadores</div>
+        <div id="gistRawUrl" style="font-size:.6rem;color:#166534;word-break:break-all;margin-bottom:6px;font-family:monospace"></div>
+        <button onclick="copyGistUrl()" style="font-size:.62rem;padding:3px 9px;border-radius:5px;border:1px solid rgba(34,197,94,.4);background:rgba(34,197,94,.08);color:#15803d;cursor:pointer">📋 Copiar enlace</button>
+      </div>
+      <div style="font-size:.62rem;color:var(--gray);margin-bottom:12px;line-height:1.5">
+        Los visualizadores abren el HTML normalmente — la app cargará los datos automáticamente desde este enlace.
+      </div>
+      <div class="drive-btns">
+        <button class="btn" onclick="gistReset()" style="font-size:.66rem">🔧 Reconfigurar</button>
+        <button class="btn pri" id="gistPublishBtn" onclick="gistPublish()">🚀 Publicar ahora</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BANNER MODO SOLO LECTURA -->
+<div id="viewerBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:900;background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;padding:8px 16px;display:none;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:1rem">👁</span>
+    <div>
+      <div style="font-weight:700">Modo visualización</div>
+      <div style="font-size:.62rem;opacity:.8" id="viewerLastUpdate">Datos cargados automáticamente</div>
+    </div>
+  </div>
+  <button onclick="gistRefresh()" style="padding:5px 12px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">🔄 Actualizar</button>
 </div>
 
 <script>
@@ -2275,12 +2347,189 @@ async function driveLoad(){
   }
 }
 
+// ── GIST / PUBLICAR ──
+const GIST_FILE_NAME = 'territorios_los_muermos.json';
+let gistToken = null;
+let gistId = null;
+let isViewerMode = false;
+
+function gistLoadConfig(){
+  try{
+    gistToken = localStorage.getItem('lm_gist_token')||null;
+    gistId    = localStorage.getItem('lm_gist_id')||null;
+  }catch(e){}
+}
+function gistSaveConfigStorage(){
+  try{
+    if(gistToken) localStorage.setItem('lm_gist_token', gistToken);
+    if(gistId)    localStorage.setItem('lm_gist_id', gistId);
+  }catch(e){}
+}
+function setGistDot(state){
+  const d = document.getElementById('gistDot');
+  if(!d) return;
+  d.className = 'sync-dot'+(state?' '+state:'');
+  const t = {ok:'Publicado',err:'Error al publicar',spin:'Publicando...','':'Sin configurar'};
+  d.title = t[state]||'';
+}
+function setGistStatus(msg){ document.getElementById('gistStatus').textContent = msg; }
+function gistRawUrl(){ return `https://gist.githubusercontent.com/raw/${gistId}/${GIST_FILE_NAME}`; }
+
+function openGistModal(){
+  gistLoadConfig();
+  if(gistToken && gistId){
+    document.getElementById('gistSetupView').style.display = 'none';
+    document.getElementById('gistReadyView').style.display = '';
+    document.getElementById('gistRawUrl').textContent = gistRawUrl();
+    setGistStatus('Listo para publicar.');
+  } else {
+    document.getElementById('gistSetupView').style.display = '';
+    document.getElementById('gistReadyView').style.display = 'none';
+    if(gistToken) document.getElementById('gistTokenInput').value = gistToken;
+    if(gistId)    document.getElementById('gistIdInput').value = gistId;
+  }
+  document.getElementById('gistModal').classList.add('open');
+}
+function closeGistModal(){ document.getElementById('gistModal').classList.remove('open'); }
+
+async function gistSaveConfig(){
+  const tok = document.getElementById('gistTokenInput').value.trim();
+  const id  = document.getElementById('gistIdInput').value.trim();
+  if(!tok){ toast('⚠️ Ingresa el token de GitHub'); return; }
+  gistToken = tok;
+  gistId    = id || null;
+  // Si no hay gistId, crear uno nuevo ahora
+  if(!gistId){
+    setGistStatus('⏳ Creando Gist...');
+    document.getElementById('gistSetupView').style.display = 'none';
+    document.getElementById('gistReadyView').style.display = '';
+    try{
+      const r = await fetch('https://api.github.com/gists',{
+        method:'POST',
+        headers:{'Authorization':'token '+gistToken,'Content-Type':'application/json'},
+        body: JSON.stringify({
+          description:'Territorios Los Muermos — datos de mapa',
+          public: true,
+          files:{ [GIST_FILE_NAME]:{ content: JSON.stringify(fullBackup(),null,2) } }
+        })
+      });
+      const data = await r.json();
+      if(!data.id){ setGistStatus('❌ Error: '+(data.message||'sin respuesta')); return; }
+      gistId = data.id;
+      gistSaveConfigStorage();
+      document.getElementById('gistRawUrl').textContent = gistRawUrl();
+      setGistStatus('✅ Gist creado y datos publicados.');
+      setGistDot('ok');
+      toast('🌐 Gist creado correctamente');
+    }catch(e){ setGistStatus('❌ Error: '+e.message); }
+  } else {
+    gistSaveConfigStorage();
+    document.getElementById('gistSetupView').style.display = 'none';
+    document.getElementById('gistReadyView').style.display = '';
+    document.getElementById('gistRawUrl').textContent = gistRawUrl();
+    setGistStatus('✅ Configuración guardada.');
+    toast('✅ Configuración guardada');
+  }
+}
+
+async function gistPublish(){
+  if(!gistToken||!gistId){ openGistModal(); return; }
+  setGistDot('spin');
+  setGistStatus('⏳ Publicando...');
+  document.getElementById('gistPublishBtn').disabled = true;
+  try{
+    const r = await fetch(`https://api.github.com/gists/${gistId}`,{
+      method:'PATCH',
+      headers:{'Authorization':'token '+gistToken,'Content-Type':'application/json'},
+      body: JSON.stringify({ files:{ [GIST_FILE_NAME]:{ content: JSON.stringify(fullBackup(),null,2) } } })
+    });
+    const data = await r.json();
+    if(!data.id){ setGistStatus('❌ Error: '+(data.message||'sin respuesta')); setGistDot('err'); return; }
+    const now = new Date().toLocaleString('es-CL');
+    setGistStatus(`✅ Publicado — ${now}`);
+    setGistDot('ok');
+    toast('🌐 Datos publicados correctamente');
+  }catch(e){
+    setGistStatus('❌ Error: '+e.message);
+    setGistDot('err');
+    toast('❌ Error al publicar');
+  }
+  document.getElementById('gistPublishBtn').disabled = false;
+}
+
+function gistReset(){
+  gistToken = null; gistId = null;
+  try{ localStorage.removeItem('lm_gist_token'); localStorage.removeItem('lm_gist_id'); }catch(e){}
+  document.getElementById('gistTokenInput').value = '';
+  document.getElementById('gistIdInput').value = '';
+  document.getElementById('gistSetupView').style.display = '';
+  document.getElementById('gistReadyView').style.display = 'none';
+  setGistDot('');
+}
+
+function copyGistUrl(){
+  const url = gistRawUrl();
+  navigator.clipboard?.writeText(url).then(()=>toast('📋 Enlace copiado')).catch(()=>toast(url));
+}
+
+// ── MODO VISUALIZADOR ──
+// El HTML puede incluir el ID del gist como atributo en el body para modo visualizador
+// O se detecta si no hay datos locales y hay un gistId embebido
+async function tryViewerMode(){
+  // Busca gistId embebido en el HTML (atributo data-gist-id en <body>)
+  const embeddedGistId = document.body.getAttribute('data-gist-id');
+  if(!embeddedGistId) return false;
+  isViewerMode = true;
+  // Ocultar botones de edición
+  ['editBtn','gistBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  document.querySelectorAll('.btn.pri, .btn.warn').forEach(btn=>{
+    if(!['darkBtn','dashBtn'].includes(btn.id)) btn.style.display='none';
+  });
+  // Mostrar banner
+  const banner = document.getElementById('viewerBanner');
+  banner.style.display = 'flex';
+  // Cargar datos
+  await gistLoadRemote(embeddedGistId);
+  return true;
+}
+
+async function gistLoadRemote(id){
+  const banner = document.getElementById('viewerBanner');
+  const upd = document.getElementById('viewerLastUpdate');
+  upd.textContent = 'Cargando datos...';
+  try{
+    const url = `https://gist.githubusercontent.com/raw/${id}/${GIST_FILE_NAME}?t=${Date.now()}`;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    applyBackup(data);
+    const now = new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    upd.textContent = `Actualizado: ${now}`;
+    toast('✅ Datos actualizados');
+  }catch(e){
+    upd.textContent = '⚠️ No se pudo actualizar';
+    toast('⚠️ Error al cargar datos remotos');
+  }
+}
+
+async function gistRefresh(){
+  const embeddedGistId = document.body.getAttribute('data-gist-id');
+  if(embeddedGistId) await gistLoadRemote(embeddedGistId);
+}
+
+// ── INIT ──
 (()=>{
   const s=document.getElementById('mn');
   for(let i=1;i<=33;i++){const o=document.createElement('option');o.value=i;o.textContent='Territorio '+i;s.appendChild(o);}
   initZoom();initMapPan();renderPins();updateAll();renderCampSidebar();
   window.addEventListener('resize',resetZoom);
+  // Cargar config Gist si existe
+  gistLoadConfig();
+  if(gistToken && gistId) setGistDot('ok');
+  // Intentar modo visualizador
+  tryViewerMode();
 })();
+
 </script>
 </body>
 </html>
