@@ -550,17 +550,45 @@ async function syncTerrToMapa(){
   gdEnsureToken(async()=>{
     driveSetStatus('⏳ Sincronizando territorios con el mapa...','#e0c34a');
     try{
-      // Leer mapa actual desde Drive
+      // Paso 1: poblar TERR_DB desde las filas del programa semanal
+      const fromRows=rowsToMapFormat();
+      Object.entries(fromRows).forEach(([n,d])=>{
+        const num=parseInt(n);
+        const existe=TERR_DB.findIndex(x=>parseInt(x.terrNum)===num&&x.estado!=='completado');
+        if(existe>=0){
+          // Actualizar encargado, mantener fecha original si es continuación
+          TERR_DB[existe].encargado=d.encargado||TERR_DB[existe].encargado;
+          if(!d._esContinuacion&&d.fechaAsig)TERR_DB[existe].fechaAsig=d.fechaAsig;
+          TERR_DB[existe].estado='asignado';
+          if(d.obs)TERR_DB[existe].obs=d.obs;
+        }else{
+          TERR_DB.push({
+            id:'prog_'+num+'_'+Date.now(),
+            terrNum:num,
+            manzana:d.manzana||'',
+            encargado:d.encargado||'',
+            modalidad:d.modalidad||'Casa en casa',
+            fechaAsig:d.fechaAsig||new Date().toISOString().slice(0,10),
+            fechaDev:'',
+            estado:'asignado',
+            obs:d.obs||''
+          });
+        }
+      });
+      saveTerr();
+      renderTerr();
+
+      // Paso 2: leer mapa actual desde Drive
       let mapaDB={};
       try{const existing=await gdLoadFile(GD_FILE_TERR);if(existing)mapaDB=existing;}catch(e){}
 
-      // Fuente 1: pestaña Territorios (TERR_DB)
+      // Fuente 1: pestaña Territorios (TERR_DB, ya actualizada arriba)
       const fromTerrDB=terrDBToMapFormat();
-      // Fuente 2: filas del programa semanal
-      const fromRows=rowsToMapFormat();
+      // Fuente 2: filas del programa semanal (para _esContinuacion)
+      const fromRowsMapa=rowsToMapFormat();
 
-      // Mezclar: TERR_DB tiene prioridad (datos más completos), luego filas del programa
-      const merged={...fromRows,...fromTerrDB};
+      // Mezclar: TERR_DB tiene prioridad
+      const merged={...fromRowsMapa,...fromTerrDB};
 
       Object.entries(merged).forEach(([n,d])=>{
         if(!mapaDB[n])mapaDB[n]={monthsWorked:{}};
