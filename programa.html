@@ -444,6 +444,7 @@ async function driveGuardar(){
     try{
       const data={titulo:document.getElementById('titulo').innerText,subtitulo:document.getElementById('subtitulo').innerText,rows:getRows()};
       await gdSaveFile(GD_FILE_PROG,JSON.stringify(data,null,2));
+      saveLocal();
       driveSetStatus(`✅ Guardado en Drive — ${new Date().toLocaleTimeString()}`,'#81c995');
       toast('✅ Programa guardado en Drive');
     }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al guardar');}
@@ -460,6 +461,7 @@ async function driveCargar(){
       if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
       if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
       render(data.rows);
+      saveLocal();
       driveSetStatus(`✅ Cargado — ${new Date().toLocaleTimeString()}`,'#81c995');
       toast('✅ Programa cargado desde Drive');
     }catch(e){driveSetStatus('⚠️ '+e.message,'#e0c34a');}
@@ -643,6 +645,7 @@ function toggleEdit(){
     editing=false;
     document.body.classList.remove('editing');
     render(getRows());
+    saveLocal();
     document.getElementById('titulo').contentEditable=false;
     document.getElementById('subtitulo').contentEditable=false;
     document.getElementById('thAct').style.display='none';
@@ -679,13 +682,32 @@ function addRow(){
   const dia=document.getElementById('f-dia').value.trim();
   const rows=getRows();
   rows.push({dia,hora,enc,lugar:document.getElementById('f-lugar').value.trim(),ter:document.getElementById('f-territorio').value.trim()});
-  render(rows);closeModal();toast('✅ Fila agregada');
+  render(rows);saveLocal();closeModal();toast('✅ Fila agregada');
 }
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
 
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
 
 // ── JSON Export/Import ──
+function saveLocal(){
+  try{
+    const data={titulo:document.getElementById('titulo').innerText,subtitulo:document.getElementById('subtitulo').innerText,rows:getRows()};
+    localStorage.setItem('progDB',JSON.stringify(data));
+  }catch(e){}
+}
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem('progDB');
+    if(!raw)return false;
+    const data=JSON.parse(raw);
+    if(!data.rows)return false;
+    if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
+    if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
+    render(data.rows);
+    return true;
+  }catch(e){return false;}
+}
+
 function exportarJSON(){
   const data={titulo:document.getElementById('titulo').innerText,subtitulo:document.getElementById('subtitulo').innerText,rows:getRows()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -705,6 +727,7 @@ function importarJSON(event){
       if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
       if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
       render(data.rows);
+      saveLocal();
       toast('✅ Datos cargados correctamente');
     }catch(err){toast('❌ Archivo inválido');}
   };
@@ -1275,14 +1298,13 @@ document.getElementById('terrModal').addEventListener('click',e=>{
 // ── INIT ──
 buildThemeBar();
 buildFontBar();
-render(defaultRows);
+// Cargar desde localStorage automáticamente, o usar datos por defecto
+if(!loadLocal()){render(defaultRows);}
 document.getElementById('thAct').style.display='none';
 // Populate territory number select
 (()=>{const s=document.getElementById('tm-num');for(let i=1;i<=33;i++){const o=document.createElement('option');o.value=i;o.textContent='Territorio '+i;s.appendChild(o);}})();
 
 (async()=>{
-  // Intentar cargar programa desde Drive al iniciar (requiere interacción del usuario para OAuth)
-  // Solo carga automática si ya hay token
   driveSetStatus('Listo. Usa los botones de Drive para sincronizar.','#888');
 })();
 </script>
