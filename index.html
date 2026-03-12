@@ -210,6 +210,57 @@ header{
 .drive-status{font-size:.7rem;padding:7px 10px;border-radius:7px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:12px;color:#475569;min-height:30px;}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--dark);color:#fff;padding:6px 14px;border-radius:16px;font-size:.74rem;font-weight:600;z-index:9999;transition:transform .3s;}
 .toast.on{transform:translateX(-50%) translateY(0);}
+
+/* CAMPAÑAS */
+.camp-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:.62rem;font-weight:700;background:#fef9c3;color:#a16207;border:1px solid #fde68a;}
+.camp-badge.active{background:#dcfce7;color:#15803d;border-color:#86efac;}
+.camp-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:7px;border:1.5px solid var(--bdr);margin-bottom:4px;cursor:pointer;background:var(--w);}
+.camp-item:hover{background:#f8fafc;border-color:#cbd5e1;}
+.camp-item.active-camp{border-color:#86efac;background:#f0fdf4;}
+body.dark .camp-item{background:var(--w);}
+body.dark .camp-item:hover{background:#22263a;}
+body.dark .camp-item.active-camp{border-color:#16a34a;background:#052e16;}
+.camp-name{font-size:.72rem;font-weight:700;color:var(--dark);flex:1;}
+.camp-dates{font-size:.6rem;color:var(--gray);}
+.camp-pct{font-size:.8rem;font-weight:900;color:var(--gd);line-height:1;}
+.camp-modal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.camp-modal.open{display:flex;}
+.camp-box{background:var(--w);border-radius:14px;padding:0;width:96%;max-width:680px;border-top:3px solid var(--gold);box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column;}
+body.dark .camp-box{background:var(--w);}
+.camp-box-head{padding:16px 20px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.camp-box-head h3{font-family:'Playfair Display',serif;font-size:1rem;margin:0;}
+.camp-tabs{display:flex;gap:2px;padding:10px 14px 0;flex-shrink:0;border-bottom:1px solid var(--bdr);}
+.camp-tab{padding:5px 12px;border-radius:7px 7px 0 0;font-size:.72rem;font-weight:600;cursor:pointer;color:var(--gray);border:1.5px solid transparent;border-bottom:none;background:transparent;}
+.camp-tab.on{background:var(--w);color:var(--dark);border-color:var(--bdr);border-bottom-color:var(--w);margin-bottom:-1px;}
+body.dark .camp-tab.on{background:var(--w);border-color:var(--bdr);border-bottom-color:var(--w);}
+.camp-body{padding:14px 16px;overflow-y:auto;flex:1;}
+.camp-list-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--bdr);margin-bottom:6px;background:var(--w);}
+.camp-list-item:hover{border-color:#94a3b8;}
+body.dark .camp-list-item{background:#22263a;}
+.cli-name{font-weight:700;font-size:.78rem;flex:1;}
+.cli-dates{font-size:.64rem;color:var(--gray);}
+.cli-pct{font-size:.9rem;font-weight:900;color:var(--gd);min-width:38px;text-align:right;}
+.cli-acts{display:flex;gap:4px;}
+.rpt-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:10px;flex-wrap:wrap;}
+.rpt-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;}
+.rpt-sub{font-size:.65rem;color:var(--gray);margin-top:2px;}
+.rpt-kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;}
+.kpi{border-radius:8px;padding:8px 10px;border:1.5px solid var(--bdr);text-align:center;background:var(--w);}
+body.dark .kpi{background:#22263a;}
+.kpi-n{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;line-height:1;}
+.kpi-l{font-size:.6rem;color:var(--gray);margin-top:2px;}
+.rpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px;}
+.rpt-trow{display:flex;align-items:center;gap:5px;padding:3px 6px;border-radius:5px;font-size:.68rem;}
+.rpt-trow.worked{background:rgba(34,197,94,.1);color:#15803d;}
+.rpt-trow.nowork{background:rgba(239,68,68,.08);color:#dc2626;}
+body.dark .rpt-trow.worked{background:rgba(34,197,94,.15);color:#4ade80;}
+body.dark .rpt-trow.nowork{background:rgba(239,68,68,.12);color:#f87171;}
+.rpt-enc-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:.7rem;}
+.rpt-enc-row:last-child{border:none;}
+body.dark .rpt-enc-row{border-bottom-color:#22263a;}
+.prog-wrap{background:#f1f5f9;border-radius:4px;height:6px;overflow:hidden;margin-top:3px;}
+body.dark .prog-wrap{background:#22263a;}
+.prog-fill{height:100%;border-radius:4px;background:var(--gd);transition:width .5s;}
 </style>
 </head>
 <body>
@@ -221,6 +272,7 @@ header{
   </div>
   <div class="hb">
     <button class="btn" id="darkBtn" onclick="toggleDark()" title="Modo oscuro/claro">🌙</button>
+    <button class="btn" onclick="openCampModal()" title="Campañas">🏕 Campañas</button>
     <button class="btn warn" id="editBtn" onclick="toggleEditMode()">✏️ Mover pines</button>
     <button class="btn xl" onclick="exportExcel()" title="Exportar reporte Excel">
       <span>📊</span> Excel
@@ -249,6 +301,13 @@ header{
 <div class="layout" id="layout">
   <div class="panel L">
     <div class="pb"><div class="pt">📊 Resumen</div><div id="statCards"></div></div>
+    <div class="pb">
+      <div class="pt" style="display:flex;justify-content:space-between;align-items:center">
+        🏕 Campaña activa
+        <button class="btn" onclick="openCampModal()" style="padding:1px 7px;font-size:.6rem">Gestionar</button>
+      </div>
+      <div id="campSidebar"></div>
+    </div>
     <div class="pb">
       <div class="pt">🔍 Filtrar mapa</div>
       <button class="fb on" onclick="setFilter('all',this)"><div class="fd" style="background:#94a3b8"></div>Todos<span class="fn" id="fa">33</span></button>
@@ -315,6 +374,21 @@ header{
     </div>
   </div>
 </div>
+<div class="camp-modal" id="campModal">
+  <div class="camp-box">
+    <div class="camp-box-head">
+      <h3>🏕 Campañas de Predicación</h3>
+      <button class="btn" onclick="closeCampModal()" style="padding:3px 9px;font-size:.7rem">✕</button>
+    </div>
+    <div class="camp-tabs">
+      <div class="camp-tab on" id="ctab1" onclick="switchCampTab(1)">📋 Lista</div>
+      <div class="camp-tab" id="ctab2" onclick="switchCampTab(2)">➕ Nueva</div>
+      <div class="camp-tab" id="ctab3" onclick="switchCampTab(3)" id="ctab3">📊 Informe</div>
+    </div>
+    <div class="camp-body" id="campBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="drive-modal" id="driveModal">
   <div class="drive-box">
@@ -856,6 +930,307 @@ function exportExcel(){
   toast('📊 Excel exportado correctamente');
 }
 
+// ── CAMPAÑAS ──
+let CAMPS = JSON.parse(localStorage.getItem('lm_camps')||'[]');
+let activeCampId = localStorage.getItem('lm_activeCamp')||null;
+let campTab = 1;
+let reportCampId = null;
+
+const saveCamps=()=>{try{localStorage.setItem('lm_camps',JSON.stringify(CAMPS));localStorage.setItem('lm_activeCamp',activeCampId||'');}catch(e){}};
+
+function openCampModal(){
+  document.getElementById('campModal').classList.add('open');
+  switchCampTab(1);
+}
+function closeCampModal(){document.getElementById('campModal').classList.remove('open');}
+
+function switchCampTab(n){
+  campTab=n;
+  [1,2,3].forEach(i=>document.getElementById('ctab'+i).classList.toggle('on',i===n));
+  renderCampBody();
+}
+
+function renderCampBody(){
+  const el=document.getElementById('campBody');
+  if(campTab===1) el.innerHTML=renderCampList();
+  else if(campTab===2) el.innerHTML=renderCampForm();
+  else el.innerHTML=renderCampReport();
+}
+
+function renderCampList(){
+  if(!CAMPS.length) return '<div class="de" style="padding:30px 0">📭 No hay campañas registradas.<br><span style="font-size:.68rem">Usa la pestaña ➕ Nueva para crear una.</span></div>';
+  const sorted=[...CAMPS].sort((a,b)=>new Date(b.inicio)-new Date(a.inicio));
+  return sorted.map(c=>{
+    const pct=campPct(c);
+    const isActive=c.id===activeCampId;
+    const fi=fmtDate(c.inicio), ff=fmtDate(c.fin);
+    const status=isActive?'<span class="camp-badge active">● Activa</span>':campStatus(c);
+    return `<div class="camp-list-item${isActive?' active-camp':''}">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="cli-name">${c.nombre}</span>${status}
+        </div>
+        <div class="cli-dates">📅 ${fi} → ${ff}${c.obs?` · ${c.obs}`:''}</div>
+        <div style="margin-top:4px">
+          <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--gray);margin-bottom:2px">
+            <span>${pct.worked} / 33 territorios</span><span>${pct.pct}%</span>
+          </div>
+          <div class="prog-wrap"><div class="prog-fill" style="width:${pct.pct}%"></div></div>
+        </div>
+      </div>
+      <div class="cli-acts">
+        <button class="btn" style="padding:3px 7px;font-size:.64rem" onclick="viewCampReport('${c.id}')" title="Ver informe">📊</button>
+        ${isActive
+          ? `<button class="btn" style="padding:3px 7px;font-size:.64rem;background:#fef9c3;color:#a16207" onclick="deactivateCamp()" title="Quitar activa">✕</button>`
+          : `<button class="btn pri" style="padding:3px 7px;font-size:.64rem" onclick="setActiveCamp('${c.id}')" title="Activar">▶</button>`}
+        <button class="btn danger" style="padding:3px 7px;font-size:.64rem" onclick="deleteCamp('${c.id}')" title="Eliminar">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCampForm(prefill){
+  const p=prefill||{};
+  const today=new Date().toISOString().split('T')[0];
+  return `<div style="max-width:440px">
+    <div class="fg"><label>Nombre de la campaña</label><input id="cf_nom" placeholder="Ej: Campaña de Verano 2025" value="${p.nombre||''}"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="fg"><label>Fecha inicio</label><input type="date" id="cf_ini" value="${p.inicio||today}"/></div>
+      <div class="fg"><label>Fecha fin</label><input type="date" id="cf_fin" value="${p.fin||''}"/></div>
+    </div>
+    <div class="fg"><label>Objetivo (territorios)</label>
+      <select id="cf_obj">
+        <option value="all"${(!p.obj||p.obj==='all')?' selected':''}>Todos los 33 territorios</option>
+        <option value="custom"${p.obj==='custom'?' selected':''}>Selección personalizada</option>
+      </select>
+    </div>
+    <div class="fg"><label>Observaciones</label><input id="cf_obs" placeholder="Opcional" value="${p.obs||''}"/></div>
+    <div class="mbtns">
+      <button class="bsm" onclick="switchCampTab(1)" style="background:#f1f5f9;color:#475569">Cancelar</button>
+      <button class="bsm" onclick="saveCampForm(${p.id?`'${p.id}'`:'null'})" style="background:var(--gd);color:#fff">${p.id?'Actualizar':'Crear campaña'}</button>
+    </div>
+  </div>`;
+}
+
+function renderCampReport(){
+  if(!reportCampId){
+    if(!CAMPS.length) return '<div class="de" style="padding:30px 0">📭 Crea una campaña primero.</div>';
+    // Mostrar selector
+    return `<div>
+      <p style="font-size:.74rem;color:var(--gray);margin-bottom:10px">Selecciona una campaña para ver su informe:</p>
+      ${[...CAMPS].sort((a,b)=>new Date(b.inicio)-new Date(a.inicio)).map(c=>`
+        <div class="camp-list-item" onclick="viewCampReport('${c.id}')" style="cursor:pointer">
+          <div style="flex:1"><div class="cli-name">${c.nombre}</div><div class="cli-dates">${fmtDate(c.inicio)} → ${fmtDate(c.fin)}</div></div>
+          <span style="color:var(--gray);font-size:.7rem">Ver →</span>
+        </div>`).join('')}
+    </div>`;
+  }
+  const c=CAMPS.find(x=>x.id===reportCampId);
+  if(!c) return '<div class="de">Campaña no encontrada</div>';
+  const pct=campPct(c);
+  const fi=fmtDate(c.inicio), ff=fmtDate(c.fin);
+
+  // Territorios trabajados durante la campaña
+  const worked=[], notWorked=[];
+  for(let n=1;n<=33;n++){
+    if(campTerWorked(c,n)) worked.push(n); else notWorked.push(n);
+  }
+
+  // Publicadores que participaron
+  const encMap={};
+  for(let n=1;n<=33;n++){
+    const d=DB[n]; if(!d) continue;
+    const hist=d.historial||[];
+    hist.forEach(h=>{
+      if(h.enc && dateInCamp(c,h.fecha)){
+        encMap[h.enc]=(encMap[h.enc]||0)+1;
+      }
+    });
+    if(d.enc && d.estado!=='disponible' && dateInCamp(c,d.fechaAsig)){
+      encMap[d.enc]=(encMap[d.enc]||0)+1;
+    }
+  }
+  const encs=Object.entries(encMap).sort((a,b)=>b[1]-a[1]);
+
+  return `<div>
+    <button class="btn" onclick="reportCampId=null;renderCampBody()" style="font-size:.66rem;margin-bottom:10px">← Volver</button>
+    <div class="rpt-head">
+      <div><div class="rpt-title">📊 ${c.nombre}</div><div class="rpt-sub">📅 ${fi} → ${ff}${c.obs?' · '+c.obs:''}</div></div>
+      <button class="btn xl" onclick="exportCampExcel('${c.id}')" style="font-size:.66rem">📊 Excel</button>
+    </div>
+    <div class="rpt-kpi">
+      <div class="kpi"><div class="kpi-n" style="color:var(--gd)">${pct.worked}</div><div class="kpi-l">Trabajados</div></div>
+      <div class="kpi"><div class="kpi-n" style="color:#dc2626">${33-pct.worked}</div><div class="kpi-l">Sin trabajar</div></div>
+      <div class="kpi"><div class="kpi-n" style="color:var(--indigo)">${pct.pct}%</div><div class="kpi-l">Cobertura</div></div>
+    </div>
+    <div style="margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;font-size:.64rem;color:var(--gray);margin-bottom:3px"><span>Progreso general</span><span>${pct.worked}/33</span></div>
+      <div class="prog-wrap" style="height:8px"><div class="prog-fill" style="width:${pct.pct}%"></div></div>
+    </div>
+
+    <div class="pt" style="margin-bottom:6px">✅ Trabajados (${worked.length})</div>
+    <div class="rpt-grid" style="margin-bottom:12px">
+      ${worked.length?worked.map(n=>`<div class="rpt-trow worked">✓ Territorio ${n}</div>`).join(''):'<div style="font-size:.7rem;color:var(--gray);grid-column:1/-1">Ninguno aún</div>'}
+    </div>
+    <div class="pt" style="margin-bottom:6px">❌ Sin trabajar (${notWorked.length})</div>
+    <div class="rpt-grid" style="margin-bottom:12px">
+      ${notWorked.length?notWorked.map(n=>`<div class="rpt-trow nowork">✗ Territorio ${n}</div>`).join(''):'<div style="font-size:.7rem;color:var(--gray);grid-column:1/-1">¡Todos trabajados! 🎉</div>'}
+    </div>
+
+    ${encs.length?`<div class="pt" style="margin-bottom:6px">👥 Participantes (${encs.length})</div>
+    <div>${encs.map(([enc,cnt])=>`<div class="rpt-enc-row"><span style="font-weight:600">${enc}</span><span style="color:var(--gray)">${cnt} territorio${cnt>1?'s':''}</span></div>`).join('')}</div>`:''}
+  </div>`;
+}
+
+function campTerWorked(c,n){
+  const d=DB[n]; if(!d) return false;
+  // Revisa historial
+  const hist=d.historial||[];
+  if(hist.some(h=>dateInCamp(c,h.fecha))) return true;
+  // Revisa asignación actual
+  if((d.estado==='completado'||d.estado==='asignado') && dateInCamp(c,d.fechaAsig)) return true;
+  return false;
+}
+
+function dateInCamp(c,dateStr){
+  if(!dateStr) return false;
+  const d=new Date(dateStr);
+  return d>=new Date(c.inicio) && d<=new Date(c.fin);
+}
+
+function campPct(c){
+  let worked=0;
+  for(let n=1;n<=33;n++) if(campTerWorked(c,n)) worked++;
+  return {worked, pct:Math.round(worked/33*100)};
+}
+
+function campStatus(c){
+  const now=new Date(), fi=new Date(c.inicio), ff=new Date(c.fin);
+  if(now<fi) return '<span class="camp-badge">⏳ Próxima</span>';
+  if(now>ff) return '<span class="camp-badge" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0">✓ Finalizada</span>';
+  return '<span class="camp-badge active">● En curso</span>';
+}
+
+function fmtDate(s){
+  if(!s) return '—';
+  const d=new Date(s+'T12:00:00');
+  return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+function saveCampForm(editId){
+  const nom=document.getElementById('cf_nom').value.trim();
+  const ini=document.getElementById('cf_ini').value;
+  const fin=document.getElementById('cf_fin').value;
+  const obs=document.getElementById('cf_obs').value.trim();
+  const obj=document.getElementById('cf_obj').value;
+  if(!nom){alert('Ingresa un nombre para la campaña');return;}
+  if(!ini||!fin){alert('Ingresa fechas de inicio y fin');return;}
+  if(new Date(fin)<new Date(ini)){alert('La fecha fin debe ser después del inicio');return;}
+  if(editId){
+    const idx=CAMPS.findIndex(c=>c.id===editId);
+    if(idx>=0) CAMPS[idx]={...CAMPS[idx],nombre:nom,inicio:ini,fin:fin,obs,obj};
+  } else {
+    CAMPS.push({id:'c'+Date.now(),nombre:nom,inicio:ini,fin:fin,obs,obj,creado:new Date().toISOString()});
+  }
+  saveCamps(); toast('✅ Campaña guardada'); switchCampTab(1);
+}
+
+function setActiveCamp(id){
+  activeCampId=id; saveCamps();
+  toast('🏕 Campaña activada'); renderCampBody(); renderCampSidebar();
+}
+function deactivateCamp(){
+  activeCampId=null; saveCamps();
+  toast('Campaña desactivada'); renderCampBody(); renderCampSidebar();
+}
+function deleteCamp(id){
+  if(!confirm('¿Eliminar esta campaña?')) return;
+  CAMPS=CAMPS.filter(c=>c.id!==id);
+  if(activeCampId===id) activeCampId=null;
+  saveCamps(); toast('Campaña eliminada'); renderCampBody();
+}
+function viewCampReport(id){
+  reportCampId=id; switchCampTab(3);
+}
+
+function renderCampSidebar(){
+  const el=document.getElementById('campSidebar');
+  if(!el) return;
+  if(!activeCampId){el.innerHTML='<div style="font-size:.68rem;color:var(--gray)">Sin campaña activa</div>';return;}
+  const c=CAMPS.find(x=>x.id===activeCampId);
+  if(!c){el.innerHTML='';return;}
+  const pct=campPct(c);
+  el.innerHTML=`<div class="camp-item active-camp" onclick="openCampModal()" style="margin-bottom:0">
+    <div style="flex:1;min-width:0">
+      <div class="camp-name">${c.nombre}</div>
+      <div class="camp-dates">${fmtDate(c.inicio)} → ${fmtDate(c.fin)}</div>
+      <div style="margin-top:3px">
+        <div style="display:flex;justify-content:space-between;font-size:.58rem;color:var(--gray);margin-bottom:1px"><span>${pct.worked}/33 territorios</span><span>${pct.pct}%</span></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:${pct.pct}%"></div></div>
+      </div>
+    </div>
+    <span class="camp-pct">${pct.pct}%</span>
+  </div>`;
+}
+
+function exportCampExcel(campId){
+  const c=CAMPS.find(x=>x.id===campId);
+  if(!c){toast('Campaña no encontrada');return;}
+  const wb=XLSX.utils.book_new();
+  const pct=campPct(c);
+
+  // Hoja resumen
+  const resRows=[
+    ['INFORME DE CAMPAÑA'],
+    ['Nombre',c.nombre],
+    ['Fecha inicio',fmtDate(c.inicio)],
+    ['Fecha fin',fmtDate(c.fin)],
+    ['Observaciones',c.obs||''],
+    [],
+    ['Territorios trabajados',pct.worked],
+    ['Territorios sin trabajar',33-pct.worked],
+    ['Cobertura',pct.pct+'%'],
+  ];
+  const wsRes=XLSX.utils.aoa_to_sheet(resRows);
+  wsRes['!cols']=[{wch:25},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,wsRes,'📋 Resumen');
+
+  // Hoja territorios
+  const terHead=['Territorio','Trabajado','Encargado(s)','Fecha(s)','Estado actual','Zona'];
+  const zoneOf=n=>Object.entries(ZONES).find(([,arr])=>arr.includes(n))?.[0]||'—';
+  const terRows=[terHead];
+  for(let n=1;n<=33;n++){
+    const worked=campTerWorked(c,n);
+    const d=DB[n]||{};
+    const encs=[];const fechas=[];
+    (d.historial||[]).forEach(h=>{if(dateInCamp(c,h.fecha)){encs.push(h.enc||'—');fechas.push(h.fecha);}});
+    if(d.enc&&dateInCamp(c,d.fechaAsig)){encs.push(d.enc);fechas.push(d.fechaAsig);}
+    terRows.push([`Territorio ${n}`,worked?'✓ Sí':'✗ No',[...new Set(encs)].join(', ')||'—',[...new Set(fechas)].join(', ')||'—',SL[d.estado||'disponible'],zoneOf(n)]);
+  }
+  const wsTer=XLSX.utils.aoa_to_sheet(terRows);
+  wsTer['!cols']=[{wch:14},{wch:12},{wch:25},{wch:20},{wch:18},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsTer,'🗺 Territorios');
+
+  // Hoja publicadores
+  const encMap={};
+  for(let n=1;n<=33;n++){
+    const d=DB[n];if(!d)continue;
+    (d.historial||[]).forEach(h=>{if(h.enc&&dateInCamp(c,h.fecha)){encMap[h.enc]=(encMap[h.enc]||[]);encMap[h.enc].push(n);}});
+    if(d.enc&&dateInCamp(c,d.fechaAsig)){encMap[d.enc]=(encMap[d.enc]||[]);encMap[d.enc].push(n);}
+  }
+  const encRows=[['Publicador','Territorios trabajados','Cantidad']];
+  Object.entries(encMap).sort((a,b)=>b[1].length-a[1].length).forEach(([enc,ns])=>{
+    encRows.push([enc,[...new Set(ns)].map(x=>`T${x}`).join(', '),[...new Set(ns)].length]);
+  });
+  const wsEnc=XLSX.utils.aoa_to_sheet(encRows);
+  wsEnc['!cols']=[{wch:25},{wch:35},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,wsEnc,'👥 Publicadores');
+
+  const slug=c.nombre.replace(/[^a-z0-9]/gi,'_').toLowerCase();
+  XLSX.writeFile(wb,`informe_${slug}.xlsx`);
+  toast('📊 Informe Excel exportado');
+}
+
 // ── MODO OSCURO ──
 function toggleDark(){
   const isDark=document.body.classList.toggle('dark');
@@ -993,7 +1368,7 @@ async function driveLoad(){
 (()=>{
   const s=document.getElementById('mn');
   for(let i=1;i<=33;i++){const o=document.createElement('option');o.value=i;o.textContent='Territorio '+i;s.appendChild(o);}
-  initZoom();initMapPan();renderPins();updateAll();
+  initZoom();initMapPan();renderPins();updateAll();renderCampSidebar();
   window.addEventListener('resize',resetZoom);
 })();
 </script>
