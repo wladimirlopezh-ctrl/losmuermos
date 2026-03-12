@@ -279,6 +279,11 @@ body.dark .hist-item{border-bottom-color:#22263a;}
 .hist-s{font-size:.62rem;color:var(--gray);}
 .btn-finish{width:100%;padding:7px;border-radius:8px;border:none;background:var(--indigo);color:#fff;font-weight:700;font-size:.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;}
 .btn-finish:hover{background:#4f46e5;}
+.mz-btn{width:34px;height:28px;border-radius:6px;border:2px solid var(--bdr);background:var(--w);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:var(--gray);cursor:pointer;transition:all .15s;}
+.mz-btn:hover{border-color:#f59e0b;color:#d97706;}
+.mz-btn.pendiente{background:#fef3c7;border-color:#f59e0b;color:#d97706;}
+body.dark .mz-btn{background:#22263a;border-color:var(--bdr);color:var(--gray);}
+body.dark .mz-btn.pendiente{background:#3d2f10;border-color:#f59e0b;color:#fbbf24;}
 </style>
 </head>
 <body>
@@ -393,23 +398,55 @@ body.dark .hist-item{border-bottom-color:#22263a;}
   </div>
 </div>
 <div class="dev-modal" id="devModal">
-  <div class="dev-box">
-    <h3>✅ Marcar territorio como terminado</h3>
+  <div class="dev-box" style="max-width:430px">
+    <h3 id="dev_title">📬 Registrar devolución de territorio</h3>
     <input type="hidden" id="dev_n"/>
     <div class="fg"><label>Territorio</label><div id="dev_ter" style="font-size:.82rem;font-weight:700;padding:5px 0;color:var(--gd)"></div></div>
     <div class="fg"><label>Encargado que devuelve</label><input id="dev_enc" placeholder="Nombre del publicador"/></div>
     <div class="fg"><label>Fecha de devolución</label><input type="date" id="dev_fecha"/></div>
-    <div class="fg"><label>Observaciones</label><input id="dev_obs" placeholder="Ej: Revisado completo, algunos no abrieron..."/></div>
+
+    <!-- Selector de tipo de devolución -->
     <div class="fg">
-      <label>¿Quedar disponible o completado?</label>
+      <label>¿Cómo se devuelve?</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
+        <div id="dev_opt_completo" onclick="setDevTipo('completo')"
+          style="border:2px solid var(--indigo);border-radius:8px;padding:8px;cursor:pointer;text-align:center;background:rgba(99,102,241,.08)">
+          <div style="font-size:.85rem">✅</div>
+          <div style="font-size:.68rem;font-weight:700;color:var(--indigo)">Terminado completo</div>
+          <div style="font-size:.58rem;color:var(--gray)">Todas las manzanas</div>
+        </div>
+        <div id="dev_opt_parcial" onclick="setDevTipo('parcial')"
+          style="border:2px solid var(--bdr);border-radius:8px;padding:8px;cursor:pointer;text-align:center">
+          <div style="font-size:.85rem">⚠️</div>
+          <div style="font-size:.68rem;font-weight:700;color:#d97706">Manzanas pendientes</div>
+          <div style="font-size:.58rem;color:var(--gray)">Algunas sin trabajar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel manzanas pendientes (visible solo si parcial) -->
+    <div id="dev_mz_panel" style="display:none">
+      <div class="fg" style="margin-bottom:4px">
+        <label>Manzanas que <strong>NO</strong> se trabajaron</label>
+        <div style="font-size:.62rem;color:var(--gray);margin-bottom:6px">Marca las que quedaron pendientes para reasignar</div>
+        <div id="dev_mz_grid" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+      </div>
+      <div id="dev_pendiente_info" style="display:none;font-size:.68rem;padding:6px 9px;border-radius:7px;background:#fef9c3;color:#92400e;border:1px solid #fde68a;margin-bottom:6px">
+        ⚠️ Las manzanas seleccionadas quedarán registradas como pendientes para reasignar.
+      </div>
+    </div>
+
+    <div class="fg"><label>Observaciones</label><input id="dev_obs" placeholder="Opcional — ej: casa esquina no abrió, zona inundada..."/></div>
+    <div class="fg">
+      <label>Estado final del territorio</label>
       <select id="dev_estado">
-        <option value="completado">✅ Completado (trabajado en este ciclo)</option>
         <option value="disponible">🟢 Disponible (listo para reasignar)</option>
+        <option value="completado">✅ Completado (ciclo cerrado)</option>
       </select>
     </div>
     <div class="mbtns">
       <button class="bsm" onclick="closeDevModal()" style="background:#f1f5f9;color:#475569">Cancelar</button>
-      <button class="bsm" onclick="saveDevolucion()" style="background:var(--indigo);color:#fff">✅ Registrar devolución</button>
+      <button class="bsm" id="dev_save_btn" onclick="saveDevolucion()" style="background:var(--indigo);color:#fff">📬 Registrar devolución</button>
     </div>
   </div>
 </div>
@@ -743,9 +780,10 @@ function renderDetail(n){
     histHtml+=hist.map(h=>`
       <div class="hist-item">
         <div class="hist-dot ${h.estado||'completado'}"></div>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="hist-t">👤 ${h.enc||'—'} <span style="font-weight:400;color:var(--gray)">· ${fdt(h.fecha)}</span></div>
           <div class="hist-s">${h.estadoLabel||'Completado'}${h.obs?' · '+h.obs:''}</div>
+          ${h.mzPendientes&&h.mzPendientes.length?`<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:2px">${h.mzPendientes.map(m=>`<span style="background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:3px;font-size:.58rem;font-weight:700;padding:1px 5px">⚠️ ${m}</span>`).join('')}</div>`:''}
         </div>
       </div>`).join('');
   }
@@ -762,8 +800,9 @@ function renderDetail(n){
     <div class="dr"><span class="dk">Modalidad</span><span class="dv">${d.modalidad||'—'}</span></div>
     <div class="dr"><span class="dk">Asignado</span><span class="dv">${fdt(d.fechaAsig)}</span></div>
     <div class="dr"><span class="dk">Devuelto</span><span class="dv">${fdt(d.fechaDev)}</span></div>
+    ${d.mzPendientes&&d.mzPendientes.length?`<div class="dr"><span class="dk">⚠️ Pendientes</span><span class="dv" style="color:#d97706">${d.mzPendientes.join(', ')}</span></div>`:''}
     ${d.obs?`<div class="dr"><span class="dk">Obs.</span><span class="dv">${d.obs}</span></div>`:''}
-    ${canFinish?`<button class="btn-finish" onclick="openDevModal(${n})" style="margin-top:8px">✅ Marcar como terminado</button>`:''}
+    ${canFinish?`<button class="btn-finish" onclick="openDevModal(${n})" style="margin-top:8px">📬 Registrar devolución</button>`:''}
     <div style="display:flex;gap:4px;margin-top:6px">
       <button class="btn" style="flex:1;font-size:.66rem;padding:4px 6px" onclick="openAssign(${n})">✏️ Editar</button>
       <button class="btn" style="font-size:.66rem;padding:4px 9px;color:#ef4444" onclick="clearT(${n})">🗑</button>
@@ -874,16 +913,55 @@ function clearT(n){
 }
 
 // ── DEVOLUCIÓN ──
+let devTipo = 'completo'; // 'completo' | 'parcial'
+let devMzPendientes = new Set();
+
 function openDevModal(n){
+  devTipo='completo'; devMzPendientes=new Set();
   document.getElementById('dev_n').value=n;
   document.getElementById('dev_ter').textContent=`Territorio ${n} — ${DB[n]?.encargado||'Sin encargado'}`;
   document.getElementById('dev_enc').value=DB[n]?.encargado||'';
   document.getElementById('dev_fecha').value=new Date().toISOString().slice(0,10);
   document.getElementById('dev_obs').value='';
-  document.getElementById('dev_estado').value='completado';
+  document.getElementById('dev_estado').value='disponible';
+  setDevTipo('completo');
+  // Renderizar manzanas
+  const mzDiv=document.getElementById('dev_mz_grid');
+  mzDiv.innerHTML=(MZ[n]||[]).map(m=>`<div class="mz-btn" id="devmz_${m}" onclick="toggleMzPendiente('${m}')">${m}</div>`).join('');
   document.getElementById('devModal').classList.add('open');
 }
 function closeDevModal(){document.getElementById('devModal').classList.remove('open');}
+
+function setDevTipo(tipo){
+  devTipo=tipo; devMzPendientes=new Set();
+  // Resetear selección visual
+  document.querySelectorAll('.mz-btn').forEach(b=>b.classList.remove('pendiente'));
+  const completo=document.getElementById('dev_opt_completo');
+  const parcial=document.getElementById('dev_opt_parcial');
+  const panel=document.getElementById('dev_mz_panel');
+  const info=document.getElementById('dev_pendiente_info');
+  if(tipo==='completo'){
+    completo.style.border='2px solid var(--indigo)';completo.style.background='rgba(99,102,241,.08)';
+    parcial.style.border='2px solid var(--bdr)';parcial.style.background='';
+    panel.style.display='none';
+    document.getElementById('dev_estado').value='disponible';
+  } else {
+    parcial.style.border='2px solid #f59e0b';parcial.style.background='rgba(245,158,11,.08)';
+    completo.style.border='2px solid var(--bdr)';completo.style.background='';
+    panel.style.display='';
+    info.style.display='none';
+    document.getElementById('dev_estado').value='disponible';
+  }
+}
+
+function toggleMzPendiente(m){
+  const btn=document.getElementById('devmz_'+m);
+  if(devMzPendientes.has(m)){devMzPendientes.delete(m);btn.classList.remove('pendiente');}
+  else{devMzPendientes.add(m);btn.classList.add('pendiente');}
+  const info=document.getElementById('dev_pendiente_info');
+  info.style.display=devMzPendientes.size>0?'':'none';
+}
+
 function saveDevolucion(){
   const n=parseInt(document.getElementById('dev_n').value);
   const enc=document.getElementById('dev_enc').value.trim();
@@ -891,33 +969,50 @@ function saveDevolucion(){
   const obs=document.getElementById('dev_obs').value.trim();
   const estado=document.getElementById('dev_estado').value;
   if(!fecha){alert('Ingresa la fecha de devolución');return;}
+  if(devTipo==='parcial'&&devMzPendientes.size===0){alert('Selecciona al menos una manzana pendiente, o elige "Terminado completo"');return;}
   if(!DB[n])DB[n]={monthsWorked:{}};
   if(!DB[n].historial)DB[n].historial=[];
+
+  const mzPend=devTipo==='parcial'?[...devMzPendientes].sort():[];
+  const mzTrab=devTipo==='parcial'?(MZ[n]||[]).filter(m=>!devMzPendientes.has(m)):MZ[n]||[];
+
   // Guardar en historial
   DB[n].historial.push({
     enc:enc||DB[n].encargado||'—',
-    fecha,
-    obs,
+    fecha, obs,
+    tipo: devTipo,
     estado,
-    estadoLabel:estado==='completado'?'Completado':'Disponible',
+    estadoLabel: devTipo==='parcial'
+      ? `Parcial — pendientes: ${mzPend.join(', ')}`
+      : (estado==='completado'?'Completado':'Disponible'),
+    mzPendientes: mzPend,
+    mzTrabajadas: mzTrab,
     encAnterior:DB[n].encargado||'',
     fechaAsigAnterior:DB[n].fechaAsig||''
   });
-  // Actualizar estado del territorio
+
+  // Actualizar estado
   DB[n].estado=estado;
   DB[n].fechaDev=fecha;
-  // Marcar mes trabajado automáticamente
+  // Guardar manzanas pendientes en el territorio para visibilidad
+  DB[n].mzPendientes=mzPend.length?mzPend:[];
+
+  // Marcar mes trabajado
   if(!DB[n].monthsWorked)DB[n].monthsWorked={};
-  const k=fecha.slice(0,7); // YYYY-MM
-  DB[n].monthsWorked[k]=true;
+  DB[n].monthsWorked[fecha.slice(0,7)]=true;
+
   // Si queda disponible, limpiar encargado
   if(estado==='disponible'){
-    DB[n].encargado='';
-    DB[n].fechaAsig='';
-    DB[n].fechaDev='';
+    DB[n].encargado='';DB[n].fechaAsig='';DB[n].fechaDev='';
   }
+
   save();closeDevModal();renderPins();updateAll();renderDetail(n);renderCampSidebar();
-  toast(`✅ Territorio ${n} marcado como ${estado==='completado'?'completado':'disponible'}`);
+
+  if(devTipo==='parcial'&&mzPend.length>0){
+    toast(`⚠️ T${n} devuelto — pendientes: ${mzPend.join(', ')}`);
+  } else {
+    toast(`✅ Territorio ${n} marcado como ${estado==='completado'?'completado':'disponible'}`);
+  }
 }
 document.getElementById('devModal').addEventListener('click',e=>{if(e.target===document.getElementById('devModal'))closeDevModal();});
 function exportData(){
