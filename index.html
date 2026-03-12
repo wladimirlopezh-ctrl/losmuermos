@@ -1201,15 +1201,30 @@ function saveDevolucion(){
   }
 }
 document.getElementById('devModal').addEventListener('click',e=>{if(e.target===document.getElementById('devModal'))closeDevModal();});
+function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null};}
+function applyBackup(data){
+  // Compatibilidad: si el JSON es solo DB (formato antiguo), lo acepta igual
+  if(data.db){
+    DB=data.db;
+    CAMPS=data.camps||[];
+    activeCampId=data.activeCampId||null;
+  } else {
+    DB=data; // formato antiguo — solo territorios
+    // No tocar CAMPS ni activeCampId
+  }
+  save();saveCamps();
+  renderPins();updateAll();renderCampSidebar();
+  if(dashVisible) renderDashboard();
+}
 function exportData(){
   const a=document.createElement('a');
   a.download=`territorios_${new Date().toISOString().slice(0,10)}.json`;
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB,null,2)],{type:'application/json'}));
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(fullBackup(),null,2)],{type:'application/json'}));
   a.click();toast('💾 Exportado');
 }
 function importData(e){
   const r=new FileReader();
-  r.onload=ev=>{try{DB=JSON.parse(ev.target.result);save();renderPins();updateAll();toast('✅ Importado');}catch{toast('❌ Error');}}
+  r.onload=ev=>{try{applyBackup(JSON.parse(ev.target.result));toast('✅ Datos importados');}catch{toast('❌ Error al importar');}}
   r.readAsText(e.target.files[0]);e.target.value='';
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2500);}
@@ -1959,7 +1974,7 @@ async function driveSave(){
   if(!gdToken){setDriveStatus('⚠️ Inicia sesión primero.');return;}
   setSyncDot('spin');setDriveStatus('⏳ Guardando...');
   try{
-    const content=JSON.stringify(DB,null,2);
+    const content=JSON.stringify(fullBackup(),null,2);
     const blob=new Blob([content],{type:'application/json'});
     const existing=await driveFindFile();
     let url,method;
@@ -2000,7 +2015,7 @@ async function driveLoad(){
     gdFileId=file.id;
     const r=await fetch(`https://www.googleapis.com/drive/v3/files/${gdFileId}?alt=media`,{headers:{Authorization:'Bearer '+gdToken}});
     const data=await r.json();
-    DB=data;save();renderPins();updateAll();
+    applyBackup(data);
     const mod=new Date(file.modifiedTime).toLocaleString('es-CL');
     setDriveStatus(`✅ Datos cargados — última modificación: ${mod}`);
     setSyncDot('ok');toast('⬇️ Datos cargados de Drive');
