@@ -485,6 +485,7 @@ body.dark .top-enc-bar{background:#22263a;}
     </button>
     <button class="btn" id="jsonBtn" onclick="exportData()">💾 JSON</button>
     <button class="btn" id="importBtn" onclick="document.getElementById('ii').click()">📂 Importar</button>
+    <button class="btn" id="ruralBtn" onclick="openRuralModal()" title="Territorios Rurales">🌿 Rurales</button>
     <button class="btn pri" id="assignBtn" onclick="openAssign()">➕ Asignar</button>
     <input type="file" id="ii" accept=".json" style="display:none" onchange="importData(event)"/>
   </div>
@@ -566,7 +567,7 @@ body.dark .top-enc-bar{background:#22263a;}
     <div class="fg"><label>Modalidad</label>
       <select id="mmod"><option>Casa en casa</option><option>Informal / testimonio</option><option>Ambas</option></select></div>
     <div class="fg"><label>Fecha asignación</label><input type="date" id="mfa"/></div>
-    <div class="fg"><label>Fecha devolución</label><input type="date" id="mfd"/></div>
+    <div class="fg"><label>Fecha completado</label><input type="date" id="mfd"/></div>
     <div class="fg"><label>Estado</label>
       <select id="mest"><option value="asignado">🟡 Asignado</option><option value="completado">✅ Completado</option><option value="disponible">🟢 Disponible</option></select></div>
     <div class="fg"><label>Observación</label><input id="mobs" placeholder="Opcional"/></div>
@@ -578,11 +579,11 @@ body.dark .top-enc-bar{background:#22263a;}
 </div>
 <div class="dev-modal" id="devModal">
   <div class="dev-box" style="max-width:430px">
-    <h3 id="dev_title">📬 Registrar devolución de territorio</h3>
+    <h3 id="dev_title">✅ Registrar territorio completado</h3>
     <input type="hidden" id="dev_n"/>
     <div class="fg"><label>Territorio</label><div id="dev_ter" style="font-size:.82rem;font-weight:700;padding:5px 0;color:var(--gd)"></div></div>
-    <div class="fg"><label>Encargado que devuelve</label><input id="dev_enc" placeholder="Nombre del publicador"/></div>
-    <div class="fg"><label>Fecha de devolución</label><input type="date" id="dev_fecha"/></div>
+    <div class="fg"><label>Encargado</label><input id="dev_enc" placeholder="Nombre del publicador"/></div>
+    <div class="fg"><label>Fecha de completado</label><input type="date" id="dev_fecha"/></div>
 
     <!-- Selector de tipo de devolución -->
     <div class="fg">
@@ -625,7 +626,7 @@ body.dark .top-enc-bar{background:#22263a;}
     </div>
     <div class="mbtns">
       <button class="bsm" onclick="closeDevModal()" style="background:#f1f5f9;color:#475569">Cancelar</button>
-      <button class="bsm" id="dev_save_btn" onclick="saveDevolucion()" style="background:var(--indigo);color:#fff">📬 Registrar devolución</button>
+      <button class="bsm" id="dev_save_btn" onclick="saveDevolucion()" style="background:var(--indigo);color:#fff">✅ Registrar completado</button>
     </div>
   </div>
 </div>
@@ -1033,7 +1034,7 @@ function renderDetail(n){
   const hist=(d.historial||[]).slice().reverse();
   let histHtml='';
   if(hist.length){
-    histHtml=`<div style="font-size:.58rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:8px 0 4px">📋 Historial de devoluciones</div>`;
+    histHtml=`<div style="font-size:.58rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:8px 0 4px">📋 Historial de territorios completados</div>`;
     histHtml+=hist.map(h=>`
       <div class="hist-item">
         <div class="hist-dot ${h.estado||'completado'}"></div>
@@ -1059,7 +1060,7 @@ function renderDetail(n){
     <div class="dr"><span class="dk">Devuelto</span><span class="dv">${fdt(d.fechaDev)}</span></div>
     ${d.mzPendientes&&d.mzPendientes.length?`<div class="dr"><span class="dk">⚠️ Pendientes</span><span class="dv" style="color:#d97706">${d.mzPendientes.join(', ')}</span></div>`:''}
     ${d.obs?`<div class="dr"><span class="dk">Obs.</span><span class="dv">${d.obs}</span></div>`:''}
-    ${canFinish?`<button class="btn-finish" onclick="openDevModal(${n})" style="margin-top:8px">📬 Registrar devolución</button>`:''}
+    ${canFinish?`<button class="btn-finish" onclick="openDevModal(${n})" style="margin-top:8px">✅ Registrar completado</button>`:''}
     <div style="display:flex;gap:4px;margin-top:6px">
       <button class="btn" style="flex:1;font-size:.66rem;padding:4px 6px" onclick="openAssign(${n})">✏️ Editar</button>
       <button class="btn" style="font-size:.66rem;padding:4px 9px;color:#ef4444" onclick="clearT(${n})">🗑</button>
@@ -1226,7 +1227,7 @@ function saveDevolucion(){
   const fecha=document.getElementById('dev_fecha').value;
   const obs=document.getElementById('dev_obs').value.trim();
   const estado=document.getElementById('dev_estado').value;
-  if(!fecha){alert('Ingresa la fecha de devolución');return;}
+  if(!fecha){alert('Ingresa la fecha de completado');return;}
   if(devTipo==='parcial'&&devMzPendientes.size===0){alert('Selecciona al menos una manzana pendiente, o elige "Terminado completo"');return;}
   if(!DB[n])DB[n]={monthsWorked:{}};
   if(!DB[n].historial)DB[n].historial=[];
@@ -1274,18 +1275,18 @@ function saveDevolucion(){
   gistAutoPublish();
 }
 document.getElementById('devModal').addEventListener('click',e=>{if(e.target===document.getElementById('devModal'))closeDevModal();});
-function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null,pins:PIN_POS};}
+function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null,pins:PIN_POS,rural:RURAL};}
 function applyBackup(data){
-  // Compatibilidad: si el JSON es solo DB (formato antiguo), lo acepta igual
   if(data.db){
     DB=data.db;
     CAMPS=data.camps||[];
     activeCampId=data.activeCampId||null;
     if(data.pins) PIN_POS=data.pins;
+    if(data.rural) RURAL=data.rural;
   } else {
-    DB=data; // formato antiguo — solo territorios
+    DB=data;
   }
-  save();saveCamps();savePins();
+  save();saveCamps();savePins();saveRural();
   renderPins();updateAll();renderCampSidebar();
   if(dashVisible) renderDashboard();
 }
@@ -1409,12 +1410,14 @@ function exportExcel(){
 
 // ── CAMPAÑAS ──
 let CAMPS = JSON.parse(localStorage.getItem('lm_camps')||'[]');
+let RURAL = JSON.parse(localStorage.getItem('lm_rural')||'[]');
 let activeCampId = localStorage.getItem('lm_activeCamp')||null;
 let campTab = 1;
 let reportCampId = null;
 
 const saveCamps=()=>{try{localStorage.setItem('lm_camps',JSON.stringify(CAMPS));localStorage.setItem('lm_activeCamp',activeCampId||'');}catch(e){}};
 
+const saveRural=()=>{try{localStorage.setItem('lm_rural',JSON.stringify(RURAL));}catch(e){}};
 function openCampModal(){
   document.getElementById('campModal').classList.add('open');
   switchCampTab(1);
@@ -1951,7 +1954,7 @@ function renderInfResumen(){
             <div class="dbl">este año</div>
           </div>
         </div>
-        <div style="font-size:.56rem;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Devoluciones — últ. 6 semanas</div>
+        <div style="font-size:.56rem;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Completados — últ. 6 semanas</div>
         <div class="db-spark">
           ${semanas.map(s=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center">
             <div class="db-spark-bar" style="height:${s.c?Math.max(5,Math.round(s.c/maxSem*36)):3}px;background:${s.c?'var(--gd)':'#e2e8f0'}"></div>
@@ -2502,7 +2505,7 @@ async function tryViewerMode(){
   if(!embeddedGistId) return false;
   isViewerMode = true;
   // Ocultar todos los botones que no corresponden a visualizadores
-  ['editBtn','gistBtn','driveBtn','jsonBtn','importBtn','assignBtn','campBtn','excelBtn'].forEach(id=>{
+  ['editBtn','gistBtn','driveBtn','jsonBtn','importBtn','assignBtn','campBtn','excelBtn','ruralBtn'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
@@ -2556,6 +2559,104 @@ async function gistRefresh(){
   if(embeddedGistId) await gistLoadRemote(embeddedGistId);
 }
 
+
+// ══ TERRITORIOS RURALES ══
+function openRuralModal(){
+  renderRuralList();
+  document.getElementById('ruralModal').style.display='block';
+}
+function closeRuralModal(){
+  document.getElementById('ruralModal').style.display='none';
+}
+function cancelRuralForm(){
+  document.getElementById('rural_id').value='';
+  document.getElementById('rural_nombre').value='';
+  document.getElementById('rural_enc').value='';
+  document.getElementById('rural_asig').value='';
+  document.getElementById('rural_comp').value='';
+  document.getElementById('rural_obs').value='';
+  document.getElementById('ruralFormTitle').textContent='➕ Agregar territorio rural';
+}
+function saveRuralEntry(){
+  const id = document.getElementById('rural_id').value;
+  const nombre = document.getElementById('rural_nombre').value.trim();
+  const enc = document.getElementById('rural_enc').value.trim();
+  const asig = document.getElementById('rural_asig').value;
+  const comp = document.getElementById('rural_comp').value;
+  const obs = document.getElementById('rural_obs').value.trim();
+  if(!nombre){alert('Ingresa el nombre del territorio');return;}
+  if(!enc){alert('Ingresa el encargado');return;}
+  if(!asig){alert('Ingresa la fecha de asignación');return;}
+  if(id){
+    // Editar existente
+    const idx = RURAL.findIndex(r=>r.id===id);
+    if(idx>=0) RURAL[idx]={...RURAL[idx],nombre,enc,asig,comp,obs};
+  } else {
+    // Nuevo
+    RURAL.push({id:'r'+Date.now(),nombre,enc,asig,comp:comp||'',obs});
+  }
+  saveRural();
+  gistAutoPublish();
+  cancelRuralForm();
+  renderRuralList();
+  toast('✅ Territorio rural guardado');
+}
+function editRuralEntry(id){
+  const r = RURAL.find(r=>r.id===id);
+  if(!r) return;
+  document.getElementById('rural_id').value=r.id;
+  document.getElementById('rural_nombre').value=r.nombre;
+  document.getElementById('rural_enc').value=r.enc;
+  document.getElementById('rural_asig').value=r.asig;
+  document.getElementById('rural_comp').value=r.comp||'';
+  document.getElementById('rural_obs').value=r.obs||'';
+  document.getElementById('ruralFormTitle').textContent='✏️ Editar territorio rural';
+  document.getElementById('ruralForm').scrollIntoView({behavior:'smooth'});
+}
+function deleteRuralEntry(id){
+  if(!confirm('¿Eliminar este territorio rural?')) return;
+  RURAL = RURAL.filter(r=>r.id!==id);
+  saveRural();
+  gistAutoPublish();
+  renderRuralList();
+  toast('🗑 Eliminado');
+}
+function renderRuralList(){
+  const el = document.getElementById('ruralList');
+  if(!RURAL.length){
+    el.innerHTML='<div style="text-align:center;padding:20px;font-size:.72rem;color:var(--gray)">No hay territorios rurales registrados</div>';
+    return;
+  }
+  const sorted = [...RURAL].sort((a,b)=>b.asig.localeCompare(a.asig));
+  el.innerHTML = sorted.map(r=>{
+    const completado = !!r.comp;
+    const estadoColor = completado ? '#1d4ed8' : '#ea580c';
+    const estadoTxt = completado ? '✅ Completado' : '🟠 Asignado';
+    const fmtDate = d => d ? d.split('-').reverse().join('-') : '—';
+    return `
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--bg)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
+            <div style="font-size:.82rem;font-weight:700">🌿 ${r.nombre}</div>
+            <span style="font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:10px;background:${completado?'rgba(29,78,216,.12)':'rgba(234,88,12,.12)'};color:${estadoColor}">${estadoTxt}</span>
+          </div>
+          <div style="font-size:.68rem;color:var(--gray)">👤 ${r.enc}</div>
+          <div style="font-size:.65rem;color:var(--gray);margin-top:2px">
+            📅 Asignado: ${fmtDate(r.asig)}
+            ${completado ? ' &nbsp;·&nbsp; ✅ Completado: '+fmtDate(r.comp) : ''}
+          </div>
+          ${r.obs?`<div style="font-size:.63rem;color:var(--gray);margin-top:3px;font-style:italic">💬 ${r.obs}</div>`:''}
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button onclick="editRuralEntry('${r.id}')" style="background:#f1f5f9;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:.7rem" title="Editar">✏️</button>
+          <button onclick="deleteRuralEntry('${r.id}')" style="background:#fee2e2;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:.7rem;color:#dc2626" title="Eliminar">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── INIT ──
 (()=>{
   const s=document.getElementById('mn');
@@ -2570,5 +2671,37 @@ async function gistRefresh(){
 })();
 
 </script>
+
+<!-- ══ MODAL TERRITORIOS RURALES ══ -->
+<div id="ruralModal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);overflow-y:auto;padding:16px" onclick="if(event.target===this)closeRuralModal()">
+  <div style="max-width:520px;margin:0 auto;background:var(--card);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+    <div style="padding:14px 18px;background:linear-gradient(135deg,#14532d,#166534);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:.95rem;font-weight:800;color:#fff">🌿 Territorios Rurales</div>
+      <button onclick="closeRuralModal()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div style="padding:16px">
+      <!-- Formulario agregar/editar -->
+      <div id="ruralForm" style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:14px;border:1.5px solid var(--border)">
+        <div style="font-size:.7rem;font-weight:700;color:var(--gd);margin-bottom:10px" id="ruralFormTitle">➕ Agregar territorio rural</div>
+        <input type="hidden" id="rural_id"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="fg" style="margin:0"><label>Nombre del territorio</label><input id="rural_nombre" placeholder="Ej: Millaray, Cañitas Alto"/></div>
+          <div class="fg" style="margin:0"><label>Encargado</label><input id="rural_enc" placeholder="Nombre del publicador"/></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="fg" style="margin:0"><label>Fecha asignación</label><input type="date" id="rural_asig"/></div>
+          <div class="fg" style="margin:0"><label>Fecha completado <span style="font-weight:400;color:var(--gray)">(opcional)</span></label><input type="date" id="rural_comp"/></div>
+        </div>
+        <div class="fg" style="margin:0 0 10px"><label>Observaciones</label><input id="rural_obs" placeholder="Opcional"/></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="bsm" onclick="cancelRuralForm()" style="background:#f1f5f9;color:#475569">Cancelar</button>
+          <button class="bsm" onclick="saveRuralEntry()" style="background:var(--gd);color:#fff">💾 Guardar</button>
+        </div>
+      </div>
+      <!-- Lista -->
+      <div id="ruralList"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
