@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Programa de Predicación</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lato:wght@300;400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;700&family=Crimson+Text:wght@400;600&family=Raleway:wght@400;500;700&family=EB+Garamond:wght@400;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --gd:#1b4332;
+  --gm:#2d6a4f;
+  --gl:#b7e4c7;
+  --ga:#d8f3dc;
+  --acc:#40916c;
+  --gold:#e0c34a;
+  --dark:#1c1c1e;
+  --dark2:#2c2c2e;
+  --dark3:#3a3a3c;
+  --w:#ffffff;
+  --td:#1c1c1e;
+  --alt:#f2faf5;
+  --row-border:#cde9d7;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Lato',sans-serif;
+  background:linear-gradient(160deg,var(--dark) 0%,var(--dark2) 35%,#1a3a2e 65%,var(--dark) 100%);
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:28px 16px;gap:18px;
+}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:fadeIn .5s ease;}
+.btn{font-family:'Lato',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px 20px;border-radius:30px;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.btn-print{background:rgba(255,255,255,.1);color:#ccc;border:1px solid rgba(255,255,255,.2);}
+.btn-print:hover{background:rgba(255,255,255,.2);color:#fff;}
+.btn-wa{background:#25D366;color:#fff;}
+.btn-wa:hover{background:#1ebe5a;transform:translateY(-1px);}
+.btn-edit{background:var(--gold);color:var(--dark);}
+.btn-edit:hover{background:#f0d060;transform:translateY(-1px);}
+.btn-add{background:rgba(64,145,108,.25);color:#a8e6c8;border:1px solid rgba(64,145,108,.4);}
+.btn-add:hover{background:rgba(64,145,108,.4);}
+.btn-save-json{background:rgba(224,195,74,.2);color:var(--gold);border:1px solid rgba(224,195,74,.4);}
+.btn-save-json:hover{background:rgba(224,195,74,.35);}
+.btn-load-json{background:rgba(255,255,255,.08);color:#bbb;border:1px solid rgba(255,255,255,.15);}
+.btn-load-json:hover{background:rgba(255,255,255,.16);color:#fff;}
+.btn-drive-save{background:rgba(52,168,83,.25);color:#81c995;border:1px solid rgba(52,168,83,.4);}
+.btn-drive-save:hover{background:rgba(52,168,83,.4);}
+.btn-drive{background:rgba(66,133,244,.25);color:#8ab4f8;border:1px solid rgba(66,133,244,.4);}
+.btn-drive:hover{background:rgba(66,133,244,.4);}
+.drive-status{font-size:.72rem;color:#888;text-align:center;letter-spacing:.5px;}
+
+.edit-badge{display:none;background:var(--gold);color:var(--dark);font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 14px;border-radius:20px;align-self:center;}
+body.editing .edit-badge{display:inline-block;}
+
+.card{background:var(--w);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 0 4px var(--gold);max-width:960px;width:100%;overflow:hidden;animation:fadeIn .7s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.header{background:linear-gradient(135deg,var(--gd) 0%,var(--gm) 100%);padding:28px 32px 22px;text-align:center;position:relative;}
+.header::before,.header::after{content:'✦';color:var(--gold);font-size:18px;position:absolute;top:50%;transform:translateY(-50%);}
+.header::before{left:24px;}.header::after{right:24px;}
+.header h1{font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--w);letter-spacing:.5px;line-height:1.2;}
+.header .subtitle{margin-top:6px;font-size:.85rem;font-weight:300;color:var(--gl);letter-spacing:2px;text-transform:uppercase;}
+[contenteditable="true"]{outline:2px dashed rgba(224,195,74,.8);border-radius:4px;padding:2px 6px;cursor:text;}
+[contenteditable="true"]:focus{outline:2px solid var(--gold);background:rgba(255,255,200,.15);}
+.gold-bar{height:4px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--gm);color:var(--w);font-family:'Playfair Display',serif;font-size:.9rem;font-weight:600;padding:14px 16px;text-align:center;letter-spacing:.5px;border-right:1px solid rgba(255,255,255,.15);}
+thead th:last-child{border-right:none;}
+th.col-act{background:var(--gd);width:40px;}
+tbody tr:nth-child(odd){background:var(--w);}
+tbody tr:nth-child(even){background:var(--alt);}
+tbody tr:hover{background:#b6e8c3;}
+tbody td{padding:11px 14px;text-align:center;font-size:.88rem;color:var(--td);border-right:1px solid var(--row-border);border-bottom:1px solid var(--row-border);vertical-align:middle;line-height:1.45;}
+tbody td:last-child{border-right:none;}
+td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;}
+.hora-pill{display:inline-block;background:var(--gd);color:var(--w);border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:700;letter-spacing:.5px;pointer-events:none;}
+.badge{display:inline-block;background:linear-gradient(135deg,var(--gm),var(--gd));color:var(--w);border-radius:6px;padding:4px 10px;font-size:.82rem;font-weight:700;line-height:1.4;pointer-events:none;}
+td.act-col{padding:4px;background:#f5fdf7 !important;}
+.btn-del{background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;opacity:.35;transition:opacity .2s,transform .2s;padding:4px 6px;border-radius:4px;}
+.btn-del:hover{opacity:1;transform:scale(1.2);}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+/* ══ TAB NAVIGATION ══ */
+.tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.tab-btn{
+  padding:9px 24px;border-radius:30px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);color:#aaa;cursor:pointer;
+  font-size:.82rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  transition:all .2s;
+}
+.tab-btn:hover{background:rgba(255,255,255,.13);color:#fff;}
+.tab-btn.active{background:var(--gm);color:#fff;border-color:var(--gm);box-shadow:0 4px 16px rgba(45,106,79,.4);}
+.tab-panel{display:none;width:100%;max-width:900px;}
+.tab-panel.active{display:block;}
+
+/* ══ TERRITORIES ══ */
+.terr-toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+.terr-card{
+  background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.09);border-radius:16px;overflow:hidden;
+  margin-bottom:10px;transition:box-shadow .2s;
+}
+.terr-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.3);}
+.terr-header{
+  display:flex;align-items:center;gap:12px;padding:13px 18px;
+  cursor:pointer;user-select:none;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.03);
+}
+.terr-header:hover{background:rgba(255,255,255,.07);}
+.terr-num{
+  width:38px;height:38px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;
+  background:var(--gd);color:#fff;
+}
+.terr-title{font-weight:700;color:#e0e0e0;font-size:.95rem;flex:1;}
+.terr-summary{font-size:.75rem;color:#888;display:flex;gap:10px;flex-wrap:wrap;}
+.terr-chevron{color:#666;font-size:.9rem;transition:transform .2s;flex-shrink:0;}
+.terr-card.open .terr-chevron{transform:rotate(90deg);}
+.terr-body{display:none;padding:14px 18px;}
+.terr-card.open .terr-body{display:block;}
+
+/* Manzana rows */
+.mz-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.mz-table th{
+  background:rgba(255,255,255,.06);color:#999;font-size:.7rem;letter-spacing:.8px;
+  text-transform:uppercase;padding:7px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08);
+}
+.mz-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:#ccc;vertical-align:middle;}
+.mz-table tr:last-child td{border-bottom:none;}
+.mz-table tr:hover td{background:rgba(255,255,255,.04);}
+
+/* Status badges */
+.st-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;}
+.st-disponible{background:rgba(184,233,148,.15);color:#84cc16;border:1px solid rgba(132,204,22,.25);}
+.st-asignado{background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);}
+.st-completado{background:rgba(52,211,153,.12);color:#34d399;border:1px solid rgba(52,211,153,.25);}
+
+.btn-terr-add{
+  background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);
+  color:#888;padding:6px 14px;border-radius:8px;cursor:pointer;
+  font-size:.78rem;margin-top:10px;width:100%;transition:all .2s;
+}
+.btn-terr-add:hover{background:rgba(255,255,255,.1);color:#ccc;}
+.btn-del-mz{background:none;border:none;color:#666;cursor:pointer;font-size:.9rem;padding:2px 5px;border-radius:4px;transition:all .15s;}
+.btn-del-mz:hover{color:#f87171;background:rgba(248,113,113,.1);}
+.btn-edit-mz{background:none;border:none;color:#666;cursor:pointer;font-size:.9rem;padding:2px 5px;border-radius:4px;transition:all .15s;}
+.btn-edit-mz:hover{color:#60a5fa;background:rgba(96,165,250,.1);}
+.terr-stats{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.terr-stat{background:rgba(255,255,255,.05);border-radius:8px;padding:6px 12px;font-size:.75rem;color:#aaa;}
+.terr-stat strong{color:#fff;display:block;font-size:1rem;}
+
+/* Territory modal */
+#terrModal{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.8);
+  align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#terrModal.open{display:flex;}
+.terr-modal-box{
+  background:#2c2c2e;border-radius:16px;padding:28px;width:92%;max-width:460px;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);border-top:4px solid var(--gold);
+  max-height:90vh;overflow-y:auto;
+}
+.terr-modal-box h3{color:var(--gold);font-size:1.1rem;margin-bottom:18px;}
+.tfg{margin-bottom:13px;}
+.tfg label{display:block;font-size:.75rem;font-weight:700;color:#999;letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase;}
+.tfg input,.tfg select{
+  width:100%;padding:9px 12px;background:#1c1c1e;border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;color:#e0e0e0;font-size:.88rem;outline:none;transition:border .2s;
+}
+.tfg input:focus,.tfg select:focus{border-color:var(--gold);}
+.tfg select option{background:#2c2c2e;}
+.terr-modal-btns{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+
+#previewModal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.85);
+  flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+#previewModal.open{display:flex;}
+.preview-box{position:relative;max-width:min(92vw,600px);max-height:82vh;border-radius:16px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7);display:flex;flex-direction:column;background:#1a1a1c;}
+.preview-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0;}
+.preview-header span{color:#ccc;font-size:.85rem;font-weight:600;letter-spacing:.5px;}
+.preview-header button{background:none;border:none;color:#aaa;font-size:1.3rem;cursor:pointer;line-height:1;padding:2px 6px;border-radius:6px;transition:all .15s;}
+.preview-header button:hover{background:rgba(255,255,255,.1);color:#fff;}
+.preview-scroll{overflow-y:auto;padding:16px;flex:1;}
+.preview-scroll img{width:100%;border-radius:8px;display:block;}
+.preview-actions{display:flex;gap:10px;padding:14px 20px;background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.08);justify-content:flex-end;flex-shrink:0;flex-wrap:wrap;}
+.preview-spin{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:60px 40px;color:#888;font-size:.9rem;}
+.preview-spin::before{content:'';width:42px;height:42px;border-radius:50%;border:4px solid rgba(255,255,255,.1);border-top-color:var(--gold,#e0c34a);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.modal h2{font-family:'Playfair Display',serif;color:var(--gd);margin-bottom:20px;font-size:1.3rem;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gd);margin-bottom:5px;}
+.fg input{width:100%;padding:9px 12px;border:1.5px solid #c0e0c8;border-radius:8px;font-family:'Lato',sans-serif;font-size:.88rem;color:var(--td);outline:none;transition:border .2s;}
+.fg input:focus{border-color:var(--gold);}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+.btn-cancel{background:#f0f0f0;color:#555;font-family:'Lato',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px 20px;border-radius:30px;border:none;cursor:pointer;}
+.btn-cancel:hover{background:#e0e0e0;}
+.btn-confirm{background:var(--gm);color:white;font-family:'Lato',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px 20px;border-radius:30px;border:none;cursor:pointer;}
+.btn-confirm:hover{background:var(--acc);}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--gd);color:white;padding:12px 22px;border-radius:30px;font-size:.85rem;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.3);transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:9999;border-left:4px solid var(--gold);}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@media print{body{background:white;padding:0;}.toolbar,.drive-status,.theme-bar{display:none;}.col-act,.act-col{display:none !important;}.card{box-shadow:none;border-radius:0;}}
+
+/* ── Theme bar ── */
+.theme-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;padding:6px 0;}
+.theme-bar span{font-size:.7rem;color:#888;letter-spacing:1px;text-transform:uppercase;margin-right:4px;}
+.font-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;padding:4px 0;}
+.font-bar span{font-size:.7rem;color:#888;letter-spacing:1px;text-transform:uppercase;margin-right:4px;flex-shrink:0;}
+.font-btn{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#bbb;cursor:pointer;font-size:.82rem;transition:all .2s;white-space:nowrap;}
+.font-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
+.font-btn.active{background:rgba(224,195,74,.2);border-color:rgba(224,195,74,.5);color:#e0c34a;}
+.theme-swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .2s,border-color .2s;flex-shrink:0;}
+.theme-swatch:hover{transform:scale(1.18);}
+.theme-swatch.active{border-color:#fff;transform:scale(1.18);}
+.theme-custom-wrap{display:flex;align-items:center;gap:5px;}
+.theme-custom-wrap label{font-size:.7rem;color:#aaa;letter-spacing:.5px;cursor:pointer;}
+.theme-custom-wrap input[type=color]{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;padding:0;background:none;}
+
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="edit-badge">✏️ Modo edición activo</span>
+  <button class="btn btn-edit" id="btnEdit" onclick="toggleEdit()">✏️ Editar programa</button>
+  <button class="btn btn-add" onclick="openModal()">＋ Agregar fila</button>
+  <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir</button>
+  <button class="btn btn-wa" onclick="copiarImagen()">📤 Compartir imagen</button>
+  <button class="btn btn-save-json" onclick="exportarJSON()">💾 Guardar datos</button>
+  <button class="btn btn-load-json" onclick="document.getElementById('inputJSON').click()">📂 Cargar datos</button>
+  <input type="file" id="inputJSON" accept=".json" style="display:none" onchange="importarJSON(event)"/>
+  <button class="btn btn-drive-save" onclick="driveGuardar()">☁️ Guardar en Drive</button>
+  <button class="btn btn-drive" onclick="driveCargar()">☁️ Cargar desde Drive</button>
+</div>
+<div class="drive-status" id="driveStatus"></div>
+
+<!-- Theme bar -->
+<div class="theme-bar" id="themeBar">
+<div class="font-bar" id="fontBar"><span>🔤 Tipografía:</span></div>
+  <span>🎨 Tema:</span>
+</div>
+
+<!-- Tab navigation -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('programa',this)">📋 Programa</button>
+  <button class="tab-btn" onclick="switchTab('territorios',this)">🗺️ Territorios</button>
+</div>
+
+<!-- TAB: Programa -->
+<div class="tab-panel active" id="tab-programa">
+<div class="card">
+  <div class="header">
+    <h1 id="titulo">Programa de Predicación</h1>
+    <p class="subtitle" id="subtitulo">02 a 08 de Marzo</p>
+  </div>
+  <div class="gold-bar"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Día</th>
+        <th>Hora</th>
+        <th>Encargado</th>
+        <th>Lugar de Reunión</th>
+        <th>Territorio y Modalidad</th>
+        <th class="col-act" id="thAct"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+</div><!-- /tab-programa -->
+
+<!-- TAB: Territorios -->
+<div class="tab-panel" id="tab-territorios">
+  <div class="terr-toolbar">
+    <button class="btn btn-add" onclick="openTerrModal()">➕ Asignar territorio</button>
+    <button class="btn btn-save-json" onclick="exportTerrJSON()">💾 Guardar territorios</button>
+    <button class="btn btn-load-json" onclick="document.getElementById('inputTerrJSON').click()">📂 Cargar territorios</button>
+    <input type="file" id="inputTerrJSON" accept=".json" style="display:none" onchange="importTerrJSON(event)"/>
+    <button class="btn" style="background:rgba(66,133,244,.15);color:#4285f4;border:1px solid rgba(66,133,244,.3)" onclick="syncTerrToMapa()" title="Enviar territorios al mapa">🗺️ → Mapa</button>
+    <button class="btn" style="background:rgba(66,133,244,.15);color:#4285f4;border:1px solid rgba(66,133,244,.3)" onclick="syncTerrFromMapa()" title="Recibir territorios del mapa">🗺️ ← Mapa</button>
+    <button class="btn" style="background:rgba(255,255,255,.08)" onclick="filterTerr('all')" id="fAll">Todos</button>
+    <button class="btn" style="background:rgba(251,191,36,.15);color:#fbbf24" onclick="filterTerr('asignado')" id="fAsig">🟡 Asignados</button>
+    <button class="btn" style="background:rgba(52,211,153,.12);color:#34d399" onclick="filterTerr('completado')" id="fComp">✅ Completados</button>
+    <button class="btn" style="background:rgba(132,204,22,.12);color:#84cc16" onclick="filterTerr('disponible')" id="fDisp">🟢 Disponibles</button>
+  </div>
+  <div id="terrStats" class="terr-stats"></div>
+  <div id="terrList"></div>
+</div><!-- /tab-territorios -->
+
+
+<div id="previewModal">
+  <div class="preview-box">
+    <div class="preview-header">
+      <span>👁 Vista previa</span>
+      <button onclick="closePreview()" title="Cerrar">✕</button>
+    </div>
+    <div class="preview-scroll" id="previewScroll">
+      <div class="preview-spin" id="previewSpin">Generando imagen…</div>
+    </div>
+    <div class="preview-actions" id="previewActions" style="display:none">
+      <button class="btn-sm" onclick="closePreview()" style="background:#444;color:#fff">Cerrar</button>
+      <button class="btn-sm" id="btnDownload" style="background:var(--gd);color:#fff">⬇️ Descargar</button>
+      <button class="btn-sm" id="btnShare" style="background:var(--gold);color:#1a1a1c;font-weight:700">📤 Compartir</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>➕ Agregar nueva fila</h2>
+    <div class="fg"><label>Día</label><input id="f-dia" placeholder="Ej: Lunes 02"/></div>
+    <div class="fg"><label>Hora</label><input id="f-hora" placeholder="Ej: 10:00"/></div>
+    <div class="fg"><label>Encargado</label><input id="f-encargado" placeholder="Nombre del encargado"/></div>
+    <div class="fg"><label>Lugar de Reunión</label><input id="f-lugar" placeholder="Ej: Salón del Reino"/></div>
+    <div class="fg"><label>Territorio y Modalidad</label><input id="f-territorio" placeholder="Ej: Territorio 5"/></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="addRow()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Territory Modal -->
+<div id="terrModal">
+  <div class="terr-modal-box">
+    <h3 id="terrModalTitle">➕ Asignar territorio</h3>
+    <div class="tfg">
+      <label>Territorio N°</label>
+      <select id="tm-num">
+        <option value="">— Seleccionar —</option>
+      </select>
+    </div>
+    <div class="tfg">
+      <label>Manzana (opcional, dejar vacío para todo el territorio)</label>
+      <input id="tm-manzana" placeholder="Ej: A  o  A, B, C"/>
+    </div>
+    <div class="tfg">
+      <label>Encargado / Publicador</label>
+      <input id="tm-encargado" placeholder="Nombre del publicador"/>
+    </div>
+    <div class="tfg">
+      <label>Modalidad</label>
+      <select id="tm-modalidad">
+        <option value="Casa en casa">Casa en casa</option>
+        <option value="Informal / testimonio">Informal / testimonio</option>
+        <option value="Ambas">Ambas</option>
+      </select>
+    </div>
+    <div class="tfg">
+      <label>Fecha de asignación</label>
+      <input type="date" id="tm-fecha-asig"/>
+    </div>
+    <div class="tfg">
+      <label>Fecha de devolución / completado (opcional)</label>
+      <input type="date" id="tm-fecha-dev"/>
+    </div>
+    <div class="tfg">
+      <label>Estado</label>
+      <select id="tm-estado">
+        <option value="asignado">🟡 Asignado</option>
+        <option value="completado">✅ Completado</option>
+        <option value="disponible">🟢 Disponible</option>
+      </select>
+    </div>
+    <div class="tfg">
+      <label>Observación (opcional)</label>
+      <input id="tm-obs" placeholder="Ej: Pendiente zona norte"/>
+    </div>
+    <div class="terr-modal-btns">
+      <button class="btn-sm" onclick="closeTerrModal()" style="background:#444;color:#fff">Cancelar</button>
+      <button class="btn-sm" id="terrModalSaveBtn" onclick="saveTerrEntry()" style="background:var(--gold);color:#1a1a1c;font-weight:700">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+// ── Google OAuth (reemplaza Apps Script) ──
+const GD_CLIENT_ID='37570589520-be4u3m56ittdn7ttcl4brv46s4peaomo.apps.googleusercontent.com';
+const GD_FOLDER_ID='1q86oWSGE9ZBk4LKE3GqDg4R8s-0walEj';
+const GD_SCOPES='https://www.googleapis.com/auth/drive.file';
+const GD_FILE_PROG='programa_predicacion.json';
+const GD_FILE_TERR='territorios_los_muermos.json'; // archivo compartido con el mapa
+let gdToken=null;
+
+function driveSetStatus(msg,color='#888'){const el=document.getElementById('driveStatus');if(el){el.textContent=msg;el.style.color=color;}}
+
+function gdEnsureToken(cb){
+  if(gdToken){cb();return;}
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:GD_CLIENT_ID,scope:GD_SCOPES,
+    callback:(resp)=>{
+      if(resp.error){driveSetStatus('❌ Error de autenticación: '+resp.error,'#e57373');return;}
+      gdToken=resp.access_token;cb();
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function gdFindFile(name){
+  const q=`name='${name}' and '${GD_FOLDER_ID}' in parents and trashed=false`;
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)`,{headers:{Authorization:'Bearer '+gdToken}});
+  const data=await r.json();
+  return data.files&&data.files.length?data.files[0]:null;
+}
+
+async function gdSaveFile(name,content){
+  const existing=await gdFindFile(name);
+  if(existing){
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media`,{method:'PATCH',headers:{Authorization:'Bearer '+gdToken,'Content-Type':'application/json'},body:content});
+    return existing.id;
+  }else{
+    const meta={name,parents:[GD_FOLDER_ID]};
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+    form.append('file',new Blob([content],{type:'application/json'}));
+    const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+gdToken},body:form});
+    const d=await r.json();
+    return d.id;
+  }
+}
+
+async function gdLoadFile(name){
+  const file=await gdFindFile(name);
+  if(!file)return null;
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,{headers:{Authorization:'Bearer '+gdToken}});
+  return await r.json();
+}
+
+// ── Guardar programa en Drive ──
+async function driveGuardar(){
+  gdEnsureToken(async()=>{
+    driveSetStatus('⏳ Guardando programa...','#e0c34a');
+    try{
+      const data={titulo:document.getElementById('titulo').innerText,subtitulo:document.getElementById('subtitulo').innerText,rows:getRows()};
+      await gdSaveFile(GD_FILE_PROG,JSON.stringify(data,null,2));
+      driveSetStatus(`✅ Guardado en Drive — ${new Date().toLocaleTimeString()}`,'#81c995');
+      toast('✅ Programa guardado en Drive');
+    }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al guardar');}
+  });
+}
+
+// ── Cargar programa desde Drive ──
+async function driveCargar(){
+  gdEnsureToken(async()=>{
+    driveSetStatus('⏳ Cargando programa...','#e0c34a');
+    try{
+      const data=await gdLoadFile(GD_FILE_PROG);
+      if(!data||!data.rows)throw new Error('Archivo no encontrado o formato inválido');
+      if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
+      if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
+      render(data.rows);
+      driveSetStatus(`✅ Cargado — ${new Date().toLocaleTimeString()}`,'#81c995');
+      toast('✅ Programa cargado desde Drive');
+    }catch(e){driveSetStatus('⚠️ '+e.message,'#e0c34a');}
+  });
+}
+
+// ── Sincronizar territorios → Mapa ──
+// Convierte TERR_DB (historial) al formato del mapa (DB indexado por número)
+function terrDBToMapFormat(){
+  const map={};
+  // Ordenar por fecha de asignación para quedarse con la entrada más reciente por territorio
+  const sorted=[...TERR_DB].sort((a,b)=>new Date(b.fechaAsig||0)-new Date(a.fechaAsig||0));
+  sorted.forEach(e=>{
+    const n=parseInt(e.terrNum);
+    if(!n)return;
+    if(!map[n]){
+      map[n]={
+        encargado:e.encargado||'',
+        modalidad:e.modalidad||'Casa en casa',
+        fechaAsig:e.fechaAsig||'',
+        fechaDev:e.fechaDev||'',
+        estado:e.estado||'asignado',
+        manzana:e.manzana||'',
+        obs:e.obs||'',
+        monthsWorked:{}
+      };
+    }
+  });
+  return map;
+}
+
+// Convierte formato mapa → entradas TERR_DB (para importar al programa)
+function mapFormatToTerrDB(mapDB){
+  const entries=[];
+  Object.entries(mapDB).forEach(([n,d])=>{
+    if(!d||(!d.encargado&&!d.fechaAsig))return;
+    entries.push({
+      id:'sync_'+n+'_'+Date.now(),
+      terrNum:parseInt(n),
+      manzana:d.manzana||'',
+      encargado:d.encargado||'',
+      modalidad:d.modalidad||'Casa en casa',
+      fechaAsig:d.fechaAsig||'',
+      fechaDev:d.fechaDev||'',
+      estado:d.estado||'asignado',
+      obs:d.obs||''
+    });
+  });
+  return entries;
+}
+
+async function syncTerrToMapa(){
+  gdEnsureToken(async()=>{
+    driveSetStatus('⏳ Sincronizando territorios con el mapa...','#e0c34a');
+    try{
+      // Leer mapa actual desde Drive
+      let mapaDB={};
+      try{const existing=await gdLoadFile(GD_FILE_TERR);if(existing)mapaDB=existing;}catch(e){}
+      // Mezclar: datos del programa sobreescriben encargado y fechaAsig en el mapa
+      const fromProg=terrDBToMapFormat();
+      Object.entries(fromProg).forEach(([n,d])=>{
+        if(!mapaDB[n])mapaDB[n]={monthsWorked:{}};
+        mapaDB[n].encargado=d.encargado;
+        mapaDB[n].fechaAsig=d.fechaAsig;
+        mapaDB[n].fechaDev=d.fechaDev||mapaDB[n].fechaDev||'';
+        mapaDB[n].estado=d.estado||mapaDB[n].estado||'asignado';
+        mapaDB[n].modalidad=d.modalidad||mapaDB[n].modalidad||'';
+        mapaDB[n].manzana=d.manzana||mapaDB[n].manzana||'';
+        mapaDB[n].obs=d.obs||mapaDB[n].obs||'';
+        if(!mapaDB[n].monthsWorked)mapaDB[n].monthsWorked={};
+      });
+      await gdSaveFile(GD_FILE_TERR,JSON.stringify(mapaDB,null,2));
+      driveSetStatus(`✅ Mapa actualizado — ${new Date().toLocaleTimeString()}`,'#81c995');
+      toast('🗺️ Territorios sincronizados con el mapa');
+    }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al sincronizar');}
+  });
+}
+
+async function syncTerrFromMapa(){
+  gdEnsureToken(async()=>{
+    driveSetStatus('⏳ Cargando territorios desde el mapa...','#e0c34a');
+    try{
+      const mapaDB=await gdLoadFile(GD_FILE_TERR);
+      if(!mapaDB)throw new Error('No se encontró archivo del mapa en Drive');
+      const nuevas=mapFormatToTerrDB(mapaDB);
+      // Mezclar: no borrar historial existente, solo actualizar/agregar
+      nuevas.forEach(e=>{
+        const idx=TERR_DB.findIndex(x=>parseInt(x.terrNum)===parseInt(e.terrNum)&&x.estado!=='completado');
+        if(idx>=0){TERR_DB[idx].encargado=e.encargado;TERR_DB[idx].fechaAsig=e.fechaAsig;}
+        else TERR_DB.push(e);
+      });
+      saveTerr();renderTerr();
+      driveSetStatus(`✅ Territorios cargados desde mapa — ${new Date().toLocaleTimeString()}`,'#81c995');
+      toast('🗺️ Territorios cargados desde el mapa');
+    }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al cargar desde mapa');}
+  });
+}
+
+const APPS_SCRIPT_URL=''; // Mantenido por compatibilidad, ya no se usa
+
+const defaultRows=[
+  {dia:"Lunes\n02",     hora:"10:00",enc:"Christian Martínez",           lugar:"Salón del Reino",        ter:"Predicación en las calles"},
+  {dia:"",              hora:"18:00",enc:"Nelson Araya",                  lugar:"Salón del Reino",        ter:"Territorio 23"},
+  {dia:"Martes\n03",    hora:"10:00",enc:"Edgardo Salcedo",               lugar:"Familia Salcedo",        ter:"Cont. Territorio 3"},
+  {dia:"",              hora:"18:00",enc:"Juan Carlos V.",                lugar:"Familia Fuentes",        ter:"Cont. Territorio 13"},
+  {dia:"Miércoles\n04", hora:"10:00",enc:"José Luis Lazo",                lugar:"Salón del Reino",        ter:"Predicación en las calles"},
+  {dia:"Jueves\n05",    hora:"10:00",enc:"Víctor Fuentes",                lugar:"Salón del Reino",        ter:"Pred. Rural: Cuesta la Vaca"},
+  {dia:"Viernes\n06",   hora:"10:00",enc:"Víctor Toledo",                 lugar:"Casa Hna. Wally Ovalle", ter:"Territorio 11 y 12"},
+  {dia:"",              hora:"18:30",enc:"Wladimir López",                lugar:"Salón del Reino",        ter:"Pred. Especial Río Frío"},
+  {dia:"Sábado\n07",    hora:"10:30",enc:"Grupos 1 y 2:\nMoisés Orellana",lugar:"Familia Toledo",         ter:"Territorio 25 y 26"},
+  {dia:"",              hora:"10:30",enc:"Grupos 3 y 4:\nRicardo Flores", lugar:"Familia Lazo",           ter:"Territorio 1 y 2"},
+  {dia:"Domingo\n08",   hora:"10:30",enc:"Andrés Acuña",                  lugar:"Salón del Reino",        ter:"Cañitas"},
+];
+
+let editing=false;
+let DB={titulo:'Programa de Predicación',subtitulo:'02 a 08 de Marzo',rows:defaultRows};
+
+function getRows(){
+  const trs=[...document.querySelectorAll('#tbody tr')];
+  let lastDia='';
+  return trs.map(tr=>{
+    const diaEl=tr.querySelector('[data-f="dia"]');
+    if(diaEl){
+      lastDia=diaEl.innerHTML.replace(/<br\s*\/?>/gi,'\n').replace(/&nbsp;/g,' ').replace(/<[^>]+>/g,'').trim();
+    }
+    return{
+      dia:diaEl?lastDia:'',
+      hora:tr.querySelector('[data-f="hora"]').innerText.trim(),
+      enc:tr.querySelector('[data-f="enc"]').innerText.trim(),
+      lugar:tr.querySelector('[data-f="lugar"]').innerText.trim(),
+      ter:tr.querySelector('[data-f="ter"]').innerText.trim(),
+    };
+  });
+}
+
+function normalizeRows(rows){
+  const result=[];
+  for(let i=0;i<rows.length;i++){
+    const r={...rows[i]};
+    if(i>0&&r.dia!==''&&r.dia===rows[i-1].dia) r.dia='';
+    result.push(r);
+  }
+  return result;
+}
+
+function render(rows){
+  rows=normalizeRows(rows);
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  const spans=new Array(rows.length).fill(0);
+  for(let i=0;i<rows.length;i++){
+    if(rows[i].dia!==''){
+      let count=1,j=i+1;
+      while(j<rows.length&&rows[j].dia===''){count++;j++;}
+      spans[i]=count;
+    }else{spans[i]=0;}
+  }
+  const ce=editing?'contenteditable="true"':'';
+  rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    let diaCell='';
+    if(spans[i]>0){
+      const diaHtml=r.dia.replace(/\n/g,'<br>');
+      diaCell=`<td class="dia" data-f="dia" rowspan="${spans[i]}" ${ce}>${diaHtml}</td>`;
+    }
+    tr.innerHTML=`
+      ${diaCell}
+      <td data-f="hora" ${ce}><span class="hora-pill">${r.hora}</span></td>
+      <td data-f="enc" ${ce}>${r.enc.replace(/\n/g,'<br>')}</td>
+      <td data-f="lugar" ${ce}>${r.lugar}</td>
+      <td data-f="ter" ${ce}><span class="badge">${r.ter}</span></td>
+      <td class="act-col" style="display:${editing?'':'none'}">
+        <button class="btn-del" onclick="delRow(${i})">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleEdit(){
+  if(editing){
+    editing=false;
+    document.body.classList.remove('editing');
+    render(getRows());
+    document.getElementById('titulo').contentEditable=false;
+    document.getElementById('subtitulo').contentEditable=false;
+    document.getElementById('thAct').style.display='none';
+    const btn=document.getElementById('btnEdit');
+    btn.innerHTML='✏️ Editar programa';btn.style.background='';btn.style.color='';
+    toast('✅ Edición finalizada');
+  }else{
+    editing=true;
+    document.body.classList.add('editing');
+    render(getRows());
+    document.getElementById('titulo').contentEditable=true;
+    document.getElementById('subtitulo').contentEditable=true;
+    document.getElementById('thAct').style.display='';
+    const btn=document.getElementById('btnEdit');
+    btn.innerHTML='✅ Salir de edición';btn.style.background='#e74c3c';btn.style.color='white';
+    toast('✏️ Haz clic en cualquier celda para editarla');
+  }
+}
+
+function delRow(i){
+  if(!confirm('¿Eliminar esta fila?'))return;
+  const rows=getRows();rows.splice(i,1);render(rows);toast('🗑️ Fila eliminada');
+}
+
+function openModal(){document.getElementById('overlay').classList.add('open');}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  ['f-dia','f-hora','f-encargado','f-lugar','f-territorio'].forEach(id=>document.getElementById(id).value='');
+}
+function addRow(){
+  const hora=document.getElementById('f-hora').value.trim();
+  const enc=document.getElementById('f-encargado').value.trim();
+  if(!hora||!enc){toast('⚠️ Hora y Encargado son obligatorios');return;}
+  const dia=document.getElementById('f-dia').value.trim();
+  const rows=getRows();
+  rows.push({dia,hora,enc,lugar:document.getElementById('f-lugar').value.trim(),ter:document.getElementById('f-territorio').value.trim()});
+  render(rows);closeModal();toast('✅ Fila agregada');
+}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
+
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
+
+// ── JSON Export/Import ──
+function exportarJSON(){
+  const data={titulo:document.getElementById('titulo').innerText,subtitulo:document.getElementById('subtitulo').innerText,rows:getRows()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const link=document.createElement('a');
+  link.download='programa_predicacion.json';
+  link.href=URL.createObjectURL(blob);
+  link.click();
+  toast('✅ Datos guardados como JSON');
+}
+function importarJSON(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.rows)throw new Error('Formato inválido');
+      if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
+      if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
+      render(data.rows);
+      toast('✅ Datos cargados correctamente');
+    }catch(err){toast('❌ Archivo inválido');}
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+// ── Drive functions defined above in OAuth block ──
+
+
+// ── Preview Modal ──
+let _previewBlob=null;
+
+async function mostrarPreview(){
+  const modal=document.getElementById('previewModal');
+  const scroll=document.getElementById('previewScroll');
+  const actions=document.getElementById('previewActions');
+  const spin=document.getElementById('previewSpin');
+  _previewBlob=null;
+  scroll.innerHTML='';
+  scroll.appendChild(spin);
+  spin.style.display='flex';
+  actions.style.display='none';
+  modal.classList.add('open');
+  document.body.style.overflow='hidden';
+
+  const canvas=await generarCanvas();
+  if(!canvas){spin.textContent='❌ Error al generar imagen';return;}
+
+  canvas.toBlob(blob=>{
+    _previewBlob=blob;
+    const img=document.createElement('img');
+    img.src=URL.createObjectURL(blob);
+    img.alt='Vista previa';
+    scroll.innerHTML='';
+    scroll.appendChild(img);
+    actions.style.display='flex';
+    document.getElementById('btnDownload').onclick=()=>descargarPreview();
+    document.getElementById('btnShare').onclick=()=>compartirPreview();
+  },'image/png');
+}
+
+function closePreview(){
+  document.getElementById('previewModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function descargarPreview(){
+  if(!_previewBlob)return;
+  const link=document.createElement('a');
+  link.download='programa_predicacion.png';
+  link.href=URL.createObjectURL(_previewBlob);
+  link.click();
+  toast('✅ Imagen descargada');
+}
+
+async function compartirPreview(){
+  if(!_previewBlob)return;
+  const file=new File([_previewBlob],'programa_predicacion.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file],title:'Programa de Predicación',text:document.getElementById('subtitulo').innerText});
+      toast('✅ ¡Compartido!');closePreview();
+    }catch(e){if(e.name!=='AbortError')toast('⚠️ No se pudo compartir');}
+    return;
+  }
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'image/png':_previewBlob})]);
+    toast('✅ ¡Imagen copiada! Pégala en WhatsApp Web (Ctrl+V)');
+  }catch(e){descargarPreview();}
+}
+
+document.getElementById('previewModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('previewModal'))closePreview();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePreview();});
+
+async function copiarImagen(){mostrarPreview();}
+
+
+async function generarCanvas(){
+  const t=currentTheme;
+  const C={greenDark:t.dark,greenMid:t.mid,greenLight:t.light,greenAlt:t.alt,gold:t.gold,white:'#ffffff',textDark:'#1c1c1e',bgDark:t.bg1,bgMid:t.bg2};
+  const rows=getRows();
+  const titulo=document.getElementById('titulo').innerText.trim();
+  const subtitulo=document.getElementById('subtitulo').innerText.trim().toUpperCase();
+  const SCALE=2, W=1500,H=1500;
+  const cv=document.createElement('canvas');cv.width=W*SCALE;cv.height=H*SCALE;
+  const ctx=cv.getContext('2d');ctx.scale(SCALE,SCALE);
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,C.bgDark);bg.addColorStop(0.5,C.bgMid);bg.addColorStop(1,C.bgDark);
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const pad=60,cardX=pad,cardY=pad,cardW=W-pad*2;
+  const headerH=155,goldBarH=7,theadH=52,rowH=68;
+  const cardH=headerH+goldBarH+theadH+rows.length*rowH;
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=40;ctx.shadowOffsetY=10;
+  roundRect(ctx,cardX,cardY,cardW,cardH,22);ctx.fillStyle=C.white;ctx.fill();ctx.restore();
+  ctx.save();roundRect(ctx,cardX-4,cardY-4,cardW+8,cardH+8,25);ctx.strokeStyle=C.gold;ctx.lineWidth=7;ctx.stroke();ctx.restore();
+  ctx.save();ctx.beginPath();roundRectTop(ctx,cardX,cardY,cardW,headerH,22);
+  const hg=ctx.createLinearGradient(cardX,cardY,cardX+cardW,cardY+headerH);
+  hg.addColorStop(0,C.greenDark);hg.addColorStop(1,C.greenMid);ctx.fillStyle=hg;ctx.fill();ctx.restore();
+  const F=currentFont.canvas;
+  ctx.fillStyle=C.white;ctx.font=F.title;ctx.textAlign='center';ctx.fillText(titulo,W/2,cardY+72);
+  ctx.fillStyle=C.greenLight;ctx.font='300 26px sans-serif';ctx.fillText(subtitulo,W/2,cardY+115);
+  ctx.fillStyle=C.gold;ctx.font='bold 28px sans-serif';ctx.textAlign='left';ctx.fillText('✦',cardX+30,cardY+82);ctx.textAlign='right';ctx.fillText('✦',cardX+cardW-30,cardY+82);
+  let y=cardY+headerH;
+  const gbg=ctx.createLinearGradient(cardX,y,cardX+cardW,y);gbg.addColorStop(0,'transparent');gbg.addColorStop(0.5,C.gold);gbg.addColorStop(1,'transparent');
+  ctx.fillStyle=gbg;ctx.fillRect(cardX,y,cardW,goldBarH);y+=goldBarH;
+  const cols=[0.14,0.10,0.19,0.23,0.34];const colW=cols.map(f=>Math.round(cardW*f));
+  ctx.save();ctx.fillStyle=C.greenMid;ctx.fillRect(cardX,y,cardW,theadH);ctx.restore();
+  const headers=['Día','Hora','Encargado','Lugar de Reunión','Territorio y Modalidad'];
+  ctx.fillStyle=C.white;ctx.font=F.thead;ctx.textAlign='center';
+  let cx=cardX;headers.forEach((h,i)=>{ctx.fillText(h,cx+colW[i]/2,y+34,colW[i]-10);cx+=colW[i];});
+  y+=theadH;
+  const spans=new Array(rows.length).fill(1);
+  for(let i=0;i<rows.length;i++){if(rows[i].dia!==''){let j=i+1;while(j<rows.length&&rows[j].dia===''){spans[i]++;j++;}}}
+  const drawnDia=new Set();const groupStart={};
+  for(let i=0;i<rows.length;i++){if(rows[i].dia){for(let j=i;j<i+spans[i];j++)groupStart[j]=i;}}
+  rows.forEach((r,i)=>{
+    const rowY=y+i*rowH;const isOdd=i%2===0;
+    ctx.fillStyle=isOdd?C.white:C.greenAlt;ctx.fillRect(cardX,rowY,cardW,rowH);
+    const gi=groupStart[i];
+    if(gi!==undefined){
+      const groupRowY=y+gi*rowH;const diaH=spans[gi]*rowH;
+      const dg=ctx.createLinearGradient(cardX,groupRowY,cardX,groupRowY+diaH);
+      dg.addColorStop(0,C.greenLight);dg.addColorStop(1,'#daf4e4');
+      ctx.fillStyle=dg;ctx.fillRect(cardX,rowY,colW[0],rowH);
+    }
+  });
+  rows.forEach((r,i)=>{
+    const rowY=y+i*rowH;const gi=groupStart[i];
+    if(r.dia&&!drawnDia.has(i)){
+      drawnDia.add(i);const groupRowY=y+gi*rowH;const diaH=spans[i]*rowH;
+      const cellCX=cardX+colW[0]/2;const midY=groupRowY+diaH/2;const diaLines=r.dia.split('\n');
+      ctx.save();ctx.beginPath();ctx.rect(cardX+2,groupRowY,colW[0]-5,diaH);ctx.clip();
+      ctx.fillStyle=C.greenDark;ctx.textAlign='center';
+      if(diaLines.length>1){ctx.font=F.dia;ctx.fillText(diaLines[0],cellCX,midY-12,colW[0]-12);ctx.font=F.dia;ctx.fillText(diaLines[1],cellCX,midY+12,colW[0]-12);}
+      else{ctx.font=F.dia;ctx.fillText(r.dia,cellCX,midY+8,colW[0]-12);}
+      ctx.restore();
+    }
+    if(gi!==undefined){ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]-3,rowY,3,rowH);}
+    ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0],rowY+rowH-1,cardW-colW[0],1);
+    let cx2=cardX+colW[0];
+    const horaX=cx2+colW[1]/2,horaY=rowY+rowH/2,pillW=90,pillH=32,pillR=16;
+    ctx.save();ctx.fillStyle=C.greenDark;roundRectFill(ctx,horaX-pillW/2,horaY-pillH/2,pillW,pillH,pillR);
+    ctx.fillStyle=C.white;ctx.font=F.badge;ctx.textAlign='center';ctx.fillText(r.hora,horaX,horaY+7);ctx.restore();
+    cx2+=colW[1];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
+    const encLines=r.enc.split('\n');
+    if(encLines.length>1){ctx.fillText(encLines[0],cx2+colW[2]/2,rowY+rowH/2-10,colW[2]-10);ctx.fillText(encLines[1],cx2+colW[2]/2,rowY+rowH/2+14,colW[2]-10);}
+    else{ctx.fillText(r.enc,cx2+colW[2]/2,rowY+rowH/2+7,colW[2]-10);}
+    cx2+=colW[2];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
+    ctx.fillText(r.lugar,cx2+colW[3]/2,rowY+rowH/2+7,colW[3]-10);
+    cx2+=colW[3];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    const badgeX=cx2+colW[4]/2,badgeY=rowY+rowH/2;
+    ctx.font=F.badge;
+    const bW=Math.min(ctx.measureText(r.ter).width+22,colW[4]-16),bH=32,bR=7;
+    const bg2=ctx.createLinearGradient(badgeX-bW/2,badgeY,badgeX+bW/2,badgeY);
+    bg2.addColorStop(0,C.greenMid);bg2.addColorStop(1,C.greenDark);
+    ctx.save();ctx.fillStyle=bg2;roundRectFill(ctx,badgeX-bW/2,badgeY-bH/2,bW,bH,bR);
+    ctx.fillStyle=C.white;ctx.textAlign='center';ctx.fillText(r.ter,badgeX,badgeY+7,bW-10);ctx.restore();
+  });
+  const finalH=cardY+cardH+pad;const finalY=Math.max(0,Math.round((H-finalH)/2));
+  const out=document.createElement('canvas');out.width=W*SCALE;out.height=W*SCALE;
+  const octx=out.getContext('2d');octx.scale(SCALE,SCALE);
+  const obg=octx.createLinearGradient(0,0,W,W);obg.addColorStop(0,C.bgDark);obg.addColorStop(0.5,C.bgMid);obg.addColorStop(1,C.bgDark);
+  octx.fillStyle=obg;octx.fillRect(0,0,W,W);octx.drawImage(cv,0,finalY,W,W);
+  return out;
+}
+
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+function roundRectTop(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+function roundRectFill(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();}
+
+// ══════════════════════════════════════════════
+//  THEME SYSTEM
+// ══════════════════════════════════════════════
+const THEMES = [
+  {id:'esmeralda', name:'Esmeralda', dark:'#1b4332', mid:'#2d6a4f', light:'#b7e4c7', alt:'#f2faf5', gold:'#e0c34a', bg1:'#1c1c1e', bg2:'#1a3a2e', rowBorder:'#cde9d7'},
+  {id:'oceano',    name:'Océano',    dark:'#1a3a5c', mid:'#2d5f8a', light:'#b7d4e4', alt:'#f2f7fa', gold:'#e0c34a', bg1:'#1c1c1e', bg2:'#1a2e3a', rowBorder:'#cde0e9'},
+  {id:'purpura',   name:'Púrpura',   dark:'#3b1f5c', mid:'#6b3fa0', light:'#d8b7e4', alt:'#f7f2fa', gold:'#f0d060', bg1:'#1c1c1e', bg2:'#2a1a3a', rowBorder:'#e0cde9'},
+  {id:'rubi',      name:'Rubí',      dark:'#5c1a1a', mid:'#a03f3f', light:'#e4b7b7', alt:'#faf2f2', gold:'#f0d060', bg1:'#1c1c1e', bg2:'#3a1a1a', rowBorder:'#e9cdcd'},
+  {id:'dorado',    name:'Dorado',    dark:'#5c4a1a', mid:'#a08030', light:'#f0d890', alt:'#faf8f0', gold:'#e0c34a', bg1:'#1c1c1e', bg2:'#3a2e1a', rowBorder:'#e9dfc0'},
+  {id:'pizarra',   name:'Pizarra',   dark:'#2c3e50', mid:'#4a6080', light:'#b8cce0', alt:'#f2f5f8', gold:'#e0c34a', bg1:'#1c1c1e', bg2:'#1a2230', rowBorder:'#c8d8e8'},
+  {id:'bosque',    name:'Bosque',    dark:'#2d4a1e', mid:'#4a7a30', light:'#c5e0a8', alt:'#f5faf0', gold:'#d4b840', bg1:'#1c1c1e', bg2:'#1e2e18', rowBorder:'#c8e0b0'},
+];
+
+let currentTheme = THEMES[0];
+
+function applyTheme(t, saveToDb=true) {
+  currentTheme = t;
+  const r = document.documentElement.style;
+  r.setProperty('--gd', t.dark);
+  r.setProperty('--gm', t.mid);
+  r.setProperty('--gl', t.light);
+  r.setProperty('--ga', t.alt);
+  r.setProperty('--alt', t.alt);
+  r.setProperty('--gold', t.gold);
+  r.setProperty('--row-border', t.rowBorder);
+  // Update body background
+  document.body.style.background = `linear-gradient(160deg,${t.bg1} 0%,${t.bg2} 50%,${t.bg1} 100%)`;
+  // Mark active swatch
+  document.querySelectorAll('.theme-swatch').forEach(s => s.classList.toggle('active', s.dataset.id === t.id));
+}
+
+function buildThemeBar() {
+  const bar = document.getElementById('themeBar');
+  // Predefined swatches
+  THEMES.forEach(t => {
+    const sw = document.createElement('div');
+    sw.className = 'theme-swatch' + (t.id === currentTheme.id ? ' active' : '');
+    sw.dataset.id = t.id;
+    sw.title = t.name;
+    sw.style.background = `linear-gradient(135deg,${t.dark},${t.mid})`;
+    sw.onclick = () => applyTheme(t);
+    bar.appendChild(sw);
+  });
+  // Custom color picker
+  const wrap = document.createElement('div');
+  wrap.className = 'theme-custom-wrap';
+  wrap.innerHTML = `
+    <label for="customColor">Personalizado:</label>
+    <input type="color" id="customColorDark" value="#1b4332" title="Color oscuro"/>
+    <input type="color" id="customColorMid"  value="#2d6a4f" title="Color medio"/>
+    <input type="color" id="customGold"      value="#e0c34a" title="Acento/Dorado"/>`;
+  bar.appendChild(wrap);
+
+  function applyCustom() {
+    const dark = document.getElementById('customColorDark').value;
+    const mid  = document.getElementById('customColorMid').value;
+    const gold = document.getElementById('customGold').value;
+    // Derive light and alt from mid
+    const custom = {
+      id:'custom', name:'Personalizado',
+      dark, mid,
+      light: lightenHex(mid, 0.65),
+      alt:   lightenHex(mid, 0.9),
+      gold,
+      bg1:'#1c1c1e', bg2: darkenHex(dark, 0.3),
+      rowBorder: lightenHex(mid, 0.55)
+    };
+    applyTheme(custom);
+  }
+  ['customColorDark','customColorMid','customGold'].forEach(id =>
+    document.getElementById(id).addEventListener('input', applyCustom)
+  );
+}
+
+function lightenHex(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 0xff) + (255 - ((n >> 16) & 0xff)) * amount));
+  const g = Math.min(255, Math.round(((n >> 8)  & 0xff) + (255 - ((n >> 8)  & 0xff)) * amount));
+  const b = Math.min(255, Math.round(( n        & 0xff) + (255 - ( n        & 0xff)) * amount));
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function darkenHex(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, Math.round(((n >> 16) & 0xff) * (1 - amount)));
+  const g = Math.max(0, Math.round(((n >> 8)  & 0xff) * (1 - amount)));
+  const b = Math.max(0, Math.round(( n        & 0xff) * (1 - amount)));
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// ── FONT SYSTEM ──
+const FONTS=[
+  {id:'playfair',  name:'Playfair',    display:'Playfair Display', body:'Lato',         canvas:{title:'bold 52px "Playfair Display",serif', thead:'bold 22px "Playfair Display",serif', dia:'bold 20px "Playfair Display",serif',  body:'20px "Lato",sans-serif',       badge:'bold 18px "Lato",sans-serif'}},
+  {id:'montserrat',name:'Montserrat',  display:'Montserrat',       body:'Montserrat',   canvas:{title:'bold 48px "Montserrat",sans-serif',   thead:'bold 20px "Montserrat",sans-serif',   dia:'bold 18px "Montserrat",sans-serif',   body:'19px "Montserrat",sans-serif', badge:'bold 17px "Montserrat",sans-serif'}},
+  {id:'merriweather',name:'Merriweather',display:'Merriweather',   body:'Merriweather', canvas:{title:'bold 46px "Merriweather",serif',      thead:'bold 19px "Merriweather",serif',      dia:'bold 17px "Merriweather",serif',      body:'19px "Merriweather",serif',    badge:'bold 16px "Merriweather",serif'}},
+  {id:'raleway',   name:'Raleway',     display:'Raleway',          body:'Raleway',      canvas:{title:'bold 52px "Raleway",sans-serif',     thead:'bold 21px "Raleway",sans-serif',     dia:'bold 19px "Raleway",sans-serif',     body:'20px "Raleway",sans-serif',    badge:'bold 18px "Raleway",sans-serif'}},
+  {id:'crimson',   name:'Crimson',     display:'Crimson Text',     body:'Crimson Text', canvas:{title:'bold 58px "Crimson Text",serif',     thead:'bold 24px "Crimson Text",serif',     dia:'bold 22px "Crimson Text",serif',     body:'23px "Crimson Text",serif',    badge:'bold 20px "Crimson Text",serif'}},
+  {id:'garamond',  name:'Garamond',    display:'EB Garamond',      body:'EB Garamond',  canvas:{title:'bold 58px "EB Garamond",serif',      thead:'bold 23px "EB Garamond",serif',      dia:'bold 21px "EB Garamond",serif',      body:'22px "EB Garamond",serif',     badge:'bold 19px "EB Garamond",serif'}},
+  {id:'nunito',    name:'Nunito',      display:'Nunito',           body:'Nunito',       canvas:{title:'bold 50px "Nunito",sans-serif',      thead:'bold 21px "Nunito",sans-serif',      dia:'bold 19px "Nunito",sans-serif',      body:'20px "Nunito",sans-serif',     badge:'bold 18px "Nunito",sans-serif'}},
+];
+let currentFont=FONTS[0];
+
+function applyFont(f){
+  currentFont=f;
+  document.body.style.fontFamily=`'${f.body}',sans-serif`;
+  document.querySelectorAll('h1,.card-title,thead th,th').forEach(el=>el.style.fontFamily=`'${f.display}',serif`);
+  document.querySelectorAll('.btn,.btn-sm,input,label').forEach(el=>el.style.fontFamily=`'${f.body}',sans-serif`);
+  render(defaultRows);
+  document.querySelectorAll('.font-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===f.id));
+}
+
+function buildFontBar(){
+  const bar=document.getElementById('fontBar');
+  FONTS.forEach(f=>{
+    const btn=document.createElement('button');
+    btn.className='font-btn'+(f.id===currentFont.id?' active':'');
+    btn.dataset.id=f.id;
+    btn.textContent=f.name;
+    btn.style.fontFamily=`'${f.display}',serif`;
+    btn.onclick=()=>applyFont(f);
+    bar.appendChild(btn);
+  });
+}
+
+// ── INIT ──
+// ══════════════════════════════════════════════
+//  TAB SYSTEM
+// ══════════════════════════════════════════════
+function switchTab(id, btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='territorios') renderTerr();
+}
+
+// ══════════════════════════════════════════════
+//  TERRITORIES DATA
+// ══════════════════════════════════════════════
+// Manzanas per territory from the map
+const TERR_MANZANAS={
+  1:['A','B'], 2:['A','B'], 3:['A','B'], 4:['A','B','C','D'],
+  5:['A','B','C','D'], 6:['A','B','C','D'], 7:['A','B','C','D','E','F','G'],
+  8:['A','B','C','D','E','F'], 9:['A','B','C','D','E','F','G'],
+  10:['A','B','C','D','E','F','G'], 11:['A','B','C','D'],
+  12:['A','B','C','D'], 13:['A','B','C','D'],
+  14:['A','B'], 15:['A'], 16:['A','B','C','D'],
+  17:['A','B','C','D','E','F','G','H','I','J','K'],
+  18:['A','B','C','D','E','F'], 19:['A','B','C','D'],
+  20:['A','B','C','D'], 21:['A','B'],
+  22:['A','B','C','D','E','F'], 23:['A'],
+  24:['A','B','C'], 25:['A'],
+  26:['A'], 27:['A'],
+  28:['A','B','C','D'],
+  29:['A','B','C','D'],
+  30:['A','B','C','D'],
+  31:['A','B','C','D','E','F','G','H','I'],
+  32:['A','B','C','D','E','F'],
+  33:['A','B']
+};
+
+// DB: array of assignment entries
+// {id, terrNum, manzana, encargado, modalidad, fechaAsig, fechaDev, estado, obs}
+let TERR_DB = JSON.parse(localStorage.getItem('terrDB')||'[]');
+let terrEditId = null;
+let terrFilter = 'all';
+
+function saveTerr(){ try{localStorage.setItem('terrDB',JSON.stringify(TERR_DB));}catch(e){} }
+
+function terrById(id){ return TERR_DB.find(e=>e.id===id); }
+
+// ── Stats ──
+function renderTerrStats(){
+  const total=TERR_DB.length;
+  const asig=TERR_DB.filter(e=>e.estado==='asignado').length;
+  const comp=TERR_DB.filter(e=>e.estado==='completado').length;
+  const disp=TERR_DB.filter(e=>e.estado==='disponible').length;
+  document.getElementById('terrStats').innerHTML=`
+    <div class="terr-stat"><strong>${total}</strong>Registros</div>
+    <div class="terr-stat" style="color:#fbbf24"><strong>${asig}</strong>🟡 Asignados</div>
+    <div class="terr-stat" style="color:#34d399"><strong>${comp}</strong>✅ Completados</div>
+    <div class="terr-stat" style="color:#84cc16"><strong>${disp}</strong>🟢 Disponibles</div>
+  `;
+}
+
+// ── Render territory list ──
+function renderTerr(){
+  renderTerrStats();
+  const list=document.getElementById('terrList');
+  list.innerHTML='';
+
+  // Group entries by territory number
+  const byTerr={};
+  TERR_DB.forEach(e=>{
+    if(!byTerr[e.terrNum]) byTerr[e.terrNum]=[];
+    byTerr[e.terrNum].push(e);
+  });
+
+  // Build cards for territories that have entries (filtered), plus add-btn for all 33
+  const nums=[...new Set([...Object.keys(byTerr).map(Number),...Array.from({length:33},(_,i)=>i+1)])].sort((a,b)=>a-b);
+
+  nums.forEach(n=>{
+    const entries=(byTerr[n]||[]);
+    const filtered=terrFilter==='all'?entries:entries.filter(e=>e.estado===terrFilter);
+
+    // If filter active and no matching entries, skip (but show if no entries at all and filter=disponible)
+    if(terrFilter!=='all' && terrFilter!=='disponible' && filtered.length===0) return;
+    if(terrFilter==='disponible' && entries.length>0 && !entries.some(e=>e.estado==='disponible')) return;
+
+    // Dominant status color for the num badge
+    const hasAsig=entries.some(e=>e.estado==='asignado');
+    const hasComp=entries.some(e=>e.estado==='completado');
+    const numBg=hasAsig?'#b45309':hasComp?'#065f46':entries.length===0?'#374151':'#1b4332';
+
+    const mzCount=TERR_MANZANAS[n]?.length||'?';
+    const card=document.createElement('div');
+    card.className='terr-card';
+    card.id='terr-card-'+n;
+
+    const sumParts=[];
+    if(entries.length) sumParts.push(`${entries.length} registro${entries.length>1?'s':''}`);
+    if(hasAsig) sumParts.push('🟡 En proceso');
+    if(hasComp) sumParts.push('✅ Completado');
+    if(!entries.length) sumParts.push('🟢 Disponible');
+
+    card.innerHTML=`
+      <div class="terr-header" onclick="toggleTerrCard(${n})">
+        <div class="terr-num" style="background:${numBg}">${n}</div>
+        <div>
+          <div class="terr-title">Territorio ${n}</div>
+          <div class="terr-summary">
+            <span>${mzCount} manzanas</span>
+            ${sumParts.map(s=>`<span>${s}</span>`).join('')}
+          </div>
+        </div>
+        <span class="terr-chevron">›</span>
+      </div>
+      <div class="terr-body">
+        ${renderTerrEntries(n, filtered)}
+        <button class="btn-terr-add" onclick="openTerrModal(${n})">＋ Agregar asignación al Territorio ${n}</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function renderTerrEntries(terrNum, entries){
+  if(!entries.length) return `<p style="color:#666;font-size:.8rem;padding:8px 0">Sin registros${terrFilter!=='all'?' con este filtro':''}.</p>`;
+  const stBadge=st=>{
+    const map={asignado:'st-asignado',completado:'st-completado',disponible:'st-disponible'};
+    const lbl={asignado:'🟡 Asignado',completado:'✅ Completado',disponible:'🟢 Disponible'};
+    return `<span class="st-badge ${map[st]||''}">${lbl[st]||st}</span>`;
+  };
+  const fmtDate=d=>d?new Date(d+'T12:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'}):'—';
+  return `<table class="mz-table">
+    <thead><tr>
+      <th>Manzana</th><th>Encargado</th><th>Modalidad</th>
+      <th>Asignado</th><th>Devuelto</th><th>Estado</th><th>Obs</th><th></th>
+    </tr></thead>
+    <tbody>
+    ${entries.map(e=>`<tr>
+      <td><strong style="color:#e0c34a">${e.manzana||'Todo'}</strong></td>
+      <td>${e.encargado}</td>
+      <td><span style="font-size:.75rem;color:#aaa">${e.modalidad}</span></td>
+      <td>${fmtDate(e.fechaAsig)}</td>
+      <td>${fmtDate(e.fechaDev)}</td>
+      <td>${stBadge(e.estado)}</td>
+      <td style="font-size:.75rem;color:#888;max-width:120px">${e.obs||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit-mz" onclick="editTerrEntry('${e.id}')" title="Editar">✏️</button>
+        <button class="btn-del-mz" onclick="deleteTerrEntry('${e.id}')" title="Eliminar">🗑</button>
+      </td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function toggleTerrCard(n){
+  const card=document.getElementById('terr-card-'+n);
+  card.classList.toggle('open');
+}
+
+// ── Filter ──
+function filterTerr(f){
+  terrFilter=f;
+  ['all','asignado','completado','disponible'].forEach(k=>{
+    const btn=document.getElementById('f'+{all:'All',asignado:'Asig',completado:'Comp',disponible:'Disp'}[k]);
+    if(btn) btn.style.outline=k===f?'2px solid #e0c34a':'none';
+  });
+  renderTerr();
+}
+
+// ── Modal ──
+function openTerrModal(preNum){
+  terrEditId=null;
+  document.getElementById('terrModalTitle').textContent='➕ Asignar territorio';
+  document.getElementById('terrModalSaveBtn').textContent='Guardar';
+  document.getElementById('tm-num').value=preNum||'';
+  document.getElementById('tm-manzana').value='';
+  document.getElementById('tm-encargado').value='';
+  document.getElementById('tm-modalidad').value='Casa en casa';
+  document.getElementById('tm-fecha-asig').value=new Date().toISOString().slice(0,10);
+  document.getElementById('tm-fecha-dev').value='';
+  document.getElementById('tm-estado').value='asignado';
+  document.getElementById('tm-obs').value='';
+  document.getElementById('terrModal').classList.add('open');
+}
+
+function editTerrEntry(id){
+  const e=terrById(id);
+  if(!e)return;
+  terrEditId=id;
+  document.getElementById('terrModalTitle').textContent='✏️ Editar asignación';
+  document.getElementById('terrModalSaveBtn').textContent='Actualizar';
+  document.getElementById('tm-num').value=e.terrNum;
+  document.getElementById('tm-manzana').value=e.manzana||'';
+  document.getElementById('tm-encargado').value=e.encargado;
+  document.getElementById('tm-modalidad').value=e.modalidad;
+  document.getElementById('tm-fecha-asig').value=e.fechaAsig||'';
+  document.getElementById('tm-fecha-dev').value=e.fechaDev||'';
+  document.getElementById('tm-estado').value=e.estado;
+  document.getElementById('tm-obs').value=e.obs||'';
+  document.getElementById('terrModal').classList.add('open');
+}
+
+function closeTerrModal(){ document.getElementById('terrModal').classList.remove('open'); }
+
+function saveTerrEntry(){
+  const num=parseInt(document.getElementById('tm-num').value);
+  const enc=document.getElementById('tm-encargado').value.trim();
+  if(!num){alert('Selecciona un número de territorio.');return;}
+  if(!enc){alert('Ingresa el nombre del encargado.');return;}
+  const entry={
+    id: terrEditId||('t'+Date.now()),
+    terrNum: num,
+    manzana: document.getElementById('tm-manzana').value.trim().toUpperCase(),
+    encargado: enc,
+    modalidad: document.getElementById('tm-modalidad').value,
+    fechaAsig: document.getElementById('tm-fecha-asig').value,
+    fechaDev: document.getElementById('tm-fecha-dev').value,
+    estado: document.getElementById('tm-estado').value,
+    obs: document.getElementById('tm-obs').value.trim()
+  };
+  if(terrEditId){
+    const idx=TERR_DB.findIndex(e=>e.id===terrEditId);
+    if(idx>=0) TERR_DB[idx]=entry;
+  } else {
+    TERR_DB.push(entry);
+  }
+  saveTerr();
+  closeTerrModal();
+  renderTerr();
+  // Auto-open the card
+  setTimeout(()=>{
+    const card=document.getElementById('terr-card-'+num);
+    if(card&&!card.classList.contains('open')) card.classList.add('open');
+  },50);
+  toast('✅ '+(terrEditId?'Actualizado':'Asignación guardada'));
+}
+
+function deleteTerrEntry(id){
+  if(!confirm('¿Eliminar este registro?'))return;
+  TERR_DB=TERR_DB.filter(e=>e.id!==id);
+  saveTerr(); renderTerr();
+  toast('🗑 Registro eliminado');
+}
+
+// ── Export / Import ──
+function exportTerrJSON(){
+  const blob=new Blob([JSON.stringify(TERR_DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.download='territorios_losmuermos.json';
+  a.href=URL.createObjectURL(blob);a.click();
+  toast('💾 Territorios exportados');
+}
+function importTerrJSON(e){
+  const file=e.target.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      TERR_DB=JSON.parse(ev.target.result);
+      saveTerr(); renderTerr();
+      toast('✅ Territorios cargados');
+    }catch{toast('❌ Error al leer el archivo');}
+  };
+  r.readAsText(file);
+  e.target.value='';
+}
+
+// Close modal on backdrop
+document.getElementById('terrModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('terrModal'))closeTerrModal();
+});
+
+// ── INIT ──
+buildThemeBar();
+buildFontBar();
+render(defaultRows);
+document.getElementById('thAct').style.display='none';
+// Populate territory number select
+(()=>{const s=document.getElementById('tm-num');for(let i=1;i<=33;i++){const o=document.createElement('option');o.value=i;o.textContent='Territorio '+i;s.appendChild(o);}})();
+
+(async()=>{
+  // Intentar cargar programa desde Drive al iniciar (requiere interacción del usuario para OAuth)
+  // Solo carga automática si ya hay token
+  driveSetStatus('Listo. Usa los botones de Drive para sincronizar.','#888');
+})();
+</script>
+</body>
+</html>
