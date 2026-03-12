@@ -857,7 +857,7 @@ function toggleEditMode(){
   document.getElementById('layout').classList.toggle('edit-mode',editMode);
   document.getElementById('mapArea').classList.toggle('edit-mode',editMode);
   renderPins();
-  if(!editMode){ savePins(); toast('📌 Posiciones guardadas'); }
+  if(!editMode){ savePins(); toast('📌 Posiciones guardadas'); gistAutoPublish(); }
 }
 
 function resetPinPositions(){
@@ -1161,6 +1161,7 @@ function saveM(){
   if(!DB[n].monthsWorked)DB[n].monthsWorked={};
   save();closeM();renderPins();updateAll();if(sel===n)renderDetail(n);
   toast(`✅ Territorio ${n} guardado`);
+  gistAutoPublish();
 }
 function clearT(n){
   if(!confirm(`¿Limpiar Territorio ${n}?`))return;
@@ -1270,6 +1271,7 @@ function saveDevolucion(){
   } else {
     toast(`✅ Territorio ${n} marcado como ${estado==='completado'?'completado':'disponible'}`);
   }
+  gistAutoPublish();
 }
 document.getElementById('devModal').addEventListener('click',e=>{if(e.target===document.getElementById('devModal'))closeDevModal();});
 function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null,pins:PIN_POS};}
@@ -2430,6 +2432,26 @@ async function gistSaveConfig(){
     setGistStatus('✅ Configuración guardada.');
     toast('✅ Configuración guardada');
   }
+}
+
+// Publicación automática silenciosa tras cada cambio
+let gistAutoPublishTimer = null;
+function gistAutoPublish(){
+  if(!gistToken || !gistId) return; // no configurado, no hace nada
+  // Debounce: espera 3s desde el último cambio para no publicar múltiples veces seguidas
+  clearTimeout(gistAutoPublishTimer);
+  gistAutoPublishTimer = setTimeout(async ()=>{
+    setGistDot('spin');
+    try{
+      const r = await fetch(`https://api.github.com/gists/${gistId}`,{
+        method:'PATCH',
+        headers:{'Authorization':'token '+gistToken,'Content-Type':'application/json'},
+        body: JSON.stringify({ files:{ [GIST_FILE_NAME]:{ content: JSON.stringify(fullBackup(),null,2) } } })
+      });
+      const data = await r.json();
+      if(data.id){ setGistDot('ok'); } else { setGistDot('err'); }
+    }catch(e){ setGistDot('err'); }
+  }, 3000);
 }
 
 async function gistPublish(){
