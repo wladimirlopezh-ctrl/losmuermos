@@ -459,9 +459,31 @@ body.dark .act-row{border-bottom-color:#22263a;}
 body.dark .top-enc-bar{background:#22263a;}
 .top-enc-fill{height:100%;border-radius:3px;background:var(--indigo);}
 
+/* SYNC PANEL */
+.sp-tab{flex:1;padding:7px 4px;font-size:.62rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--gray);font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;transition:all .15s;}
+.sp-tab:hover{color:var(--dark);}
+.sp-tab-active{color:var(--gd)!important;border-bottom-color:var(--gd)!important;}
+body.dark .sp-tab{color:#64748b;}
+body.dark .sp-tab-active{color:var(--gd)!important;}
+.sp-sect{background:var(--bg);border-radius:9px;padding:11px 12px;margin-bottom:10px;border:1.5px solid var(--bdr);}
+body.dark .sp-sect{background:#13161f;}
+.sp-sect-title{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:8px;}
+.filt-btn{width:100%;padding:7px 10px;border-radius:7px;border:1.5px solid var(--bdr);background:var(--w);font-size:.72rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);text-align:left;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;transition:all .15s;}
+.filt-btn:hover{border-color:#94a3b8;}
+.filt-btn.active{color:#fff;border-color:transparent;}
+.filt-btn.f-all.active{background:#475569;}
+.filt-btn.f-dis.active{background:#15803d;}
+.filt-btn.f-asig.active{background:#d97706;}
+.filt-btn.f-comp.active{background:#4f46e5;}
+.filt-btn.f-urg.active{background:#dc2626;}
+.ar-btn{padding:5px 10px;border-radius:6px;border:1.5px solid var(--bdr);background:var(--w);font-size:.68rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);transition:all .15s;}
+.ar-btn:hover{border-color:#94a3b8;}
+.ar-btn.active{background:var(--gd);color:#fff;border-color:var(--gd);}
+body.dark .ar-btn{background:var(--w);color:#94a3b8;}
+
 </style>
 </head>
-<body data-gist-id="ad9e09915749d0ec91880c335b8fb643">
+<body>
 
 <header>
   <div style="display:flex;align-items:center;gap:8px">
@@ -488,6 +510,7 @@ body.dark .top-enc-bar{background:#22263a;}
     <button class="btn" id="importBtn" onclick="document.getElementById('ii').click()">📂 Importar</button>
     <button class="btn" id="ruralBtn" onclick="openRuralModal()" title="Territorios Rurales">🌿 Rurales</button>
     <button class="btn pri" id="assignBtn" onclick="openAssign()">➕ Asignar</button>
+    <button class="btn" id="toolsBtn" onclick="openSyncPanel()" title="Herramientas: Gist, JSON, filtros, alertas" style="background:#1e40af;color:#fff;border-color:#1e40af;">🛠 Herramientas</button>
     <input type="file" id="ii" accept=".json" style="display:none" onchange="importData(event)"/>
   </div>
 </header>
@@ -734,16 +757,52 @@ body.dark .top-enc-bar{background:#22263a;}
   </div>
 </div>
 
-<!-- BANNER MODO SOLO LECTURA -->
-<div id="viewerBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:900;background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;padding:8px 16px;display:none;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;">
+<!-- BANNER SINCRONIZACIÓN + ALERTAS -->
+<div id="syncBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:900;background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;padding:7px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;flex-wrap:wrap;">
   <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:1rem">👁</span>
+    <span id="syncBannerIcon" style="font-size:1rem">🔄</span>
     <div>
-      <div style="font-weight:700">Modo visualización</div>
-      <div style="font-size:.62rem;opacity:.8" id="viewerLastUpdate">Datos cargados automáticamente</div>
+      <div style="font-weight:700" id="syncBannerTitle">Sincronizado con Gist</div>
+      <div style="font-size:.62rem;opacity:.8" id="syncBannerSub">—</div>
     </div>
   </div>
-  <button onclick="gistRefresh()" style="padding:5px 12px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">🔄 Actualizar</button>
+  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:.6rem;opacity:.7" id="autoRefreshLbl"></span>
+    <button onclick="manualGistRefresh()" style="padding:4px 10px;border-radius:6px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">🔄 Actualizar</button>
+    <button onclick="toggleSyncPanel()" style="padding:4px 10px;border-radius:6px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">⚙️ Opciones</button>
+    <button onclick="document.getElementById('syncBanner').style.display='none'" style="background:transparent;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:.9rem;padding:0 2px">✕</button>
+  </div>
+</div>
+
+<!-- BANNER ALERTA URGENTES -->
+<div id="alertBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:901;background:linear-gradient(90deg,#7f1d1d,#991b1b);color:#fff;padding:7px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:1.1rem">🚨</span>
+    <div>
+      <div style="font-weight:700" id="alertBannerCount"></div>
+      <div style="font-size:.62rem;opacity:.85">Territorios asignados hace más de 12 meses</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button onclick="openSyncPanel();switchSyncTab('alertas')" style="padding:4px 10px;border-radius:6px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">Ver →</button>
+    <button onclick="document.getElementById('alertBanner').style.display='none'" style="background:transparent;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:.9rem;padding:0 2px">✕</button>
+  </div>
+</div>
+
+<!-- PANEL LATERAL SYNC/HERRAMIENTAS -->
+<div id="syncPanel" style="display:none;position:fixed;top:0;right:0;bottom:0;z-index:950;width:310px;background:var(--w);border-left:1.5px solid var(--bdr);box-shadow:-6px 0 24px rgba(0,0,0,.15);flex-direction:column;overflow:hidden;">
+  <div style="padding:13px 16px;background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div style="font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;">🛠 Herramientas</div>
+    <button onclick="closeSyncPanel()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:27px;height:27px;border-radius:6px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center">✕</button>
+  </div>
+  <!-- tabs -->
+  <div style="display:flex;border-bottom:1.5px solid var(--bdr);flex-shrink:0;">
+    <button id="stab_gist" class="sp-tab sp-tab-active" onclick="switchSyncTab('gist')">🌐 Gist</button>
+    <button id="stab_json" class="sp-tab" onclick="switchSyncTab('json')">📂 JSON</button>
+    <button id="stab_filtros" class="sp-tab" onclick="switchSyncTab('filtros')">🔽 Filtros</button>
+    <button id="stab_alertas" class="sp-tab" onclick="switchSyncTab('alertas')">🚨 Alertas</button>
+  </div>
+  <div id="syncPanelBody" style="flex:1;overflow-y:auto;padding:12px;"></div>
 </div>
 
 <script>
@@ -2498,67 +2557,341 @@ function copyGistUrl(){
   navigator.clipboard?.writeText(url).then(()=>toast('📋 Enlace copiado')).catch(()=>toast(url));
 }
 
-// ── MODO VISUALIZADOR ──
-// El HTML puede incluir el ID del gist como atributo en el body para modo visualizador
-// O se detecta si no hay datos locales y hay un gistId embebido
-async function tryViewerMode(){
-  const embeddedGistId = document.body.getAttribute('data-gist-id');
-  if(!embeddedGistId) return false;
-  isViewerMode = true;
-  // Ocultar todos los botones que no corresponden a visualizadores
-  ['editBtn','gistBtn','driveBtn','jsonBtn','importBtn','assignBtn','campBtn','excelBtn','ruralBtn','wordBtn'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.style.display = 'none';
+// ── SISTEMA DE SINCRONIZACIÓN Y HERRAMIENTAS ──
+let syncGistId = null;       // Gist configurado para auto-refresco
+let autoRefreshInterval = null;
+let autoRefreshMins = 5;
+let currentFilt = 'all';     // filtro activo del panel
+let syncPanelTab = 'gist';
+
+// Herencia: tryViewerMode no hace nada (ya no hay modo solo lectura)
+function tryViewerMode(){ return false; }
+
+// ── PANEL HERRAMIENTAS ──
+function openSyncPanel(){
+  renderSyncPanel();
+  document.getElementById('syncPanel').style.display = 'flex';
+}
+function closeSyncPanel(){
+  document.getElementById('syncPanel').style.display = 'none';
+}
+function toggleSyncPanel(){
+  const p = document.getElementById('syncPanel');
+  if(p.style.display === 'flex') closeSyncPanel(); else openSyncPanel();
+}
+function switchSyncTab(tab){
+  syncPanelTab = tab;
+  ['gist','json','filtros','alertas'].forEach(t=>{
+    document.getElementById('stab_'+t).classList.toggle('sp-tab-active', t===tab);
   });
-  // También ocultar el panel izquierdo con botón "Gestionar" campañas
-  document.querySelectorAll('#campSidebar .btn').forEach(b=>b.style.display='none');
-  // Mostrar banner
-  document.getElementById('viewerBanner').style.display = 'flex';
-  // Cargar datos
-  await gistLoadRemote(embeddedGistId);
-  return true;
+  renderSyncPanel();
 }
 
-async function gistLoadRemote(id){
-  const upd = document.getElementById('viewerLastUpdate');
-  if(upd) upd.textContent = 'Cargando datos...';
+function renderSyncPanel(){
+  const el = document.getElementById('syncPanelBody');
+  if(!el) return;
+  if(syncPanelTab === 'gist')    el.innerHTML = renderSyncTabGist();
+  if(syncPanelTab === 'json')    el.innerHTML = renderSyncTabJson();
+  if(syncPanelTab === 'filtros') el.innerHTML = renderSyncTabFiltros();
+  if(syncPanelTab === 'alertas') el.innerHTML = renderSyncTabAlertas();
+}
+
+// ── TAB GIST ──
+function renderSyncTabGist(){
+  const configured = gistToken && gistId;
+  const now = new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  return `
+  <div class="sp-sect">
+    <div class="sp-sect-title">🌐 Publicar datos (tu cuenta)</div>
+    <p style="font-size:.68rem;color:var(--gray);margin-bottom:10px;line-height:1.5">
+      Configura tu token GitHub para que los cambios se publiquen automáticamente y otros puedan ver el mapa actualizado.
+    </p>
+    ${configured ? `
+      <div style="padding:8px 10px;border-radius:8px;background:#f0fdf4;border:1.5px solid rgba(34,197,94,.3);margin-bottom:10px;">
+        <div style="font-size:.62rem;font-weight:700;color:#15803d;margin-bottom:3px">✅ Gist configurado</div>
+        <div style="font-size:.6rem;color:#166534;font-family:monospace;word-break:break-all">${gistId}</div>
+      </div>
+    ` : `
+      <div style="padding:8px 10px;border-radius:8px;background:#fef9c3;border:1.5px solid #fde68a;margin-bottom:10px;font-size:.68rem;color:#92400e">
+        ⚠️ Gist no configurado — usa el botón <strong>🌐 Publicar</strong> del header para configurarlo.
+      </div>
+    `}
+    <button class="btn pri" onclick="closeSyncPanel();openGistModal()" style="width:100%;font-size:.72rem;padding:7px;margin-bottom:6px">⚙️ Configurar / ver enlace de Gist</button>
+    ${configured ? `<button class="btn xl" onclick="gistPublish();renderSyncPanel()" style="width:100%;font-size:.72rem;padding:7px">🚀 Publicar datos ahora</button>` : ''}
+  </div>
+
+  <div class="sp-sect">
+    <div class="sp-sect-title">🔄 Auto-refresco desde Gist</div>
+    <p style="font-size:.65rem;color:var(--gray);margin-bottom:8px;line-height:1.5">
+      Carga automáticamente los datos más recientes del Gist. Útil para quienes solo visualizan.
+    </p>
+    <div style="margin-bottom:8px">
+      <label style="font-size:.62rem;font-weight:700;color:var(--gray);display:block;margin-bottom:4px">ID del Gist a monitorear</label>
+      <div style="display:flex;gap:5px">
+        <input id="syncGistInput" placeholder="ID del Gist (ej: ad9e09915...)" value="${syncGistId||gistId||''}"
+          style="flex:1;padding:5px 8px;border:1.5px solid var(--bdr);border-radius:6px;font-size:.7rem;background:var(--w);color:var(--dark);font-family:'DM Sans',sans-serif"/>
+        <button onclick="startSyncFromInput()" class="btn pri" style="padding:4px 10px;font-size:.7rem;flex-shrink:0">Activar</button>
+      </div>
+    </div>
+    <div style="margin-bottom:6px">
+      <div style="font-size:.62rem;font-weight:700;color:var(--gray);margin-bottom:5px">Intervalo de actualización</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${[1,3,5,10,15].map(m=>`
+          <button class="ar-btn${autoRefreshMins===m&&autoRefreshInterval?' active':''}" onclick="setAutoRefresh(${m})">${m} min</button>
+        `).join('')}
+        <button class="ar-btn" onclick="stopAutoRefresh()">⏸ Pausar</button>
+      </div>
+    </div>
+    ${autoRefreshInterval ? `<div style="font-size:.62rem;color:#15803d;padding:4px 0">● Activo — cada ${autoRefreshMins} min · <span id="nextRefreshLbl"></span></div>` : `<div style="font-size:.62rem;color:var(--gray);padding:4px 0">○ Pausado</div>`}
+    <button onclick="manualGistRefresh()" class="btn" style="width:100%;font-size:.7rem;padding:6px;margin-top:6px">🔄 Actualizar ahora</button>
+  </div>`;
+}
+
+// ── TAB JSON ──
+function renderSyncTabJson(){
+  return `
+  <div class="sp-sect">
+    <div class="sp-sect-title">📂 Cargar JSON de última actualización</div>
+    <p style="font-size:.65rem;color:var(--gray);margin-bottom:10px;line-height:1.5">
+      Sube el archivo JSON exportado para cargar todos los datos de territorios, campañas y pines.
+    </p>
+    <label style="display:block;padding:14px;border:2px dashed var(--bdr);border-radius:8px;text-align:center;cursor:pointer;background:var(--bg);transition:border-color .15s" 
+      onmouseover="this.style.borderColor='var(--gd)'" onmouseout="this.style.borderColor=''">
+      <div style="font-size:1.4rem;margin-bottom:4px">📂</div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--dark)">Seleccionar archivo JSON</div>
+      <div style="font-size:.62rem;color:var(--gray);margin-top:2px">Clic aquí o arrastra el archivo</div>
+      <input type="file" accept=".json" onchange="loadJsonFile(event)" style="display:none"/>
+    </label>
+  </div>
+
+  <div class="sp-sect">
+    <div class="sp-sect-title">🔗 Cargar desde URL directa</div>
+    <div style="display:flex;gap:5px">
+      <input id="jsonUrlInput" placeholder="https://..." 
+        style="flex:1;padding:5px 8px;border:1.5px solid var(--bdr);border-radius:6px;font-size:.7rem;background:var(--w);color:var(--dark);font-family:'DM Sans',sans-serif"/>
+      <button onclick="loadJsonFromUrl()" class="btn pri" style="padding:4px 10px;font-size:.7rem;flex-shrink:0">Cargar</button>
+    </div>
+    <div style="font-size:.6rem;color:var(--gray);margin-top:5px">Útil si el JSON está publicado en un servidor o en GitHub raw.</div>
+  </div>
+
+  <div class="sp-sect">
+    <div class="sp-sect-title">💾 Exportar datos</div>
+    <div style="display:flex;gap:6px">
+      <button onclick="exportData();closeSyncPanel()" class="btn" style="flex:1;font-size:.7rem;padding:7px">💾 JSON</button>
+      <button onclick="exportExcel();closeSyncPanel()" class="btn xl" style="flex:1;font-size:.7rem;padding:7px">📊 Excel</button>
+    </div>
+  </div>`;
+}
+
+// ── TAB FILTROS ──
+function renderSyncTabFiltros(){
+  const cnt = {disponible:0, asignado:0, completado:0, urgente:0};
+  for(let i=1;i<=33;i++) cnt[gs(i)]++;
+  return `
+  <div class="sp-sect">
+    <div class="sp-sect-title">🔽 Filtrar pines del mapa</div>
+    <button class="filt-btn f-all${filt==='all'?' active':''}" onclick="applyFilt('all');renderSyncPanel()">
+      <span>📍 Todos los territorios</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900">33</span>
+    </button>
+    <button class="filt-btn f-dis${filt==='disponible'?' active':''}" onclick="applyFilt('disponible');renderSyncPanel()">
+      <span>🟢 Disponibles</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${filt==='disponible'?'#fff':'#15803d'}">${cnt.disponible}</span>
+    </button>
+    <button class="filt-btn f-asig${filt==='asignado'?' active':''}" onclick="applyFilt('asignado');renderSyncPanel()">
+      <span>🟡 Asignados</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${filt==='asignado'?'#fff':'#d97706'}">${cnt.asignado}</span>
+    </button>
+    <button class="filt-btn f-comp${filt==='completado'?' active':''}" onclick="applyFilt('completado');renderSyncPanel()">
+      <span>✅ Completados</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${filt==='completado'?'#fff':'#4f46e5'}">${cnt.completado}</span>
+    </button>
+    <button class="filt-btn f-urg${filt==='urgente'?' active':''}" onclick="applyFilt('urgente');renderSyncPanel()">
+      <span>🔴 Sin trabajar +12m</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${filt==='urgente'?'#fff':'#dc2626'}">${cnt.urgente}</span>
+    </button>
+  </div>
+  <div class="sp-sect">
+    <div class="sp-sect-title">📊 Acceso rápido</div>
+    <button onclick="closeSyncPanel();toggleDash()" class="btn pri" style="width:100%;font-size:.72rem;padding:8px">📋 Ver informe completo</button>
+  </div>`;
+}
+
+// ── TAB ALERTAS ──
+function renderSyncTabAlertas(){
+  const urgentes = [];
+  for(let n=1;n<=33;n++){
+    if(gs(n)==='urgente'){
+      const d = DB[n]||{};
+      const dias = d.fechaAsig ? Math.round((Date.now()-new Date(d.fechaAsig+'T12:00'))/86400000) : null;
+      urgentes.push({n, enc:d.encargado||'Sin encargado', dias, fechaAsig:d.fechaAsig||'—'});
+    }
+  }
+  // También territorios asignados que llevan más de 6 meses (advertencia)
+  const advertencias = [];
+  for(let n=1;n<=33;n++){
+    if(gs(n)==='asignado'){
+      const d = DB[n]||{};
+      const dias = d.fechaAsig ? Math.round((Date.now()-new Date(d.fechaAsig+'T12:00'))/86400000) : 0;
+      if(dias >= 180) advertencias.push({n, enc:d.encargado||'—', dias});
+    }
+  }
+  return `
+  ${urgentes.length > 0 ? `
+  <div class="sp-sect" style="border-color:rgba(239,68,68,.4)">
+    <div class="sp-sect-title" style="color:#dc2626">🚨 Urgentes — +12 meses (${urgentes.length})</div>
+    ${urgentes.map(u=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(239,68,68,.06);border-radius:7px;border:1px solid rgba(239,68,68,.18);margin-bottom:5px;cursor:pointer" onclick="closeSyncPanel();selectT(${u.n})">
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:#dc2626;min-width:26px;text-align:center">${u.n}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.72rem;font-weight:700;color:var(--dark)">Territorio ${u.n}</div>
+          <div style="font-size:.63rem;color:#dc2626">👤 ${u.enc}</div>
+          <div style="font-size:.6rem;color:var(--gray)">📅 ${u.fechaAsig} · ${u.dias!=null?u.dias+' días':''}</div>
+        </div>
+        <span style="font-size:.58rem;font-weight:700;color:#dc2626;background:rgba(239,68,68,.12);padding:2px 6px;border-radius:4px;flex-shrink:0">URGENTE</span>
+      </div>`).join('')}
+  </div>` : `
+  <div class="sp-sect" style="border-color:rgba(34,197,94,.3)">
+    <div class="sp-sect-title" style="color:#15803d">✅ Sin urgencias</div>
+    <div style="font-size:.72rem;color:var(--gray)">Ningún territorio lleva más de 12 meses asignado.</div>
+  </div>`}
+
+  ${advertencias.length > 0 ? `
+  <div class="sp-sect" style="border-color:rgba(245,158,11,.35)">
+    <div class="sp-sect-title" style="color:#d97706">⚠️ Atención — +6 meses (${advertencias.length})</div>
+    ${advertencias.map(a=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(245,158,11,.06);border-radius:7px;border:1px solid rgba(245,158,11,.2);margin-bottom:5px;cursor:pointer" onclick="closeSyncPanel();selectT(${a.n})">
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#d97706;min-width:26px;text-align:center">${a.n}</div>
+        <div style="flex:1">
+          <div style="font-size:.7rem;font-weight:700">Territorio ${a.n} · ${a.enc}</div>
+          <div style="font-size:.62rem;color:var(--gray)">${a.dias} días asignado</div>
+        </div>
+      </div>`).join('')}
+  </div>` : ''}`;
+}
+
+// ── LÓGICA DE FILTROS ──
+function applyFilt(f){
+  filt = f;
+  renderPins();
+  updateAll();
+}
+
+// ── CARGA JSON ──
+function loadJsonFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try{
+      applyBackup(JSON.parse(ev.target.result));
+      checkAlerts();
+      showSyncBanner('✅ JSON cargado: '+file.name, new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}));
+      toast('✅ Datos cargados correctamente');
+      closeSyncPanel();
+    }catch(err){ toast('❌ Error al leer el JSON'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+}
+
+async function loadJsonFromUrl(){
+  const url = document.getElementById('jsonUrlInput').value.trim();
+  if(!url){ toast('⚠️ Ingresa una URL'); return; }
+  toast('⏳ Cargando...');
   try{
-    // Intentar primero con URL raw con cache-bust (no consume rate limit)
+    const r = await fetch(url+'?t='+Date.now(), {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    applyBackup(data);
+    checkAlerts();
+    showSyncBanner('✅ Datos cargados desde URL', new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}));
+    toast('✅ Datos cargados');
+    closeSyncPanel();
+  }catch(e){ toast('❌ Error: '+e.message); }
+}
+
+// ── SYNC GIST ──
+function startSyncFromInput(){
+  const id = document.getElementById('syncGistInput').value.trim();
+  if(!id){ toast('⚠️ Ingresa el ID del Gist'); return; }
+  syncGistId = id;
+  setAutoRefresh(autoRefreshMins);
+  manualGistRefresh();
+  renderSyncPanel();
+}
+
+function setAutoRefresh(mins){
+  autoRefreshMins = mins;
+  stopAutoRefresh();
+  if(!syncGistId && !gistId){ toast('⚠️ Configura un Gist primero'); return; }
+  autoRefreshInterval = setInterval(()=>{ manualGistRefresh(true); }, mins * 60 * 1000);
+  updateAutoRefreshLabel();
+  renderSyncPanel();
+  toast('🔄 Auto-refresco: cada '+mins+' min');
+}
+
+function stopAutoRefresh(){
+  if(autoRefreshInterval){ clearInterval(autoRefreshInterval); autoRefreshInterval=null; }
+  updateAutoRefreshLabel();
+}
+
+function updateAutoRefreshLabel(){
+  const lbl = document.getElementById('autoRefreshLbl');
+  if(lbl) lbl.textContent = autoRefreshInterval ? '● Cada '+autoRefreshMins+' min' : '';
+}
+
+async function manualGistRefresh(silent=false){
+  const id = syncGistId || gistId;
+  if(!id){ if(!silent) toast('⚠️ No hay Gist configurado'); return; }
+  if(!silent) toast('🔄 Actualizando desde Gist...');
+  try{
     const rawUrl = `https://gist.githubusercontent.com/raw/${id}/${GIST_FILE_NAME}?t=${Date.now()}`;
     let fileContent = null;
     try{
       const rRaw = await fetch(rawUrl, {cache:'no-store'});
       if(rRaw.ok) fileContent = await rRaw.text();
     }catch(e2){}
-
-    // Si raw falla, usar API de GitHub
     if(!fileContent){
       const apiUrl = `https://api.github.com/gists/${id}?t=${Date.now()}`;
-      const r = await fetch(apiUrl, { cache:'no-store', headers:{ Accept:'application/vnd.github.v3+json' } });
-      if(!r.ok){
-        const errData = await r.json().catch(()=>({}));
-        throw new Error(`HTTP ${r.status}: ${errData.message||'sin respuesta'}`);
-      }
+      const r = await fetch(apiUrl, {cache:'no-store', headers:{Accept:'application/vnd.github.v3+json'}});
+      if(!r.ok) throw new Error('HTTP '+r.status);
       const gist = await r.json();
       fileContent = gist.files?.[GIST_FILE_NAME]?.content;
-      if(!fileContent) throw new Error('Archivo no encontrado en el Gist');
+      if(!fileContent) throw new Error('Archivo no encontrado en Gist');
     }
-
     const data = JSON.parse(fileContent);
     applyBackup(data);
     const now = new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    if(upd) upd.textContent = `Actualizado: ${now}`;
-    toast('✅ Datos actualizados');
+    showSyncBanner('✅ Sincronizado con Gist', 'Última actualización: '+now);
+    checkAlerts();
+    if(!silent) toast('✅ Datos actualizados');
   }catch(e){
-    if(upd) upd.textContent = '⚠️ Error: '+e.message;
-    toast('⚠️ Error al cargar: '+e.message);
+    showSyncBanner('⚠️ Error al sincronizar', e.message);
+    if(!silent) toast('⚠️ Error: '+e.message);
   }
 }
 
-async function gistRefresh(){
-  const embeddedGistId = document.body.getAttribute('data-gist-id');
-  if(embeddedGistId) await gistLoadRemote(embeddedGistId);
+// ── BANNER Y ALERTAS ──
+function showSyncBanner(title, sub){
+  const b = document.getElementById('syncBanner');
+  document.getElementById('syncBannerTitle').textContent = title;
+  document.getElementById('syncBannerSub').textContent = sub;
+  b.style.display = 'flex';
+  updateAutoRefreshLabel();
 }
+
+function checkAlerts(){
+  const urgentes = [];
+  for(let n=1;n<=33;n++) if(gs(n)==='urgente') urgentes.push(n);
+  const banner = document.getElementById('alertBanner');
+  if(urgentes.length > 0){
+    document.getElementById('alertBannerCount').textContent = urgentes.length+' territorio'+(urgentes.length>1?'s urgentes':' urgente');
+    banner.style.display = 'flex';
+    // Ocultar automáticamente después de 10 segundos
+    setTimeout(()=>{ banner.style.display='none'; }, 10000);
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// Compatibilidad: gistRefresh sigue funcionando
+async function gistRefresh(){ await manualGistRefresh(false); }
 
 
 // ══ TERRITORIOS RURALES ══
@@ -2677,9 +3010,9 @@ function descargarWord(){
   window.addEventListener('resize',resetZoom);
   // Cargar config Gist si existe
   gistLoadConfig();
-  if(gistToken && gistId) setGistDot('ok');
-  // Intentar modo visualizador
-  tryViewerMode();
+  if(gistToken && gistId){ setGistDot('ok'); syncGistId = gistId; }
+  // Revisar alertas al inicio
+  checkAlerts();
 })();
 
 </script>
