@@ -470,6 +470,7 @@ body.dark .top-enc-bar{background:#22263a;}
   </div>
   <div class="hb">
     <button class="btn" id="darkBtn" onclick="toggleDark()" title="Modo oscuro/claro">🌙</button>
+    <button class="btn" id="pubBtn" onclick="openPubModal()" title="Historial publicadores">👥</button>
     <button class="btn" id="dashBtn" onclick="toggleDash()" title="Informe">📋 Informe</button>
     <button class="btn" id="campBtn" onclick="openCampModal()" title="Campañas">🏕 Campañas</button>
     <button class="btn warn" id="editBtn" onclick="toggleEditMode()">✏️ Mover pines</button>
@@ -484,8 +485,13 @@ body.dark .top-enc-bar{background:#22263a;}
       Drive <span class="sync-dot" id="syncDot" title="Sin conectar"></span>
     </button>
     <button class="btn" id="wordBtn" onclick="descargarWord()" title="Descargar Registro Word actualizado">📄 Word</button>
-    <button class="btn" id="jsonBtn" onclick="exportData()">💾 JSON</button>
-    <button class="btn" id="importBtn" onclick="document.getElementById('ii').click()">📂 Importar</button>
+    <div style="position:relative;display:inline-block">
+      <button class="btn" id="masBtn" onclick="toggleMasMenu()" title="Más opciones">⋯</button>
+      <div id="masMenu" style="display:none;position:absolute;right:0;top:110%;background:var(--card);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:500;min-width:160px;padding:6px">
+        <div onclick="exportData();toggleMasMenu()" style="padding:8px 14px;cursor:pointer;font-size:.72rem;border-radius:7px;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">💾 Exportar JSON</div>
+        <div onclick="document.getElementById('ii').click();toggleMasMenu()" style="padding:8px 14px;cursor:pointer;font-size:.72rem;border-radius:7px;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">📂 Importar JSON</div>
+      </div>
+    </div>
     <button class="btn" id="ruralBtn" onclick="openRuralModal()" title="Territorios Rurales">🌿 Rurales</button>
     <button class="btn pri" id="assignBtn" onclick="openAssign()">➕ Asignar</button>
     <input type="file" id="ii" accept=".json" style="display:none" onchange="importData(event)"/>
@@ -504,6 +510,14 @@ body.dark .top-enc-bar{background:#22263a;}
 
 <div class="layout" id="layout">
   <div class="panel L">
+    <div class="pb" style="padding:8px 10px">
+      <div style="position:relative">
+        <input id="searchBox" oninput="searchTerritories(this.value)" placeholder="🔍 Buscar territorio, encargado..." style="width:100%;box-sizing:border-box;padding:8px 32px 8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:.72rem;outline:none"/>
+        <span id="searchClear" onclick="clearSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--gray);font-size:.9rem">✕</span>
+      </div>
+      <div id="searchResults" style="display:none;margin-top:6px;max-height:220px;overflow-y:auto"></div>
+    </div>
+    <div id="alertaSinTrabajar" style="display:none;padding:6px 8px 0"></div>
     <div class="pb"><div class="pt">📊 Resumen</div><div id="statCards"></div></div>
     <div class="pb">
       <div class="pt" style="display:flex;justify-content:space-between;align-items:center">
@@ -1078,6 +1092,7 @@ function toggleM(n,k){
 
 // ── UPDATES ──
 function updateAll(){updateStats();updateProg();updateUrgent();updateActivity();updateHeatmap();updateZones();}
+  renderAlertaSinTrabajar();
 
 function updateStats(){
   const c={'disponible':0,'asignado':0,'completado':0,'urgente':0};
@@ -2438,13 +2453,17 @@ async function gistSaveConfig(){
   }
 }
 
-// Publicación automática silenciosa tras cada cambio
+// Publicación automática con 15s de espera y botón cancelar
 let gistAutoPublishTimer = null;
+let gistCancelBtn = null;
+
 function gistAutoPublish(){
-  if(!gistToken || !gistId) return; // no configurado, no hace nada
-  // Debounce: espera 3s desde el último cambio para no publicar múltiples veces seguidas
+  if(!gistToken || !gistId) return;
   clearTimeout(gistAutoPublishTimer);
+  // Mostrar botón cancelar con cuenta regresiva
+  showGistCancelBtn(15);
   gistAutoPublishTimer = setTimeout(async ()=>{
+    hideGistCancelBtn();
     setGistDot('spin');
     try{
       const r = await fetch(`https://api.github.com/gists/${gistId}`,{
@@ -2455,7 +2474,40 @@ function gistAutoPublish(){
       const data = await r.json();
       if(data.id){ setGistDot('ok'); } else { setGistDot('err'); }
     }catch(e){ setGistDot('err'); }
-  }, 3000);
+  }, 15000);
+}
+
+function cancelGistAutoPublish(){
+  clearTimeout(gistAutoPublishTimer);
+  hideGistCancelBtn();
+  toast('❌ Publicación cancelada');
+}
+
+let _cancelCountdown = null;
+function showGistCancelBtn(secs){
+  let btn = document.getElementById('gistCancelBtn');
+  if(!btn){
+    btn = document.createElement('div');
+    btn.id = 'gistCancelBtn';
+    btn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;background:#1e293b;color:#fff;border-radius:10px;padding:10px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.4);font-family:Arial,sans-serif;font-size:.75rem';
+    btn.innerHTML = '<span id="gistCancelCount">15</span>s — Publicando cambios... <button onclick="cancelGistAutoPublish()" style="background:#dc2626;border:none;color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.72rem;font-weight:700">✕ Cancelar</button>';
+    document.body.appendChild(btn);
+  }
+  btn.style.display = 'flex';
+  let s = secs;
+  clearInterval(_cancelCountdown);
+  _cancelCountdown = setInterval(()=>{
+    s--;
+    const el = document.getElementById('gistCancelCount');
+    if(el) el.textContent = s;
+    if(s <= 0) clearInterval(_cancelCountdown);
+  }, 1000);
+}
+
+function hideGistCancelBtn(){
+  clearInterval(_cancelCountdown);
+  const btn = document.getElementById('gistCancelBtn');
+  if(btn) btn.style.display = 'none';
 }
 
 async function gistPublish(){
@@ -2506,7 +2558,7 @@ async function tryViewerMode(){
   if(!embeddedGistId) return false;
   isViewerMode = true;
   // Ocultar todos los botones que no corresponden a visualizadores
-  ['editBtn','gistBtn','driveBtn','jsonBtn','importBtn','assignBtn','campBtn','excelBtn','ruralBtn','wordBtn'].forEach(id=>{
+  ['editBtn','gistBtn','driveBtn','jsonBtn','importBtn','assignBtn','campBtn','excelBtn','ruralBtn','wordBtn','masBtn'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
@@ -2669,17 +2721,216 @@ function descargarWord(){
   toast('📄 Descargando registro Word...');
 }
 
+
+function toggleMasMenu(){
+  const m = document.getElementById('masMenu');
+  if(!m) return;
+  const visible = m.style.display === 'block';
+  m.style.display = visible ? 'none' : 'block';
+  if(!visible){
+    setTimeout(()=>document.addEventListener('click', function handler(e){
+      if(!document.getElementById('masBtn')?.contains(e.target) && !m.contains(e.target)){
+        m.style.display='none';
+        document.removeEventListener('click', handler);
+      }
+    }), 10);
+  }
+}
+
+
+// ── BÚSQUEDA RÁPIDA ──
+function searchTerritories(q){
+  const box = document.getElementById('searchResults');
+  const clear = document.getElementById('searchClear');
+  q = q.trim().toLowerCase();
+  if(!q){ box.style.display='none'; clear.style.display='none'; return; }
+  clear.style.display='block';
+  const results = [];
+  for(let n=1;n<=33;n++){
+    const t = DB[n]||{};
+    const enc = (t.encargado||'').toLowerCase();
+    const mz = (t.manzana||'').toLowerCase();
+    const num = String(n);
+    if(num.includes(q) || enc.includes(q) || mz.includes(q)){
+      results.push(n);
+    }
+  }
+  // También buscar en rurales
+  const rurales = (RURAL||[]).filter(r=>
+    r.nombre.toLowerCase().includes(q) || r.enc.toLowerCase().includes(q)
+  );
+  if(!results.length && !rurales.length){
+    box.innerHTML = '<div style="font-size:.68rem;color:var(--gray);padding:6px">Sin resultados</div>';
+    box.style.display='block'; return;
+  }
+  const estadoColor = {disponible:'#64748b',asignado:'#ea580c',completado:'#1d4ed8',urgente:'#dc2626'};
+  box.innerHTML = results.map(n=>{
+    const t = DB[n]||{};
+    const color = estadoColor[t.estado]||'#64748b';
+    return `<div onclick="selectT(${n});clearSearch()" style="padding:7px 10px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:3px;border:1.5px solid var(--border)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+      <div style="width:24px;height:24px;border-radius:50%;background:${color};color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${n}</div>
+      <div style="min-width:0">
+        <div style="font-size:.72rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.encargado||'Sin encargado'}</div>
+        <div style="font-size:.62rem;color:var(--gray)">${t.manzana?'Mz '+t.manzana+' · ':''}<span style="color:${color}">${t.estado||'disponible'}</span></div>
+      </div>
+    </div>`;
+  }).join('') +
+  rurales.map(r=>`<div style="padding:7px 10px;border-radius:7px;display:flex;align-items:center;gap:8px;margin-bottom:3px;border:1.5px solid var(--border)">
+    <div style="font-size:1rem;flex-shrink:0">🌿</div>
+    <div style="min-width:0">
+      <div style="font-size:.72rem;font-weight:600">${r.nombre}</div>
+      <div style="font-size:.62rem;color:var(--gray)">${r.enc} · ${r.comp?'✅ Completado':'🟠 Asignado'}</div>
+    </div>
+  </div>`).join('');
+  box.style.display='block';
+}
+
+function clearSearch(){
+  document.getElementById('searchBox').value='';
+  document.getElementById('searchResults').style.display='none';
+  document.getElementById('searchClear').style.display='none';
+}
+
+
+// ── HISTORIAL PUBLICADORES ──
+function openPubModal(){
+  renderPubList();
+  document.getElementById('pubModal').style.display='block';
+}
+function closePubModal(){
+  document.getElementById('pubModal').style.display='none';
+}
+function renderPubList(){
+  const filtroEnc = (document.getElementById('pubFiltroEnc')?.value||'').toLowerCase().trim();
+  const filtroAnio = document.getElementById('pubFiltroAnio')?.value||'';
+  // Recopilar historial de todos los territorios
+  const encMap = {};
+  for(let n=1;n<=33;n++){
+    const t = DB[n]||{};
+    (t.historial||[]).forEach(h=>{
+      if(!h.enc) return;
+      if(filtroAnio && !h.fecha?.startsWith(filtroAnio)) return;
+      if(!encMap[h.enc]) encMap[h.enc]=[];
+      encMap[h.enc].push({n, fecha:h.fecha, fechaAsig:h.fechaAsig||'', tipo:h.tipo||'completo'});
+    });
+    // Asignación activa
+    if(t.estado==='asignado' && t.encargado){
+      if(!filtroAnio || (t.fechaAsig||'').startsWith(filtroAnio)){
+        if(!encMap[t.encargado]) encMap[t.encargado]=[];
+        const yaEsta = encMap[t.encargado].some(e=>e.n===n && e.fechaAsig===t.fechaAsig && !e.fecha);
+        if(!yaEsta) encMap[t.encargado].push({n, fecha:'', fechaAsig:t.fechaAsig||'', tipo:'activo'});
+      }
+    }
+  }
+  // Rurales
+  (RURAL||[]).forEach(r=>{
+    if(!r.enc) return;
+    if(filtroAnio && !r.asig?.startsWith(filtroAnio)) return;
+    if(!encMap[r.enc]) encMap[r.enc]=[];
+    encMap[r.enc].push({n:'🌿', nombre:r.nombre, fecha:r.comp||'', fechaAsig:r.asig||'', tipo:r.comp?'completo':'activo'});
+  });
+
+  const sorted = Object.entries(encMap)
+    .filter(([enc])=>!filtroEnc||enc.toLowerCase().includes(filtroEnc))
+    .sort((a,b)=>b[1].length-a[1].length);
+
+  const el = document.getElementById('pubList');
+  if(!sorted.length){ el.innerHTML='<div style="text-align:center;padding:20px;font-size:.72rem;color:var(--gray)">Sin resultados</div>'; return; }
+
+  const fmtD = d=>d?d.split('-').reverse().join('-'):'—';
+
+  el.innerHTML = sorted.map(([enc,entries])=>{
+    const completados = entries.filter(e=>e.tipo==='completo').length;
+    const activos = entries.filter(e=>e.tipo==='activo').length;
+    return `<div style="border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
+      <div style="padding:10px 13px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div>
+          <div style="font-size:.78rem;font-weight:700">${enc}</div>
+          <div style="font-size:.62rem;color:var(--gray);margin-top:2px">
+            ${completados?`✅ ${completados} completado${completados>1?'s':''}`:''} 
+            ${activos?`🟠 ${activos} activo${activos>1?'s':''}`:''} 
+            · ${entries.length} total
+          </div>
+        </div>
+        <span style="color:var(--gray);font-size:.8rem">▼</span>
+      </div>
+      <div style="display:none;padding:8px 13px">
+        ${entries.sort((a,b)=>(b.fecha||b.fechaAsig).localeCompare(a.fecha||a.fechaAsig)).map(e=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:.68rem">
+            <div style="width:22px;height:22px;border-radius:50%;background:${e.tipo==='activo'?'#ea580c':'#1d4ed8'};color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${e.n}</div>
+            <div style="flex:1">${e.nombre||('Territorio '+e.n)}</div>
+            <div style="color:var(--gray)">${fmtD(e.fechaAsig)}</div>
+            <div style="color:var(--gray)">${e.fecha?'→ '+fmtD(e.fecha):''}</div>
+            <div style="font-size:.6rem;padding:2px 6px;border-radius:8px;background:${e.tipo==='activo'?'rgba(234,88,12,.12)':'rgba(29,78,216,.12)'};color:${e.tipo==='activo'?'#ea580c':'#1d4ed8'}">${e.tipo==='activo'?'Activo':'✅'}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ALERTA TERRITORIOS SIN TRABAJAR ──
+const SEMANAS_ALERTA = 8; // umbral configurable
+
+function getTerSinTrabajar(){
+  const hoy = new Date();
+  const resultado = [];
+  for(let n=1;n<=33;n++){
+    const t = DB[n]||{};
+    const hist = t.historial||[];
+    const ultimaFecha = [...hist].filter(h=>h.fecha).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
+    if(!ultimaFecha) continue; // nunca trabajado, no alertar (no hay datos)
+    const ultima = new Date(ultimaFecha.fecha);
+    const semanas = Math.floor((hoy - ultima) / (7*24*60*60*1000));
+    if(semanas >= SEMANAS_ALERTA && t.estado !== 'asignado'){
+      resultado.push({n, semanas, ultima: ultimaFecha.fecha});
+    }
+  }
+  return resultado.sort((a,b)=>b.semanas-a.semanas);
+}
+
+function renderAlertaSinTrabajar(){
+  const lista = getTerSinTrabajar();
+  const el = document.getElementById('alertaSinTrabajar');
+  if(!el) return;
+  if(!lista.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  const fmtD = d=>d?d.split('-').reverse().join('-'):'—';
+  el.innerHTML = `
+    <div style="background:rgba(234,88,12,.08);border:1.5px solid rgba(234,88,12,.3);border-radius:10px;padding:10px 13px;margin-bottom:8px">
+      <div style="font-size:.68rem;font-weight:700;color:#ea580c;margin-bottom:6px">⚠️ ${lista.length} territorio${lista.length>1?'s':''} sin trabajar hace +${SEMANAS_ALERTA} semanas</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${lista.map(({n,semanas})=>`
+          <div onclick="selectT(${n})" title="${semanas} semanas sin trabajar" style="cursor:pointer;background:rgba(234,88,12,.15);border:1.5px solid rgba(234,88,12,.4);color:#ea580c;border-radius:8px;padding:3px 9px;font-size:.68rem;font-weight:700">
+            T${n} <span style="font-weight:400;font-size:.6rem">${semanas}sem</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 // ── INIT ──
-(()=>{
+(async ()=>{
   const s=document.getElementById('mn');
   for(let i=1;i<=33;i++){const o=document.createElement('option');o.value=i;o.textContent='Territorio '+i;s.appendChild(o);}
   initZoom();initMapPan();renderPins();updateAll();renderCampSidebar();
   window.addEventListener('resize',resetZoom);
-  // Cargar config Gist si existe
+  // Cargar config Gist
   gistLoadConfig();
-  if(gistToken && gistId) setGistDot('ok');
-  // Intentar modo visualizador
-  tryViewerMode();
+  // Modo visualizador
+  const isViewer = await tryViewerMode();
+  // Si es editor y tiene Gist configurado, cargar desde Gist como fuente principal
+  if(!isViewer && gistToken && gistId){
+    setGistDot('spin');
+    try{
+      await gistLoadRemote(gistId);
+      setGistDot('ok');
+      toast('☁️ Datos cargados desde Gist');
+    }catch(e){
+      setGistDot('err');
+      // Si falla, usar datos locales (ya cargados al inicio)
+    }
+  } else if(gistToken && gistId){
+    setGistDot('ok');
+  }
 })();
 
 </script>
@@ -2715,5 +2966,28 @@ function descargarWord(){
     </div>
   </div>
 </div>
+
+<!-- ══ MODAL PUBLICADORES ══ -->
+<div id="pubModal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);overflow-y:auto;padding:16px" onclick="if(event.target===this)closePubModal()">
+  <div style="max-width:560px;margin:0 auto;background:var(--card);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+    <div style="padding:14px 18px;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:.95rem;font-weight:800;color:#fff">👥 Historial de Publicadores</div>
+      <button onclick="closePubModal()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+    </div>
+    <div style="padding:14px">
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+        <input id="pubFiltroEnc" oninput="renderPubList()" placeholder="Filtrar por publicador..." style="flex:1;min-width:140px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:.72rem;outline:none"/>
+        <select id="pubFiltroAnio" onchange="renderPubList()" style="padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:.72rem;outline:none">
+          <option value="">Todos los años</option>
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+      </div>
+      <div id="pubList"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
