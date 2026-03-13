@@ -1,0 +1,42 @@
+name: Generar Registro Word
+
+on:
+  schedule:
+    # Ejecutar cada 10 minutos para detectar cambios en el Gist
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # También permite ejecutar manualmente
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install docx
+
+      - name: Descargar datos del Gist
+        run: |
+          curl -s "https://gist.githubusercontent.com/raw/ad9e09915749d0ec91880c335b8fb643/territorios_los_muermos.json" \
+            -o datos.json
+          echo "Datos descargados:"
+          wc -c datos.json
+
+      - name: Generar documento Word
+        run: node scripts/generar_registro.js
+
+      - name: Subir Word al repositorio
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add registro_2026.docx
+          git diff --cached --quiet || git commit -m "📄 Actualizar registro Word [$(date '+%d-%m-%Y %H:%M')]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
