@@ -73,11 +73,8 @@ tbody tr:nth-child(even){background:var(--alt);}
 tbody tr:hover{background:#b6e8c3;}
 tbody td{padding:11px 14px;text-align:center;font-size:.88rem;color:var(--td);border-right:1px solid var(--row-border);border-bottom:1px solid var(--row-border);vertical-align:middle;line-height:1.45;}
 tbody td:last-child{border-right:none;}
-td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;min-width:130px;vertical-align:middle;text-align:center;}
-.dia-weather{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%;}
-.dia-name{line-height:1.3;text-align:center;}
-.dia-name br{display:none;}
-.dia-name br::after{content:' ';}
+td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;text-align:center;vertical-align:middle;}
+td.clima-col{background:linear-gradient(180deg,var(--gl),#daf4e4) !important;text-align:center;vertical-align:middle;padding:4px 6px !important;border-right:1px solid var(--row-border);}
 .weather-badge{display:inline-flex;align-items:center;gap:3px;font-size:.65rem;font-weight:700;font-family:'Lato',sans-serif;padding:2px 7px;border-radius:20px;white-space:nowrap;letter-spacing:.2px;}
 .weather-badge.rain-high{background:rgba(59,130,246,.18);color:#1d4ed8;border:1px solid rgba(59,130,246,.35);}
 .weather-badge.rain-mid{background:rgba(148,163,184,.15);color:#475569;border:1px solid rgba(148,163,184,.3);}
@@ -345,6 +342,7 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
     <thead>
       <tr>
         <th>Día</th>
+        <th id="thClima">Clima</th>
         <th>Hora</th>
         <th>Encargado</th>
         <th>Lugar de Reunión</th>
@@ -769,14 +767,7 @@ function getRows(){
   return trs.map(tr=>{
     const diaEl=tr.querySelector('[data-f="dia"]');
     if(diaEl){
-      // Leer solo .dia-name si existe (excluye el badge de clima), si no leer todo
-      const diaName=diaEl.querySelector('.dia-name');
-      const src=diaName||diaEl;
-      lastDia=src.innerHTML
-        .replace(/<br\s*\/?>/gi,'\n')
-        .replace(/&nbsp;/g,' ')
-        .replace(/<[^>]+>/g,'')
-        .trim();
+      lastDia=diaEl.innerText.trim();
     }
     return{
       dia:diaEl?lastDia:'',
@@ -814,12 +805,15 @@ function render(rows){
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr');
     let diaCell='';
+    let climaCell='';
     if(spans[i]>0){
       const diaHtml=r.dia.replace(/\n/g,' ');
       diaCell=`<td class="dia" data-f="dia" rowspan="${spans[i]}" ${ce}>${diaHtml}</td>`;
+      climaCell=`<td class="clima-col" data-clima-dia="${diaHtml.trim()}" rowspan="${spans[i]}"><span class="weather-badge loading">⏳</span></td>`;
     }
     tr.innerHTML=`
       ${diaCell}
+      ${climaCell}
       <td data-f="hora" ${ce}><span class="hora-pill">${r.hora}</span></td>
       <td data-f="enc" ${ce}>${r.enc.replace(/\n/g,'<br>')}</td>
       <td data-f="lugar" ${ce}>${r.lugar}</td>
@@ -961,6 +955,11 @@ async function copiarImagen(){
 }
 
 
+function parseDiaNum(textodia){
+  const m=(textodia||'').match(/\b(\d{1,2})\b/);
+  return m?parseInt(m[1]):NaN;
+}
+
 async function generarCanvas(){
   const t=currentTheme;
   const C={greenDark:t.dark,greenMid:t.mid,greenLight:t.light,greenAlt:t.alt,gold:t.gold,white:'#ffffff',textDark:'#1c1c1e',bgDark:t.bg1,bgMid:t.bg2};
@@ -968,15 +967,12 @@ async function generarCanvas(){
   const titulo=document.getElementById('titulo').innerText.trim();
   const subtitulo=document.getElementById('subtitulo').innerText.trim().toUpperCase();
 
-  // Recopilar clima por día (del DOM)
+  // Recopilar clima por número de día desde celdas clima-col
   const climaDia={};
-  document.querySelectorAll('td.dia').forEach(td=>{
+  document.querySelectorAll('td.clima-col').forEach(td=>{
     const badge=td.querySelector('.weather-badge:not(.loading)');
     if(!badge)return;
-    // Leer número solo desde .dia-name (excluye texto del badge)
-    const diaName=td.querySelector('.dia-name');
-    const textoSolo=(diaName?diaName.innerText:td.innerText).trim();
-    const num=parseInt(textoSolo.split(/\s+/).pop());
+    const num=parseDiaNum(td.dataset.climaDia||'');
     if(!isNaN(num))climaDia[num]=badge.textContent.trim();
   });
 
@@ -1024,10 +1020,10 @@ async function generarCanvas(){
   gbg.addColorStop(0,'transparent');gbg.addColorStop(0.5,C.gold);gbg.addColorStop(1,'transparent');
   ctx.fillStyle=gbg;ctx.fillRect(cardX,y,cardW,goldBarH);y+=goldBarH;
 
-  // Thead — columna día más ancha para que quepa el clima
-  const cols=[0.17,0.09,0.19,0.22,0.33];const colW=cols.map(f=>Math.round(cardW*f));
+  // Thead — 6 columnas: Día, Clima, Hora, Encargado, Lugar, Territorio
+  const cols=[0.13,0.12,0.08,0.18,0.20,0.29];const colW=cols.map(f=>Math.round(cardW*f));
   ctx.save();ctx.fillStyle=C.greenMid;ctx.fillRect(cardX,y,cardW,theadH);ctx.restore();
-  const headers=['Día','Hora','Encargado','Lugar de Reunión','Territorio y Modalidad'];
+  const headers=['Día','Clima','Hora','Encargado','Lugar de Reunión','Territorio y Modalidad'];
   ctx.fillStyle=C.white;ctx.font=F.thead;ctx.textAlign='center';
   let cx=cardX;headers.forEach((h,i)=>{ctx.fillText(h,cx+colW[i]/2,y+26,colW[i]-8);cx+=colW[i];});
   y+=theadH;
@@ -1060,78 +1056,61 @@ async function generarCanvas(){
       drawnDia.add(i);
       const groupRowY=y+gi*rowH;const diaH=spans[i]*rowH;
       const cellCX=cardX+colW[0]/2;const midY=groupRowY+diaH/2;
-      const diaLines=r.dia.split('\n');
-      ctx.save();ctx.beginPath();ctx.rect(cardX+2,groupRowY,colW[0]-5,diaH);ctx.clip();
+      ctx.save();ctx.beginPath();ctx.rect(cardX+2,groupRowY,colW[0]-4,diaH);ctx.clip();
+      ctx.fillStyle=C.greenDark;ctx.textAlign='center';ctx.font=F.dia;
+      ctx.fillText(r.dia,cellCX,midY+6,colW[0]-8);
+      ctx.restore();
 
-      // Extraer número del día — funciona con "Lunes\n16" o "Lunes 16"
-      const numMatch=r.dia.match(/\b(\d{1,2})\b/);
-      const diaNum=numMatch?parseInt(numMatch[1]):NaN;
-      const wText=(!isNaN(diaNum)&&climaDia[diaNum])?climaDia[diaNum]:null;
-
-      // Texto del día: unir todo en una línea "Lunes 16"
-      const textodia=r.dia.replace(/\n/g,' ').trim();
-
-      // Alturas reales de cada elemento
-      const textoH=20;  // altura real de "Lunes 16" con F.dia (~18px)
-      const gap=6;      // espacio entre texto y badge
-      const badgeH=15;  // altura badge clima
-
-      // Altura total del bloque centrado
-      const bloqueH=wText?textoH+gap+badgeH:textoH;
-
-      // Punto de inicio: centrado verticalmente en la celda
-      const startY=midY-bloqueH/2;
-
-      ctx.fillStyle=C.greenDark;ctx.textAlign='center';
-      ctx.font=F.dia;
-      ctx.fillText(textodia,cellCX,startY+textoH,colW[0]-8);
-
-      // Badge clima debajo, bien separado
+      // ── Celda clima ──
+      const num=parseDiaNum(r.dia);
+      const wText=(!isNaN(num)&&climaDia[num])?climaDia[num]:null;
       if(wText){
-        const by=startY+textoH+gap;
-        ctx.font='9.5px sans-serif';
-        const wW=Math.min(ctx.measureText(wText).width+14,colW[0]-8);
-        const wX=cellCX-wW/2,wR=8;
+        const wCX=cardX+colW[0]+colW[1]/2;
+        ctx.save();ctx.beginPath();ctx.rect(cardX+colW[0],groupRowY,colW[1],diaH);ctx.clip();
+        ctx.font='10px sans-serif';
+        const wW=Math.min(ctx.measureText(wText).width+14,colW[1]-6);
+        const wX=wCX-wW/2,wY=midY-8,wH=16,wR=8;
         const isRain=wText.includes('%')&&parseInt(wText.match(/\d+/)?.[0]||'0')>=30;
         ctx.fillStyle=isRain?'rgba(59,130,246,.22)':'rgba(34,197,94,.18)';
         ctx.beginPath();
-        if(ctx.roundRect)ctx.roundRect(wX,by,wW,badgeH,wR);
-        else roundRectFill(ctx,wX,by,wW,badgeH,wR);
+        if(ctx.roundRect)ctx.roundRect(wX,wY,wW,wH,wR);
+        else roundRectFill(ctx,wX,wY,wW,wH,wR);
         ctx.fill();
         ctx.fillStyle=isRain?'#1e40af':'#15803d';
-        ctx.fillText(wText,cellCX,by+badgeH-3,colW[0]-8);
+        ctx.textAlign='center';
+        ctx.fillText(wText,wCX,wY+wH-3,colW[1]-6);
+        ctx.restore();
       }
-      ctx.restore();
     }
 
     if(gi!==undefined){ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]-3,rowY,3,rowH);}
-    ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0],rowY+rowH-1,cardW-colW[0],1);
+    ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0]+colW[1],rowY+rowH-1,cardW-colW[0]-colW[1],1);
 
-    let cx2=cardX+colW[0];
+    let cx2=cardX+colW[0]+colW[1];
     // Hora pill
-    const horaX=cx2+colW[1]/2,horaY=rowY+rowH/2,pillW=76,pillH=26,pillR=13;
+    const horaX=cx2+colW[2]/2,horaY=rowY+rowH/2,pillW=70,pillH=24,pillR=12;
     ctx.save();ctx.fillStyle=C.greenDark;roundRectFill(ctx,horaX-pillW/2,horaY-pillH/2,pillW,pillH,pillR);
     ctx.fillStyle=C.white;ctx.font=F.badge;ctx.textAlign='center';ctx.fillText(r.hora,horaX,horaY+6);ctx.restore();
-    cx2+=colW[1];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    cx2+=colW[2];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
 
     // Encargado
     ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
     const encLines=r.enc.split('\n');
     if(encLines.length>1){
-      ctx.fillText(encLines[0],cx2+colW[2]/2,rowY+rowH/2-8,colW[2]-8);
-      ctx.fillText(encLines[1],cx2+colW[2]/2,rowY+rowH/2+10,colW[2]-8);
-    } else {ctx.fillText(r.enc,cx2+colW[2]/2,rowY+rowH/2+6,colW[2]-8);}
-    cx2+=colW[2];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+      ctx.fillText(encLines[0],cx2+colW[3]/2,rowY+rowH/2-8,colW[3]-8);
+      ctx.fillText(encLines[1],cx2+colW[3]/2,rowY+rowH/2+10,colW[3]-8);
+    } else {ctx.fillText(r.enc,cx2+colW[3]/2,rowY+rowH/2+6,colW[3]-8);}
+    cx2+=colW[3];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
 
     // Lugar
     ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
-    ctx.fillText(r.lugar,cx2+colW[3]/2,rowY+rowH/2+6,colW[3]-8);
-    cx2+=colW[3];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    ctx.fillText(r.lugar,cx2+colW[4]/2,rowY+rowH/2+6,colW[4]-8);
+    cx2+=colW[4];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
 
     // Territorio badge
-    const badgeX=cx2+colW[4]/2,badgeY=rowY+rowH/2;
+    const badgeX=cx2+colW[5]/2,badgeY=rowY+rowH/2;
     ctx.font=F.badge;
-    const bW=Math.min(ctx.measureText(r.ter).width+20,colW[4]-14),bH=26,bR=6;
+    const bW=Math.min(ctx.measureText(r.ter).width+20,colW[5]-14),bH=24,bR=6;
     const bg2=ctx.createLinearGradient(badgeX-bW/2,badgeY,badgeX+bW/2,badgeY);
     bg2.addColorStop(0,C.greenMid);bg2.addColorStop(1,C.greenDark);
     ctx.save();ctx.fillStyle=bg2;roundRectFill(ctx,badgeX-bW/2,badgeY-bH/2,bW,bH,bR);
@@ -1784,33 +1763,22 @@ function diaNumToFecha(diaInnerText,fechas){
 function applyClimaToTable(){
   if(!Object.keys(climaCache).length)return;
   const fechas=parseFechaSubtitulo();if(!fechas.length)return;
-  document.querySelectorAll('td.dia').forEach(td=>{
-    const fecha=diaNumToFecha(td.innerText,fechas);
+  document.querySelectorAll('td.clima-col').forEach(td=>{
+    const textodia=td.dataset.climaDia||'';
+    const num=parseDiaNum(textodia);
+    if(isNaN(num))return;
+    const fecha=fechas.find(f=>parseInt(f.split('-')[2])===num);
     if(!fecha||!climaCache[fecha])return;
     const c=climaCache[fecha];
-    if(td.querySelector('.weather-badge'))return;
-    if(!td.querySelector('.dia-name')){
-      const name=document.createElement('div');name.className='dia-name';name.innerHTML=td.innerHTML;
-      td.innerHTML='';
-      const wrap=document.createElement('div');wrap.className='dia-weather';wrap.appendChild(name);td.appendChild(wrap);
-    }
-    const badge=document.createElement('div');
-    badge.className=`weather-badge ${c.cls}`;
-    badge.title=`Precipitación: ${c.mm}mm`;
-    badge.textContent=c.label;
-    td.querySelector('.dia-weather').appendChild(badge);
+    td.innerHTML=`<div class="weather-badge ${c.cls}" title="Precipitación: ${c.mm}mm">${c.label}</div>`;
   });
 }
 
 async function initClima(){
   const fechas=parseFechaSubtitulo();if(!fechas.length)return;
-  document.querySelectorAll('td.dia').forEach(td=>{
-    if(td.querySelector('.weather-badge'))return;
-    const name=document.createElement('div');name.className='dia-name';name.innerHTML=td.innerHTML;
-    td.innerHTML='';
-    const wrap=document.createElement('div');wrap.className='dia-weather';wrap.appendChild(name);
-    const loading=document.createElement('div');loading.className='weather-badge loading';loading.textContent='⏳ clima…';
-    wrap.appendChild(loading);td.appendChild(wrap);
+  // Mostrar loading en celdas clima
+  document.querySelectorAll('td.clima-col').forEach(td=>{
+    td.innerHTML='<span class="weather-badge loading">⏳</span>';
   });
   await fetchClima(fechas);
   document.querySelectorAll('.weather-badge.loading').forEach(b=>b.remove());
