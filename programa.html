@@ -74,6 +74,15 @@ tbody tr:hover{background:#b6e8c3;}
 tbody td{padding:11px 14px;text-align:center;font-size:.88rem;color:var(--td);border-right:1px solid var(--row-border);border-bottom:1px solid var(--row-border);vertical-align:middle;line-height:1.45;}
 tbody td:last-child{border-right:none;}
 td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;}
+.dia-weather{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.dia-name{line-height:1.2;}
+.weather-badge{display:inline-flex;align-items:center;gap:3px;font-size:.68rem;font-weight:700;font-family:'Lato',sans-serif;padding:2px 7px;border-radius:20px;margin-top:3px;white-space:nowrap;letter-spacing:.2px;}
+.weather-badge.rain-high{background:rgba(59,130,246,.18);color:#1d4ed8;border:1px solid rgba(59,130,246,.35);}
+.weather-badge.rain-mid{background:rgba(148,163,184,.15);color:#475569;border:1px solid rgba(148,163,184,.3);}
+.weather-badge.rain-low{background:rgba(34,197,94,.12);color:#15803d;border:1px solid rgba(34,197,94,.25);}
+.weather-badge.rain-none{background:rgba(251,191,36,.12);color:#92400e;border:1px solid rgba(251,191,36,.25);}
+.weather-badge.loading{background:rgba(156,163,175,.1);color:#9ca3af;border:1px solid rgba(156,163,175,.2);animation:wblink .9s infinite;}
+@keyframes wblink{0%,100%{opacity:.5}50%{opacity:1}}
 .hora-pill{display:inline-block;background:var(--gd);color:var(--w);border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:700;letter-spacing:.5px;pointer-events:none;}
 .badge{display:inline-block;background:linear-gradient(135deg,var(--gm),var(--gd));color:var(--w);border-radius:6px;padding:4px 10px;font-size:.82rem;font-weight:700;line-height:1.4;pointer-events:none;}
 td.act-col{padding:4px;background:#f5fdf7 !important;}
@@ -232,6 +241,7 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   <input type="file" id="inputJSON" accept=".json" style="display:none" onchange="importarJSON(event)"/>
   <button class="btn btn-drive-save" onclick="driveGuardar()">☁️ Guardar en Drive</button>
   <button class="btn btn-drive" onclick="driveCargar()">☁️ Cargar desde Drive</button>
+  <button class="btn" style="background:rgba(56,189,248,.18);color:#38bdf8;border:1px solid rgba(56,189,248,.3)" onclick="climaCache={};initClima()" title="Actualizar pronóstico del tiempo">🌤 Clima</button>
 </div>
 <div class="drive-status" id="driveStatus"></div>
 
@@ -754,6 +764,7 @@ function toggleEdit(){
     const btn=document.getElementById('btnEdit');
     btn.innerHTML='✏️ Editar programa';btn.style.background='';btn.style.color='';
     toast('✅ Edición finalizada');
+    climaCache={};setTimeout(initClima,100);
   }else{
     editing=true;
     document.body.classList.add('editing');
@@ -1398,6 +1409,121 @@ document.getElementById('terrModal').addEventListener('click',e=>{
   if(e.target===document.getElementById('terrModal'))closeTerrModal();
 });
 
+// ── CLIMA (Open-Meteo) ──
+// Coordenadas Los Muermos, Chile
+const CLIMA_LAT=-41.4;
+const CLIMA_LON=-73.47;
+let climaCache={}; // {YYYY-MM-DD: {prob, mm, icon, label, cls}}
+
+function weatherIcon(prob,mm){
+  if(prob>=70)return'🌧️';
+  if(prob>=40)return'🌦️';
+  if(prob>=20||mm>0.5)return'⛅';
+  return'☀️';
+}
+function weatherCls(prob){
+  if(prob>=60)return'rain-high';
+  if(prob>=30)return'rain-mid';
+  if(prob>=10)return'rain-low';
+  return'rain-none';
+}
+function weatherLabel(prob,mm){
+  if(prob>=60)return`${weatherIcon(prob,mm)} ${prob}% lluvia`;
+  if(prob>=30)return`${weatherIcon(prob,mm)} ${prob}%`;
+  if(prob>=10)return`${weatherIcon(prob,mm)} ${prob}%`;
+  return`${weatherIcon(prob,mm)} Despejado`;
+}
+
+async function fetchClima(fechas){
+  if(!fechas.length)return;
+  // No funciona desde file:// por política del browser
+  if(location.protocol==='file:'){
+    document.querySelectorAll('.weather-badge.loading').forEach(b=>{
+      b.className='weather-badge rain-mid';b.textContent='⚠️ Abrir desde web';
+    });
+    console.info('Clima: abre el archivo desde GitHub Pages para ver el pronóstico.');
+    return;
+  }
+  const sorted=[...fechas].sort();
+  const start=sorted[0],end=sorted[sorted.length-1];
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${CLIMA_LAT}&longitude=${CLIMA_LON}&daily=precipitation_sum,precipitation_probability_max&timezone=America%2FSantiago&start_date=${start}&end_date=${end}`;
+    const res=await fetch(url,{mode:'cors'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const days=data.daily?.time||[];
+    const probs=data.daily?.precipitation_probability_max||[];
+    const mms=data.daily?.precipitation_sum||[];
+    days.forEach((d,i)=>{
+      const prob=probs[i]??0;const mm=mms[i]??0;
+      climaCache[d]={prob,mm,icon:weatherIcon(prob,mm),label:weatherLabel(prob,mm),cls:weatherCls(prob)};
+    });
+    applyClimaToTable();
+  }catch(e){
+    console.warn('Clima no disponible:',e.message);
+    document.querySelectorAll('.weather-badge.loading').forEach(b=>{
+      b.className='weather-badge rain-mid';b.textContent='⚠️ Sin conexión';
+    });
+  }
+}
+
+function parseFechaSubtitulo(){
+  const sub=document.getElementById('subtitulo')?.innerText?.trim()||'';
+  const meses={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
+  const m=sub.match(/(\d{1,2})\s+a[l]?\s+(\d{1,2})\s+de\s+(\w+)(?:\s+(\d{4}))?/i);
+  if(!m)return[];
+  const diaIni=parseInt(m[1]),diaFin=parseInt(m[2]);
+  const mes=meses[m[3].toLowerCase()];if(!mes)return[];
+  const anio=m[4]?parseInt(m[4]):new Date().getFullYear();
+  const fechas=[];
+  for(let d=diaIni;d<=diaFin;d++){
+    fechas.push(`${anio}-${String(mes).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+  }
+  return fechas;
+}
+
+function diaNumToFecha(diaInnerText,fechas){
+  const num=parseInt(diaInnerText.trim().split(/\s+/).pop());
+  if(isNaN(num))return null;
+  return fechas.find(f=>parseInt(f.split('-')[2])===num)||null;
+}
+
+function applyClimaToTable(){
+  if(!Object.keys(climaCache).length)return;
+  const fechas=parseFechaSubtitulo();if(!fechas.length)return;
+  document.querySelectorAll('td.dia').forEach(td=>{
+    const fecha=diaNumToFecha(td.innerText,fechas);
+    if(!fecha||!climaCache[fecha])return;
+    const c=climaCache[fecha];
+    if(td.querySelector('.weather-badge'))return;
+    if(!td.querySelector('.dia-name')){
+      const name=document.createElement('div');name.className='dia-name';name.innerHTML=td.innerHTML;
+      td.innerHTML='';
+      const wrap=document.createElement('div');wrap.className='dia-weather';wrap.appendChild(name);td.appendChild(wrap);
+    }
+    const badge=document.createElement('div');
+    badge.className=`weather-badge ${c.cls}`;
+    badge.title=`Precipitación: ${c.mm}mm`;
+    badge.textContent=c.label;
+    td.querySelector('.dia-weather').appendChild(badge);
+  });
+}
+
+async function initClima(){
+  const fechas=parseFechaSubtitulo();if(!fechas.length)return;
+  document.querySelectorAll('td.dia').forEach(td=>{
+    if(td.querySelector('.weather-badge'))return;
+    const name=document.createElement('div');name.className='dia-name';name.innerHTML=td.innerHTML;
+    td.innerHTML='';
+    const wrap=document.createElement('div');wrap.className='dia-weather';wrap.appendChild(name);
+    const loading=document.createElement('div');loading.className='weather-badge loading';loading.textContent='⏳ clima…';
+    wrap.appendChild(loading);td.appendChild(wrap);
+  });
+  await fetchClima(fechas);
+  document.querySelectorAll('.weather-badge.loading').forEach(b=>b.remove());
+  applyClimaToTable();
+}
+
 // ── INIT ──
 buildThemeBar();
 buildFontBar();
@@ -1409,6 +1535,8 @@ document.getElementById('thAct').style.display='none';
 
 (async()=>{
   driveSetStatus('Listo. Usa los botones de Drive para sincronizar.','#888');
+  // Cargar clima automáticamente al iniciar
+  setTimeout(initClima, 300);
 })();
 </script>
 </body>
