@@ -75,7 +75,9 @@ tbody td{padding:11px 14px;text-align:center;font-size:.88rem;color:var(--td);bo
 tbody td:last-child{border-right:none;}
 td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;min-width:130px;vertical-align:middle;text-align:center;}
 .dia-weather{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%;}
-.dia-name{line-height:1.3;text-align:center;white-space:nowrap;}
+.dia-name{line-height:1.3;text-align:center;}
+.dia-name br{display:none;}
+.dia-name br::after{content:' ';}
 .weather-badge{display:inline-flex;align-items:center;gap:3px;font-size:.65rem;font-weight:700;font-family:'Lato',sans-serif;padding:2px 7px;border-radius:20px;white-space:nowrap;letter-spacing:.2px;}
 .weather-badge.rain-high{background:rgba(59,130,246,.18);color:#1d4ed8;border:1px solid rgba(59,130,246,.35);}
 .weather-badge.rain-mid{background:rgba(148,163,184,.15);color:#475569;border:1px solid rgba(148,163,184,.3);}
@@ -770,7 +772,12 @@ function getRows(){
       // Leer solo .dia-name si existe (excluye el badge de clima), si no leer todo
       const diaName=diaEl.querySelector('.dia-name');
       const src=diaName||diaEl;
-      lastDia=src.innerHTML.replace(/<br\s*\/?>/gi,'\n').replace(/&nbsp;/g,' ').replace(/<[^>]+>/g,'').trim();
+      lastDia=src.innerHTML
+        .replace(/<span[^>]*>\n<\/span>/gi,'\n')
+        .replace(/<br\s*\/?>/gi,'\n')
+        .replace(/&nbsp;/g,' ')
+        .replace(/<[^>]+>/g,'')
+        .trim();
     }
     return{
       dia:diaEl?lastDia:'',
@@ -809,7 +816,7 @@ function render(rows){
     const tr=document.createElement('tr');
     let diaCell='';
     if(spans[i]>0){
-      const diaHtml=r.dia.replace(/\n/g,' ');
+      const diaHtml=r.dia.replace(/\n/g,' <span style="display:none">\n</span>');
       diaCell=`<td class="dia" data-f="dia" rowspan="${spans[i]}" ${ce}>${diaHtml}</td>`;
     }
     tr.innerHTML=`
