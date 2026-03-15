@@ -767,7 +767,10 @@ function getRows(){
   return trs.map(tr=>{
     const diaEl=tr.querySelector('[data-f="dia"]');
     if(diaEl){
-      lastDia=diaEl.innerHTML.replace(/<br\s*\/?>/gi,'\n').replace(/&nbsp;/g,' ').replace(/<[^>]+>/g,'').trim();
+      // Leer solo .dia-name si existe (excluye el badge de clima), si no leer todo
+      const diaName=diaEl.querySelector('.dia-name');
+      const src=diaName||diaEl;
+      lastDia=src.innerHTML.replace(/<br\s*\/?>/gi,'\n').replace(/&nbsp;/g,' ').replace(/<[^>]+>/g,'').trim();
     }
     return{
       dia:diaEl?lastDia:'',
@@ -1055,16 +1058,15 @@ async function generarCanvas(){
       const diaNum=parseInt((diaLines[1]||diaLines[0]||'').trim());
       const wText=(!isNaN(diaNum)&&climaDia[diaNum])?climaDia[diaNum]:null;
 
-      // Alturas fijas por elemento
-      const lineaNombre=16; // altura línea nombre (ej: "Lunes")
-      const lineaNum=14;    // altura línea número — pegado al nombre
-      const gap=5;          // espacio entre número y badge
-      const badgeH=15;      // altura badge clima
+      // Alturas reales de cada elemento
+      const textoH=20;  // altura real de "Lunes 16" con F.dia (~18px)
+      const gap=6;      // espacio entre texto y badge
+      const badgeH=15;  // altura badge clima
 
-      // Altura total del bloque según si hay clima o no
-      const bloqueH=wText?lineaNombre+gap+badgeH:lineaNombre;
+      // Altura total del bloque centrado
+      const bloqueH=wText?textoH+gap+badgeH:textoH;
 
-      // Punto de inicio centrado verticalmente
+      // Punto de inicio: centrado verticalmente en la celda
       const startY=midY-bloqueH/2;
 
       ctx.fillStyle=C.greenDark;ctx.textAlign='center';
@@ -1072,11 +1074,11 @@ async function generarCanvas(){
       // Dibujar texto del día: "Lunes 16" o solo "Lunes" en una línea
       const textodia=diaLines.length>1?`${diaLines[0]} ${diaLines[1]}`:diaLines[0];
       ctx.font=F.dia;
-      ctx.fillText(textodia,cellCX,startY+lineaNombre,colW[0]-8);
+      ctx.fillText(textodia,cellCX,startY+textoH,colW[0]-8);
 
       // Badge clima debajo, bien separado
       if(wText){
-        const by=startY+lineaNombre+gap;
+        const by=startY+textoH+gap;
         ctx.font='9.5px sans-serif';
         const wW=Math.min(ctx.measureText(wText).width+14,colW[0]-8);
         const wX=cellCX-wW/2,wR=8;
