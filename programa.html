@@ -75,7 +75,7 @@ tbody td{padding:11px 14px;text-align:center;font-size:.88rem;color:var(--td);bo
 tbody td:last-child{border-right:none;}
 td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;text-align:center;vertical-align:middle;}
 td.clima-col{background:linear-gradient(180deg,var(--gl),#daf4e4) !important;text-align:center;vertical-align:middle;padding:4px 6px !important;border-right:1px solid var(--row-border);}
-.weather-badge{display:inline-flex;align-items:center;gap:3px;font-size:.65rem;font-weight:700;font-family:'Lato',sans-serif;padding:2px 7px;border-radius:20px;white-space:nowrap;letter-spacing:.2px;}
+.weather-badge{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:700;font-family:'Lato',sans-serif;padding:4px 10px;border-radius:20px;white-space:nowrap;letter-spacing:.2px;}
 .weather-badge.rain-high{background:rgba(59,130,246,.18);color:#1d4ed8;border:1px solid rgba(59,130,246,.35);}
 .weather-badge.rain-mid{background:rgba(148,163,184,.15);color:#475569;border:1px solid rgba(148,163,184,.3);}
 .weather-badge.rain-low{background:rgba(34,197,94,.12);color:#15803d;border:1px solid rgba(34,197,94,.25);}
@@ -1070,9 +1070,9 @@ async function generarCanvas(){
       if(wText){
         const wCX=cardX+colW[0]+colW[1]/2;
         ctx.save();ctx.beginPath();ctx.rect(cardX+colW[0],groupRowY,colW[1],diaH);ctx.clip();
-        ctx.font='10px sans-serif';
-        const wW=Math.min(ctx.measureText(wText).width+14,colW[1]-6);
-        const wX=wCX-wW/2,wY=midY-8,wH=16,wR=8;
+        ctx.font='11.5px sans-serif';
+        const wW=Math.min(ctx.measureText(wText).width+16,colW[1]-6);
+        const wX=wCX-wW/2,wY=midY-10,wH=20,wR=10;
         const isRain=wText.includes('%')&&parseInt(wText.match(/\d+/)?.[0]||'0')>=30;
         ctx.fillStyle=isRain?'rgba(59,130,246,.22)':'rgba(34,197,94,.18)';
         ctx.beginPath();
@@ -1081,7 +1081,7 @@ async function generarCanvas(){
         ctx.fill();
         ctx.fillStyle=isRain?'#1e40af':'#15803d';
         ctx.textAlign='center';
-        ctx.fillText(wText,wCX,wY+wH-3,colW[1]-6);
+        ctx.fillText(wText,wCX,wY+wH-4,colW[1]-6);
         ctx.restore();
       }
     }
