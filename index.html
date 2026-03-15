@@ -1019,16 +1019,18 @@ function renderPins(){
   // Detectar territorios sin predicar +60 dias para parpadeo rojo
   // Solo marca territorios que TUVIERON actividad pero la ultima devolucion fue hace >60 dias
   const noWorkSet=new Set();
+  // Parsea fechas en formato YYYY-MM-DD o DD-MM-YYYY
+  const parseF=s=>{if(!s)return NaN;if(/^\d{4}-/.test(s))return new Date(s).getTime();const[a,b,c]=s.split('-');return new Date(`${c}-${b}-${a}`).getTime();};
   try{
     const hoy=Date.now();const UMBRAL=60*24*60*60*1000;
     for(let n=1;n<=33;n++){
       const d=DB[n]||{};const hist=d.historial||[];
       if(hist.length>0){
-        const devs=hist.filter(h=>h.tipo==='devolucion').map(h=>new Date(h.fecha).getTime()).filter(x=>!isNaN(x));
+        const devs=hist.filter(h=>h.tipo==='devolucion').map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
         if(devs.length>0&&hoy-Math.max(...devs)>UMBRAL)noWorkSet.add(n);
-      } else if(d.fechaDev){
-        // Tiene fecha de devolución directa (sin historial detallado)
-        const t=new Date(d.fechaDev).getTime();
+      }
+      if(!noWorkSet.has(n)&&d.fechaDev){
+        const t=parseF(d.fechaDev);
         if(!isNaN(t)&&hoy-t>UMBRAL)noWorkSet.add(n);
       }
     }
@@ -2757,38 +2759,48 @@ function renderSyncTabFiltros(){
 function getAlertData(){
   const urgentes=[], sinPredicar=[], noInformados=[], advertencias=[];
   const HOY = Date.now();
-  const DOS_MESES = 60*24*3600*1000;
-  const SEIS_MESES = 180*24*3600*1000;
-  const DOCE_MESES = 365*24*3600*1000;
+  const UMBRAL_2M = 60*24*3600*1000;
+  const UMBRAL_6M = 180*24*3600*1000;
+  // Parsea fechas DD-MM-YYYY o YYYY-MM-DD
+  const parseF=s=>{
+    if(!s||s==='—')return NaN;
+    if(/^\d{4}-/.test(s))return new Date(s+'T12:00').getTime();
+    const p=s.split('-');
+    if(p.length===3)return new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`).getTime();
+    return new Date(s).getTime();
+  };
   for(let n=1;n<=33;n++){
     const d=DB[n]||{};
     const st=gs(n);
-    // Urgentes (gs() ya detecta +12m asignado)
+    const hist=(d.historial||[]);
+    // Urgentes (+12m asignado)
     if(st==='urgente'){
-      const dias=d.fechaAsig?Math.round((HOY-new Date(d.fechaAsig+'T12:00'))/86400000):null;
+      const dias=d.fechaAsig?Math.round((HOY-parseF(d.fechaAsig))/86400000):null;
       urgentes.push({n,enc:d.encargado||'Sin encargado',dias,fecha:d.fechaAsig||'—'});
     }
-    // Sin predicar +2 meses: última fecha de devolución hace más de 60 días
-    const hist=(d.historial||[]);
-    const ultimaDev = hist.length ? hist[hist.length-1].fecha : null;
-    if(ultimaDev){
-      const diasDesdeUltimaDev = Math.round((HOY-new Date(ultimaDev+'T12:00'))/86400000);
-      if(diasDesdeUltimaDev >= 60 && st !== 'urgente'){
-        sinPredicar.push({n, enc:d.encargado||'—', dias:diasDesdeUltimaDev, fecha:ultimaDev, st});
-      }
-    } else if(!ultimaDev && !d.fechaAsig){
-      // Nunca trabajado
-      sinPredicar.push({n, enc:'—', dias:null, fecha:'Sin historial', st});
+    // Obtener la fecha más reciente de devolución (historial o fechaDev directa)
+    const devsHist=hist.filter(h=>h.tipo==='devolucion').map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
+    const fechaDevDirecta=parseF(d.fechaDev);
+    const todasDevs=[...devsHist,...(isNaN(fechaDevDirecta)?[]:[fechaDevDirecta])];
+    const ultimaDevTs=todasDevs.length?Math.max(...todasDevs):null;
+    const ultimaDevStr=ultimaDevTs?new Date(ultimaDevTs).toLocaleDateString('es-CL'):null;
+    // Sin predicar +2 meses: tuvo actividad pero última devolución fue hace >60 días
+    if(ultimaDevTs!==null && st!=='urgente'){
+      const dias=Math.round((HOY-ultimaDevTs)/86400000);
+      if(dias>=60) sinPredicar.push({n,enc:d.encargado||'—',dias,fecha:ultimaDevStr,st});
     }
-    // No informados: asignados sin ninguna devolución registrada
-    if(st==='asignado' && hist.length===0){
-      const diasAsig = d.fechaAsig ? Math.round((HOY-new Date(d.fechaAsig+'T12:00'))/86400000) : null;
-      noInformados.push({n, enc:d.encargado||'—', dias:diasAsig, fecha:d.fechaAsig||'—'});
+    // No informados: territorio ASIGNADO con encargado pero sin ninguna devolución registrada
+    // (ni en historial ni en fechaDev) — no ha enviado informe
+    if(st==='asignado' && d.encargado && todasDevs.length===0){
+      const tAsig=parseF(d.fechaAsig);
+      const dias=!isNaN(tAsig)?Math.round((HOY-tAsig)/86400000):null;
+      noInformados.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'—'});
     }
-    // Advertencia +6 meses asignado (que no sea ya urgente)
+    // Advertencia +6 meses asignado
     if(st==='asignado'){
-      const dias=d.fechaAsig?Math.round((HOY-new Date(d.fechaAsig+'T12:00'))/86400000):0;
-      if(dias>=180) advertencias.push({n,enc:d.encargado||'—',dias});
+      const tAsig=parseF(d.fechaAsig);
+      const dias=!isNaN(tAsig)?Math.round((HOY-tAsig)/86400000):0;
+      if(dias>=180) advertencias.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'—'});
     }
   }
   return {urgentes, sinPredicar, noInformados, advertencias};
