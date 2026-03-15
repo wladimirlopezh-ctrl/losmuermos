@@ -1017,6 +1017,7 @@ function renderPins(){
   g.innerHTML='';
   const cnt={'disponible':0,'asignado':0,'completado':0,'urgente':0};
   // Detectar territorios sin predicar +60 dias para parpadeo rojo
+  // Solo marca territorios que TUVIERON actividad pero la ultima devolucion fue hace >60 dias
   const noWorkSet=new Set();
   try{
     const hoy=Date.now();const UMBRAL=60*24*60*60*1000;
@@ -1024,9 +1025,12 @@ function renderPins(){
       const d=DB[n]||{};const hist=d.historial||[];
       if(hist.length>0){
         const devs=hist.filter(h=>h.tipo==='devolucion').map(h=>new Date(h.fecha).getTime()).filter(x=>!isNaN(x));
-        if(devs.length>0){if(hoy-Math.max(...devs)>UMBRAL)noWorkSet.add(n);}
-        else{const fa=hist.map(h=>new Date(h.fecha).getTime()).filter(x=>!isNaN(x));if(fa.length>0&&hoy-Math.min(...fa)>UMBRAL)noWorkSet.add(n);}
-      } else if(!d.encargado){noWorkSet.add(n);}
+        if(devs.length>0&&hoy-Math.max(...devs)>UMBRAL)noWorkSet.add(n);
+      } else if(d.fechaDev){
+        // Tiene fecha de devolución directa (sin historial detallado)
+        const t=new Date(d.fechaDev).getTime();
+        if(!isNaN(t)&&hoy-t>UMBRAL)noWorkSet.add(n);
+      }
     }
   }catch(e){}
 
