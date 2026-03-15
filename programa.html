@@ -967,7 +967,10 @@ async function generarCanvas(){
   document.querySelectorAll('td.dia').forEach(td=>{
     const badge=td.querySelector('.weather-badge:not(.loading)');
     if(!badge)return;
-    const num=parseInt(td.innerText.trim().split(/\s+/).pop());
+    // Leer número solo desde .dia-name (excluye texto del badge)
+    const diaName=td.querySelector('.dia-name');
+    const textoSolo=(diaName?diaName.innerText:td.innerText).trim();
+    const num=parseInt(textoSolo.split(/\s+/).pop());
     if(!isNaN(num))climaDia[num]=badge.textContent.trim();
   });
 
