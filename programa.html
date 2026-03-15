@@ -522,7 +522,14 @@ async function driveGuardar(){
   gdEnsureToken(async()=>{
     driveSetStatus('⏳ Guardando programa...','#e0c34a');
     try{
-      const data={titulo:document.getElementById('titulo').innerText,subtitulo:document.getElementById('subtitulo').innerText,rows:getRows()};
+      const data={
+        titulo:document.getElementById('titulo').innerText,
+        subtitulo:document.getElementById('subtitulo').innerText,
+        rows:getRows(),
+        temaId:currentTheme.id,
+        temaCustom:currentTheme.id==='custom'?currentTheme:null,
+        fuenteId:currentFont.id
+      };
       await gdSaveFile(GD_FILE_PROG,JSON.stringify(data,null,2));
       saveLocal();
       driveSetStatus(`✅ Guardado en Drive — ${new Date().toLocaleTimeString()}`,'#81c995');
@@ -541,6 +548,7 @@ async function driveCargar(){
       if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
       if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
       render(data.rows);
+      restoreEstilo(data);
       saveLocal();
       driveSetStatus(`✅ Cargado — ${new Date().toLocaleTimeString()}`,'#81c995');
       toast('✅ Programa cargado desde Drive');
@@ -880,10 +888,38 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // ── JSON Export/Import ──
 function saveLocal(){
   try{
-    const data={titulo:document.getElementById('titulo').innerText,subtitulo:document.getElementById('subtitulo').innerText,rows:getRows()};
+    const data={
+      titulo:document.getElementById('titulo').innerText,
+      subtitulo:document.getElementById('subtitulo').innerText,
+      rows:getRows(),
+      temaId:currentTheme.id,
+      temaCustom:currentTheme.id==='custom'?currentTheme:null,
+      fuenteId:currentFont.id
+    };
     localStorage.setItem('progDB',JSON.stringify(data));
   }catch(e){}
 }
+function restoreEstilo(data){
+  // Restaurar tema
+  if(data.temaId){
+    const t=data.temaId==='custom'&&data.temaCustom
+      ?data.temaCustom
+      :THEMES.find(t=>t.id===data.temaId);
+    if(t)applyTheme(t,false);
+  }
+  // Restaurar fuente
+  if(data.fuenteId){
+    const f=FONTS.find(f=>f.id===data.fuenteId);
+    if(f){
+      currentFont=f;
+      document.body.style.fontFamily=`'${f.body}',sans-serif`;
+      document.querySelectorAll('h1,.card-title,thead th,th').forEach(el=>el.style.fontFamily=`'${f.display}',serif`);
+      document.querySelectorAll('.btn,.btn-sm,input,label').forEach(el=>el.style.fontFamily=`'${f.body}',sans-serif`);
+      document.querySelectorAll('.font-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===f.id));
+    }
+  }
+}
+
 function loadLocal(){
   try{
     const raw=localStorage.getItem('progDB');
@@ -893,6 +929,7 @@ function loadLocal(){
     if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
     if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
     render(data.rows);
+    restoreEstilo(data);
     return true;
   }catch(e){return false;}
 }
@@ -916,6 +953,7 @@ function importarJSON(event){
       if(data.titulo)document.getElementById('titulo').innerText=data.titulo;
       if(data.subtitulo)document.getElementById('subtitulo').innerText=data.subtitulo;
       render(data.rows);
+      restoreEstilo(data);
       saveLocal();
       toast('✅ Datos cargados correctamente');
     }catch(err){toast('❌ Archivo inválido');}
