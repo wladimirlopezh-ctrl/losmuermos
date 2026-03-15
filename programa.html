@@ -279,7 +279,7 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   .weather-badge{font-size:.58rem !important;padding:1px 5px !important;}
   tbody tr:nth-child(odd){background:#fff !important;}
   tbody tr:nth-child(even){background:var(--alt) !important;}
-  @page{margin:10mm;size:A4 landscape;}
+  @page{margin:8mm;size:A4 portrait;}
 }
 
 /* ── Theme bar ── */
@@ -371,8 +371,8 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 <!-- MODAL: Nueva semana -->
 <div id="semanaModal">
   <div class="semana-box">
-    <h3>📅 Nueva semana vacía</h3>
-    <p class="semana-sub">Se generarán los 7 días (lunes a domingo) en blanco para completar.</p>
+    <h3>📅 Nueva semana</h3>
+    <p class="semana-sub">Copia la estructura actual (horarios y lugares), limpia encargados y territorios. Lunes y Miércoles siempre quedan con "Predicación en las calles".</p>
     <div class="semana-date-row">
       <label>Lunes</label>
       <input type="date" id="semanaFecha"/>
@@ -983,7 +983,7 @@ async function generarCanvas(){
 
   // Ajustar rowH dinámicamente según cantidad de filas y clima
   const hasClima=Object.keys(climaDia).length>0;
-  const rowH=hasClima?60:52;
+  const rowH=hasClima?68:54;
 
   const cardH=headerH+goldBarH+theadH+rows.length*rowH;
 
@@ -1011,8 +1011,8 @@ async function generarCanvas(){
   gbg.addColorStop(0,'transparent');gbg.addColorStop(0.5,C.gold);gbg.addColorStop(1,'transparent');
   ctx.fillStyle=gbg;ctx.fillRect(cardX,y,cardW,goldBarH);y+=goldBarH;
 
-  // Thead
-  const cols=[0.13,0.09,0.20,0.24,0.34];const colW=cols.map(f=>Math.round(cardW*f));
+  // Thead — columna día más ancha para que quepa el clima
+  const cols=[0.17,0.09,0.19,0.22,0.33];const colW=cols.map(f=>Math.round(cardW*f));
   ctx.save();ctx.fillStyle=C.greenMid;ctx.fillRect(cardX,y,cardW,theadH);ctx.restore();
   const headers=['Día','Hora','Encargado','Lugar de Reunión','Territorio y Modalidad'];
   ctx.fillStyle=C.white;ctx.font=F.thead;ctx.textAlign='center';
@@ -1041,39 +1041,52 @@ async function generarCanvas(){
   const drawnDia=new Set();
   rows.forEach((r,i)=>{
     const rowY=y+i*rowH;const gi=groupStart[i];
-    // Celda día (con clima)
+
+    // ── Celda día ──
     if(r.dia&&!drawnDia.has(i)){
       drawnDia.add(i);
       const groupRowY=y+gi*rowH;const diaH=spans[i]*rowH;
       const cellCX=cardX+colW[0]/2;const midY=groupRowY+diaH/2;
       const diaLines=r.dia.split('\n');
       ctx.save();ctx.beginPath();ctx.rect(cardX+2,groupRowY,colW[0]-5,diaH);ctx.clip();
-      ctx.fillStyle=C.greenDark;ctx.textAlign='center';
+
       // Extraer número del día para buscar clima
       const diaNum=parseInt((diaLines[1]||diaLines[0]||'').trim());
       const wText=(!isNaN(diaNum)&&climaDia[diaNum])?climaDia[diaNum]:null;
-      const offsetY=wText?-10:0;
+
+      // Posición vertical: si hay clima, subimos el texto del día
+      const climaH=wText?18:0;
+      const textBlock=diaLines.length>1?28:16; // alto aprox del bloque nombre+número
+      const totalH=textBlock+climaH+(wText?4:0);
+      const startY=midY-totalH/2;
+
+      ctx.fillStyle=C.greenDark;ctx.textAlign='center';
       if(diaLines.length>1){
-        ctx.font=F.dia;ctx.fillText(diaLines[0],cellCX,midY-10+offsetY,colW[0]-12);
-        ctx.font='bold 17px sans-serif';ctx.fillText(diaLines[1],cellCX,midY+10+offsetY,colW[0]-12);
+        ctx.font=F.dia;ctx.fillText(diaLines[0],cellCX,startY+13,colW[0]-10);
+        ctx.font='bold 16px sans-serif';ctx.fillText(diaLines[1],cellCX,startY+28,colW[0]-10);
       } else {
-        ctx.font=F.dia;ctx.fillText(r.dia,cellCX,midY+offsetY,colW[0]-12);
+        ctx.font=F.dia;ctx.fillText(r.dia,cellCX,startY+16,colW[0]-10);
       }
-      // Badge clima
+
+      // Badge clima debajo del número, dentro de la misma celda
       if(wText){
-        ctx.font='11px sans-serif';
-        const wW=Math.min(ctx.measureText(wText).width+14,colW[0]-10);
-        const wX=cellCX-wW/2,wY=midY+24+offsetY,wH=17,wR=8;
-        // Color badge según contenido
+        const badgeY=startY+textBlock+8;
+        ctx.font='10px sans-serif';
+        const wW=Math.min(ctx.measureText(wText).width+16,colW[0]-8);
+        const wX=cellCX-wW/2,wH=16,wR=8;
         const isRain=wText.includes('%')&&parseInt(wText.match(/\d+/)?.[0]||'0')>=30;
-        ctx.fillStyle=isRain?'rgba(59,130,246,.2)':'rgba(34,197,94,.15)';
-        ctx.beginPath();ctx.roundRect?ctx.roundRect(wX,wY,wW,wH,wR):roundRectFill(ctx,wX,wY,wW,wH,wR);
+        ctx.fillStyle=isRain?'rgba(59,130,246,.22)':'rgba(34,197,94,.18)';
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(wX,badgeY,wW,wH,wR);
+        else roundRectFill(ctx,wX,badgeY,wW,wH,wR);
         ctx.fill();
-        ctx.fillStyle=isRain?'#1d4ed8':'#15803d';
-        ctx.textAlign='center';ctx.fillText(wText,cellCX,wY+12,colW[0]-10);
+        ctx.fillStyle=isRain?'#1e40af':'#15803d';
+        ctx.textAlign='center';
+        ctx.fillText(wText,cellCX,badgeY+11,colW[0]-8);
       }
       ctx.restore();
     }
+
     if(gi!==undefined){ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]-3,rowY,3,rowH);}
     ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0],rowY+rowH-1,cardW-colW[0],1);
 
@@ -1280,10 +1293,45 @@ function generarSemana(){
   const mesStr=lunes.getMonth()===domingo.getMonth()?mesIni:`${mesIni} / ${MESES_ES[domingo.getMonth()]}`;
   document.getElementById('subtitulo').innerText=`${dIni} al ${dFin} de ${mesStr}`;
 
-  const newRows=[];
+  // Mapa nombre día → nueva fecha "Lunes\nDD"
+  const diaFechaMap={};
   DIAS_SEMANA.forEach((nombre,i)=>{
     const fecha=new Date(lunes);fecha.setDate(lunes.getDate()+i);
-    newRows.push({dia:`${nombre}\n${String(fecha.getDate()).padStart(2,'0')}`,hora:'',enc:'',lugar:'',ter:''});
+    diaFechaMap[nombre.toLowerCase()]=`${nombre}\n${String(fecha.getDate()).padStart(2,'0')}`;
+  });
+
+  // Territorios fijos por día (siempre en PRIMERA fila del día)
+  const FIJOS={
+    'lunes':'Predicación en las calles',
+    'miércoles':'Predicación en las calles'
+  };
+
+  const rows=getRows();
+  let lastDiaKey='';
+  let firstOfDay=false;
+
+  const newRows=rows.map(r=>{
+    const tieneDia=r.dia&&r.dia.trim()!=='';
+    if(tieneDia){
+      // Extraer nombre del día (primera línea)
+      const partes=r.dia.replace(/<br\s*\/?>/gi,'\n').split('\n');
+      lastDiaKey=(partes[0]||'').trim().toLowerCase();
+      firstOfDay=true;
+    } else {
+      firstOfDay=false;
+    }
+
+    const nuevoDia=tieneDia?(diaFechaMap[lastDiaKey]||r.dia):'';
+    // Aplicar territorio fijo solo en la primera fila del día
+    const terFijo=(firstOfDay&&FIJOS[lastDiaKey])||'';
+
+    return{
+      dia:nuevoDia,
+      hora:r.hora,
+      enc:'',
+      lugar:r.lugar,
+      ter:terFijo
+    };
   });
 
   render(newRows);saveLocal();closeSemanaModal();
@@ -1644,26 +1692,40 @@ function weatherLabel(prob,mm){
 
 async function fetchClima(fechas){
   if(!fechas.length)return;
-  // No funciona desde file:// por política del browser
   if(location.protocol==='file:'){
     document.querySelectorAll('.weather-badge.loading').forEach(b=>{
       b.className='weather-badge rain-mid';b.textContent='⚠️ Abrir desde web';
     });
-    console.info('Clima: abre el archivo desde GitHub Pages para ver el pronóstico.');
     return;
   }
   const sorted=[...fechas].sort();
   const start=sorted[0],end=sorted[sorted.length-1];
   try{
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${CLIMA_LAT}&longitude=${CLIMA_LON}&daily=precipitation_sum,precipitation_probability_max&timezone=America%2FSantiago&start_date=${start}&end_date=${end}`;
+    // Pedimos datos HORARIOS para evaluar clima a las 10:00 y 18:00 específicamente
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${CLIMA_LAT}&longitude=${CLIMA_LON}`
+      +`&hourly=precipitation_probability,precipitation&timezone=America%2FSantiago`
+      +`&start_date=${start}&end_date=${end}`;
     const res=await fetch(url,{mode:'cors'});
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
-    const days=data.daily?.time||[];
-    const probs=data.daily?.precipitation_probability_max||[];
-    const mms=data.daily?.precipitation_sum||[];
-    days.forEach((d,i)=>{
-      const prob=probs[i]??0;const mm=mms[i]??0;
+    const times=data.hourly?.time||[];
+    const probs=data.hourly?.precipitation_probability||[];
+    const mms=data.hourly?.precipitation||[];
+
+    // Agrupar por fecha, quedándonos con el MAX de prob entre 10:00 y 18:00
+    const byDate={};
+    times.forEach((t,i)=>{
+      const [dateStr,timeStr]=t.split('T');
+      const hour=parseInt(timeStr);
+      // Solo considerar horarios de predicación: 10:00 y 18:00
+      if(hour!==10&&hour!==18)return;
+      if(!byDate[dateStr])byDate[dateStr]={prob:0,mm:0};
+      byDate[dateStr].prob=Math.max(byDate[dateStr].prob,probs[i]??0);
+      byDate[dateStr].mm+=mms[i]??0;
+    });
+
+    Object.entries(byDate).forEach(([d,v])=>{
+      const prob=Math.round(v.prob);const mm=Math.round(v.mm*10)/10;
       climaCache[d]={prob,mm,icon:weatherIcon(prob,mm),label:weatherLabel(prob,mm),cls:weatherCls(prob)};
     });
     applyClimaToTable();
