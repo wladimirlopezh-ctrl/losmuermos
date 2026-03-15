@@ -231,6 +231,21 @@ body.dark .dash-act-row{border-bottom-color:#22263a;}
 .zrh{display:flex;justify-content:space-between;font-size:.66rem;margin-bottom:2px;}
 .zrn{font-weight:600;} .zrc{color:var(--gray);}
 
+/* AVANCES MODE PINS */
+.cav4{fill:#16a34a;stroke:#14532d;stroke-width:1.5;}
+.cav3{fill:#4ade80;stroke:#16a34a;stroke-width:1.5;}
+.cav2{fill:#86efac;stroke:#4ade80;stroke-width:1.5;}
+.cav1{fill:#bbf7d0;stroke:#86efac;stroke-width:1.5;opacity:.85;}
+.cav0{fill:#e2e8f0;stroke:#94a3b8;stroke-width:1.5;opacity:.6;}
+.cav0 text{fill:#64748b!important;}
+.cav1 text{fill:#15803d!important;}
+.cav2 text{fill:#15803d!important;}
+/* AVANCES leyenda */
+.av-leg{display:flex;flex-direction:column;gap:3px;margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0;}
+body.dark .av-leg{background:#13161f;border-color:#22263a;}
+.av-leg-row{display:flex;align-items:center;gap:5px;font-size:.63rem;color:var(--dark);}
+.av-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
 /* PINS */
 .tpin{cursor:pointer;}
 .tpin.draggable{cursor:grab !important;}
@@ -250,6 +265,24 @@ body.dark .dash-act-row{border-bottom-color:#22263a;}
 
 .tip{position:fixed;background:#1e2235;color:#fff;border-radius:8px;padding:7px 11px;font-size:.7rem;z-index:9999;pointer-events:none;box-shadow:0 5px 18px rgba(0,0,0,.3);min-width:125px;}
 .tip b{font-family:'Playfair Display',serif;font-size:.88rem;display:block;margin-bottom:2px;}
+
+/* VIEWER PANEL */
+.viewer-panel{display:none;position:fixed;top:0;right:0;bottom:0;z-index:700;width:300px;background:var(--w);border-left:1px solid var(--bdr);box-shadow:-4px 0 20px rgba(0,0,0,.12);flex-direction:column;overflow:hidden;}
+.viewer-panel.open{display:flex;}
+body.dark .viewer-panel{background:var(--w);}
+.vp-head{padding:12px 14px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;}
+.vp-head-title{font-family:'Playfair Display',serif;font-size:.92rem;font-weight:700;}
+.vp-body{flex:1;overflow-y:auto;padding:10px;}
+.vp-body::-webkit-scrollbar{width:3px;}
+.vp-body::-webkit-scrollbar-thumb{background:#dde;border-radius:2px;}
+.vp-sect{margin-bottom:12px;padding:10px 12px;border-radius:9px;border:1.5px solid var(--bdr);background:var(--bg);}
+body.dark .vp-sect{background:#13161f;}
+.vp-sect-title{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:8px;}
+.vr-opt-active,.btn-filt-active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important;}
+
+/* VIEWER ALERT BANNER */
+.viewer-alert-banner{display:none;position:fixed;top:50px;left:0;right:0;z-index:600;background:linear-gradient(90deg,#7f1d1d,#991b1b);color:#fff;padding:7px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;}
+.viewer-alert-banner.show{display:flex;}
 
 .mover{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);align-items:center;justify-content:center;}
 .mover.open{display:flex;}
@@ -488,6 +521,7 @@ body.dark .top-enc-bar{background:#22263a;}
     <button class="btn" id="importBtn" onclick="document.getElementById('ii').click()">📂 Importar</button>
     <button class="btn" id="ruralBtn" onclick="openRuralModal()" title="Territorios Rurales">🌿 Rurales</button>
     <button class="btn pri" id="assignBtn" onclick="openAssign()">➕ Asignar</button>
+    <button class="btn" id="viewerPanelBtn" onclick="openViewerPanel()" title="Panel visualizador" style="display:none;background:#1e40af;color:#fff;border-color:#1e40af">👁 Panel</button>
     <input type="file" id="ii" accept=".json" style="display:none" onchange="importData(event)"/>
   </div>
 </header>
@@ -518,7 +552,15 @@ body.dark .top-enc-bar{background:#22263a;}
       <button class="fb" onclick="setFilter('disponible',this)"><div class="fd" style="background:#22c55e"></div>Disponibles<span class="fn" id="fdi">—</span></button>
       <button class="fb" onclick="setFilter('asignado',this)"><div class="fd" style="background:#f59e0b"></div>Asignados<span class="fn" id="fas">—</span></button>
       <button class="fb" onclick="setFilter('completado',this)"><div class="fd" style="background:#6366f1"></div>Completados<span class="fn" id="fco">—</span></button>
-      <button class="fb" onclick="setFilter('urgente',this)"><div class="fd" style="background:#ef4444"></div>Sin trabajar +1 año<span class="fn" id="fur">—</span></button>
+      <button class="fb" onclick="setFilter('urgente',this)"><div class="fd" style="background:#ef4444"></div>Sin trabajar +2m<span class="fn" id="fur">—</span></button>
+      <button class="fb" id="fbAvances" onclick="setFilter('avances',this)"><div class="fd" style="background:linear-gradient(135deg,#16a34a,#86efac)"></div>Vista avances</button>
+    </div>
+    <div class="av-leg" id="avLeg" style="display:none">
+      <div class="av-leg-row"><div class="av-dot" style="background:#16a34a"></div>Completado este mes</div>
+      <div class="av-leg-row"><div class="av-dot" style="background:#4ade80"></div>Trabajado (1-2m atrás)</div>
+      <div class="av-leg-row"><div class="av-dot" style="background:#86efac"></div>Trabajado (3-4m atrás)</div>
+      <div class="av-leg-row"><div class="av-dot" style="background:#bbf7d0"></div>Hace 5-6 meses</div>
+      <div class="av-leg-row"><div class="av-dot" style="background:#e2e8f0"></div>Sin registro reciente</div>
     </div>
     <div class="pb"><div class="pt">📈 Progreso</div><div id="progBars"></div></div>
     <div class="pb"><div class="pt">⚠️ Requieren atención</div><div id="urgList"></div></div>
@@ -648,6 +690,30 @@ body.dark .top-enc-bar{background:#22263a;}
   </div>
 </div>
 
+<!-- BANNER ALERTAS URGENTES (visualizador) -->
+<div class="viewer-alert-banner" id="viewerAlertBanner">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:1.1rem">🚨</span>
+    <div>
+      <div style="font-weight:700" id="viewerAlertCount">Territorios urgentes</div>
+      <div style="font-size:.62rem;opacity:.85">Asignados hace más de 12 meses</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button onclick="openViewerPanel()" style="padding:4px 10px;border-radius:6px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">Ver →</button>
+    <button onclick="document.getElementById('viewerAlertBanner').style.display='none'" style="background:transparent;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:1rem;padding:0 4px">✕</button>
+  </div>
+</div>
+
+<!-- PANEL VISUALIZADOR -->
+<div class="viewer-panel" id="viewerPanel">
+  <div class="vp-head">
+    <div class="vp-head-title">👁 Panel visualizador</div>
+    <button onclick="closeViewerPanel()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center">✕</button>
+  </div>
+  <div class="vp-body" id="viewerPanelContent"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="drive-modal" id="driveModal" onclick="if(event.target===this)closeDriveModal()">
   <div class="drive-box">
@@ -735,7 +801,7 @@ body.dark .top-enc-bar{background:#22263a;}
 </div>
 
 <!-- BANNER MODO SOLO LECTURA -->
-<div id="viewerBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:900;background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;padding:8px 16px;display:none;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;">
+<div id="viewerBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:900;background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;padding:8px 16px;align-items:center;justify-content:space-between;gap:10px;font-size:.72rem;">
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:1rem">👁</span>
     <div>
@@ -743,7 +809,12 @@ body.dark .top-enc-bar{background:#22263a;}
       <div style="font-size:.62rem;opacity:.8" id="viewerLastUpdate">Datos cargados automáticamente</div>
     </div>
   </div>
-  <button onclick="gistRefresh()" style="padding:5px 12px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">🔄 Actualizar</button>
+  <div style="display:flex;gap:6px;align-items:center">
+    <span style="font-size:.6rem;opacity:.7" id="viewerRefreshLbl">Cada 5 min</span>
+    <button onclick="viewerRefreshData(false)" style="padding:5px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">🔄 Actualizar</button>
+    <button onclick="openViewerPanel()" style="padding:5px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">⚙️ Panel</button>
+    <button onclick="toggleDash()" style="padding:5px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.68rem;font-weight:600">📊 Informe</button>
+  </div>
 </div>
 
 <script>
@@ -945,16 +1016,34 @@ function initMapPan(){
 // ── RENDER PINS ──
 const SCLS={'disponible':'cdis','asignado':'casig','completado':'ccomp','urgente':'curg'};
 
+function getAvanceClass(n){
+  const w=(DB[n]||{}).monthsWorked||{};
+  const now=new Date();
+  // Buscar el mes más reciente trabajado en los últimos 6 meses
+  for(let i=0;i<=6;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(w[k]){
+      if(i===0)return'cav4'; // este mes
+      if(i<=2)return'cav3';  // 1-2 meses atrás
+      if(i<=4)return'cav2';  // 3-4 meses atrás
+      return'cav1';           // 5-6 meses atrás
+    }
+  }
+  return'cav0'; // sin registro reciente
+}
+
 function renderPins(){
   const g=document.getElementById('pg');
   g.innerHTML='';
   const cnt={'disponible':0,'asignado':0,'completado':0,'urgente':0};
+  const isAvances=filt==='avances';
 
   for(let n=1;n<=33;n++){
     const st=gs(n);
     const [cx,cy]=PIN_POS[n]||DEFAULT_POS[n];
     cnt[st]++;
-    const show=filt==='all'||filt===st;
+    const show=isAvances||filt==='all'||filt===st;
     const isSel=sel===n;
     const r=invR(13,isSel), sw=invSW(isSel), fs=invFS(n);
 
@@ -972,19 +1061,19 @@ function renderPins(){
 
     const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
     circle.setAttribute('cx',cx);circle.setAttribute('cy',cy);circle.setAttribute('r',r);
-    circle.setAttribute('class','tc '+(show?SCLS[st]:'chid'));
+    const pinClass=isAvances?getAvanceClass(n):(show?SCLS[st]:'chid');
+    circle.setAttribute('class','tc '+pinClass);
     circle.setAttribute('stroke-width',sw);
     grp.appendChild(circle);
 
     const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
     txt.setAttribute('x',cx);txt.setAttribute('y',cy);
     txt.style.fontSize=fs+'px';
-    txt.style.opacity=show?'1':'0.4';
+    txt.style.opacity='1';
     txt.textContent=n;
     grp.appendChild(txt);
 
     if(editMode){
-      // Drag events
       grp.addEventListener('mousedown',e=>startPinDrag(e,n));
       grp.addEventListener('touchstart',e=>startPinDrag(e,n),{passive:false});
     } else {
@@ -1007,8 +1096,17 @@ function showTip(n,e){
   if(editMode)return;
   hideTip();
   const d=DB[n]||{};
+  const w=d.monthsWorked||{};
+  const mCount=Object.keys(w).length;
+  let avInfo='';
+  if(filt==='avances'){
+    // Buscar último mes trabajado
+    const now=new Date();let lastMes='—';
+    for(let i=0;i<=12;i++){const dd=new Date(now.getFullYear(),now.getMonth()-i,1);const k=`${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}`;if(w[k]){const mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];lastMes=`${mn[dd.getMonth()]} ${dd.getFullYear()}`;break;}}
+    avInfo=`<div style="opacity:.7;margin-top:2px;font-size:.65rem">Último mes: ${lastMes}</div><div style="opacity:.55;font-size:.62rem">${mCount} mes${mCount!==1?'es':''} en total</div>`;
+  }
   const t=document.createElement('div');t.className='tip';
-  t.innerHTML=`<b>Territorio ${n}</b><div style="opacity:.8">${SL[gs(n)]}</div><div style="opacity:.5;margin-top:1px">${MZ[n].length} manzana${MZ[n].length>1?'s':''}</div>${d.encargado?`<div style="opacity:.6;margin-top:1px">👤 ${d.encargado}</div>`:''}`;
+  t.innerHTML=`<b>Territorio ${n}</b><div style="opacity:.8">${SL[gs(n)]}</div><div style="opacity:.5;margin-top:1px">${MZ[n].length} manzana${MZ[n].length>1?'s':''}</div>${d.encargado?`<div style="opacity:.6;margin-top:1px">👤 ${d.encargado}</div>`:''}${avInfo}`;
   document.body.appendChild(t);tip=t;
   const mv=ev=>{tip&&(tip.style.left=(ev.clientX+14)+'px',tip.style.top=(ev.clientY-55)+'px');};
   t._mv=mv;document.addEventListener('mousemove',mv);
@@ -1087,7 +1185,7 @@ function updateStats(){
     <div class="sc G"><div class="sn">${c.disponible}</div><div><div class="sl">Disponibles</div><div class="ss">para asignar</div></div></div>
     <div class="sc A"><div class="sn">${c.asignado}</div><div><div class="sl">Asignados</div><div class="ss">en proceso</div></div></div>
     <div class="sc I"><div class="sn">${c.completado}</div><div><div class="sl">Completados</div><div class="ss">este ciclo</div></div></div>
-    <div class="sc R"><div class="sn">${c.urgente}</div><div><div class="sl">Sin trabajar</div><div class="ss">+12 meses</div></div></div>`;
+    <div class="sc R"><div class="sn">${c.urgente}</div><div><div class="sl">Sin trabajar</div><div class="ss">+2 meses</div></div></div>`;
 }
 function updateProg(){
   const s=Array.from({length:33},(_,i)=>gs(i+1));
@@ -1134,7 +1232,7 @@ function updateZones(){
   document.getElementById('zonaGrid').innerHTML=h;
 }
 
-function setFilter(f,btn){filt=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderPins();}
+function setFilter(f,btn){filt=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');const avLeg=document.getElementById('avLeg');if(avLeg)avLeg.style.display=f==='avances'?'flex':'none';renderPins();}
 
 function openAssign(preN){
   const n=preN??sel;
@@ -2499,39 +2597,76 @@ function copyGistUrl(){
 }
 
 // ── MODO VISUALIZADOR ──
-// El HTML puede incluir el ID del gist como atributo en el body para modo visualizador
-// O se detecta si no hay datos locales y hay un gistId embebido
+let viewerAutoRefreshInterval = null;
+let viewerAutoRefreshMinutes = 5;
+let viewerGistId = null;
+let viewerJsonUrl = null;
+
 async function tryViewerMode(){
   const embeddedGistId = document.body.getAttribute('data-gist-id');
   if(!embeddedGistId) return false;
+  viewerGistId = embeddedGistId;
+  activateViewerMode();
+  await gistLoadRemote(embeddedGistId);
+  startViewerAutoRefresh();
+  return true;
+}
+
+function activateViewerMode(){
   isViewerMode = true;
-  // Ocultar todos los botones que no corresponden a visualizadores
   ['editBtn','gistBtn','driveBtn','jsonBtn','importBtn','assignBtn','campBtn','excelBtn','ruralBtn','wordBtn'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
-  // También ocultar el panel izquierdo con botón "Gestionar" campañas
   document.querySelectorAll('#campSidebar .btn').forEach(b=>b.style.display='none');
-  // Mostrar banner
   document.getElementById('viewerBanner').style.display = 'flex';
-  // Cargar datos
-  await gistLoadRemote(embeddedGistId);
-  return true;
+  // Mostrar botones modo visualizador en header
+  const vbtns = document.getElementById('viewerHeaderBtns');
+  if(vbtns) vbtns.style.display = 'flex';
+  const vpBtn = document.getElementById('viewerPanelBtn');
+  if(vpBtn) vpBtn.style.display = '';
+}
+
+function startViewerAutoRefresh(){
+  if(viewerAutoRefreshInterval) clearInterval(viewerAutoRefreshInterval);
+  viewerAutoRefreshInterval = setInterval(()=>{
+    viewerRefreshData(true);
+  }, viewerAutoRefreshMinutes * 60 * 1000);
+  updateRefreshLabel();
+}
+
+function stopViewerAutoRefresh(){
+  if(viewerAutoRefreshInterval){ clearInterval(viewerAutoRefreshInterval); viewerAutoRefreshInterval=null; }
+}
+
+function setViewerRefreshInterval(mins){
+  viewerAutoRefreshMinutes = mins;
+  document.querySelectorAll('.vr-opt').forEach(b=>b.classList.toggle('active', parseInt(b.dataset.mins)===mins));
+  startViewerAutoRefresh();
+  toast('🔄 Actualización automática: cada '+mins+' min');
+}
+
+function updateRefreshLabel(){
+  const lbl = document.getElementById('viewerRefreshLbl');
+  if(lbl) lbl.textContent = 'Cada '+viewerAutoRefreshMinutes+' min';
+}
+
+async function viewerRefreshData(silent=false){
+  if(!silent) toast('🔄 Actualizando datos...');
+  if(viewerGistId) await gistLoadRemote(viewerGistId);
+  else if(viewerJsonUrl) await loadFromUrl(viewerJsonUrl, silent);
 }
 
 async function gistLoadRemote(id){
   const upd = document.getElementById('viewerLastUpdate');
   if(upd) upd.textContent = 'Cargando datos...';
   try{
-    // Intentar primero con URL raw con cache-bust (no consume rate limit)
     const rawUrl = `https://gist.githubusercontent.com/raw/${id}/${GIST_FILE_NAME}?t=${Date.now()}`;
     let fileContent = null;
     try{
       const rRaw = await fetch(rawUrl, {cache:'no-store'});
       if(rRaw.ok) fileContent = await rRaw.text();
     }catch(e2){}
-
-    // Si raw falla, usar API de GitHub
     if(!fileContent){
       const apiUrl = `https://api.github.com/gists/${id}?t=${Date.now()}`;
       const r = await fetch(apiUrl, { cache:'no-store', headers:{ Accept:'application/vnd.github.v3+json' } });
@@ -2543,11 +2678,11 @@ async function gistLoadRemote(id){
       fileContent = gist.files?.[GIST_FILE_NAME]?.content;
       if(!fileContent) throw new Error('Archivo no encontrado en el Gist');
     }
-
     const data = JSON.parse(fileContent);
     applyBackup(data);
     const now = new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
     if(upd) upd.textContent = `Actualizado: ${now}`;
+    checkViewerAlerts();
     toast('✅ Datos actualizados');
   }catch(e){
     if(upd) upd.textContent = '⚠️ Error: '+e.message;
@@ -2555,9 +2690,187 @@ async function gistLoadRemote(id){
   }
 }
 
+async function loadFromUrl(url, silent=false){
+  const upd = document.getElementById('viewerLastUpdate');
+  try{
+    const r = await fetch(url+'?t='+Date.now(), {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    applyBackup(data);
+    const now = new Date().toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    if(upd) upd.textContent = `Actualizado: ${now}`;
+    checkViewerAlerts();
+    if(!silent) toast('✅ Datos actualizados');
+  }catch(e){
+    if(upd) upd.textContent = '⚠️ Error: '+e.message;
+    if(!silent) toast('⚠️ Error: '+e.message);
+  }
+}
+
 async function gistRefresh(){
-  const embeddedGistId = document.body.getAttribute('data-gist-id');
-  if(embeddedGistId) await gistLoadRemote(embeddedGistId);
+  await viewerRefreshData(false);
+}
+
+// ── PANEL VISUALIZADOR ──
+function openViewerPanel(){
+  renderViewerPanel();
+  document.getElementById('viewerPanel').classList.add('open');
+}
+function closeViewerPanel(){ document.getElementById('viewerPanel').classList.remove('open'); }
+
+function renderViewerPanel(){
+  const urgentes = [];
+  const sinTrab = [];
+  for(let n=1;n<=33;n++){
+    const st=gs(n);
+    const d=DB[n]||{};
+    if(st==='urgente') urgentes.push({n, enc:d.encargado||'—', dias: d.fechaAsig?Math.round((Date.now()-new Date(d.fechaAsig+'T12:00'))/86400000):null});
+    if(!d.fechaDev&&!d.fechaAsig) sinTrab.push(n);
+  }
+
+  const cnt={disponible:0,asignado:0,completado:0,urgente:0};
+  for(let i=1;i<=33;i++) cnt[gs(i)]++;
+
+  document.getElementById('viewerPanelContent').innerHTML = `
+    <!-- SECCIÓN: CARGAR DATOS -->
+    <div class="vp-sect">
+      <div class="vp-sect-title">📡 Fuente de datos</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <label style="font-size:.62rem;font-weight:700;color:var(--gray);display:block;margin-bottom:3px">URL Gist de GitHub</label>
+          <div style="display:flex;gap:5px">
+            <input id="vpGistInput" placeholder="ID del Gist (ej: abc123...)" value="${viewerGistId||''}"
+              style="flex:1;padding:5px 8px;border:1.5px solid var(--bdr);border-radius:6px;font-size:.72rem;background:var(--w);color:var(--dark);font-family:'DM Sans',sans-serif"/>
+            <button onclick="vpLoadGist()" class="btn pri" style="padding:4px 10px;font-size:.7rem;flex-shrink:0">Cargar</button>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:.6rem;color:var(--gray)">— o —</div>
+        <div>
+          <label style="font-size:.62rem;font-weight:700;color:var(--gray);display:block;margin-bottom:3px">URL directa del JSON</label>
+          <div style="display:flex;gap:5px">
+            <input id="vpUrlInput" placeholder="https://..." value="${viewerJsonUrl||''}"
+              style="flex:1;padding:5px 8px;border:1.5px solid var(--bdr);border-radius:6px;font-size:.72rem;background:var(--w);color:var(--dark);font-family:'DM Sans',sans-serif"/>
+            <button onclick="vpLoadUrl()" class="btn pri" style="padding:4px 10px;font-size:.7rem;flex-shrink:0">Cargar</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:.62rem;font-weight:700;color:var(--gray);display:block;margin-bottom:3px">Subir archivo JSON</label>
+          <label style="display:block;padding:7px;border:1.5px dashed var(--bdr);border-radius:7px;text-align:center;cursor:pointer;font-size:.7rem;color:var(--gray);background:var(--bg)">
+            📂 Seleccionar archivo…
+            <input type="file" accept=".json" onchange="vpLoadFile(event)" style="display:none"/>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: AUTO-REFRESCO -->
+    <div class="vp-sect">
+      <div class="vp-sect-title">🔄 Actualización automática</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${[1,3,5,10,15].map(m=>`
+          <button class="btn vr-opt${viewerAutoRefreshMinutes===m?' vr-opt-active':''}" data-mins="${m}"
+            onclick="setViewerRefreshInterval(${m})" style="font-size:.68rem;padding:4px 10px">${m} min</button>
+        `).join('')}
+        <button class="btn" onclick="stopViewerAutoRefresh();toast('⏸ Auto-actualización pausada')" style="font-size:.68rem;padding:4px 9px">⏸ Pausar</button>
+      </div>
+      <div style="font-size:.62rem;color:var(--gray);margin-top:5px" id="viewerRefreshLbl2">Intervalo actual: ${viewerAutoRefreshMinutes} min</div>
+    </div>
+
+    <!-- SECCIÓN: FILTROS -->
+    <div class="vp-sect">
+      <div class="vp-sect-title">🔽 Filtrar mapa</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <button class="btn${filt==='all'?' btn-filt-active':''}" onclick="setFilt('all');renderViewerPanel()" style="font-size:.68rem;padding:5px 8px">📍 Todos <span style="font-weight:900">${33}</span></button>
+        <button class="btn${filt==='disponible'?' btn-filt-active':''}" onclick="setFilt('disponible');renderViewerPanel()" style="font-size:.68rem;padding:5px 8px;border-color:rgba(34,197,94,.4);color:#15803d">🟢 Disponibles <b>${cnt.disponible}</b></button>
+        <button class="btn${filt==='asignado'?' btn-filt-active':''}" onclick="setFilt('asignado');renderViewerPanel()" style="font-size:.68rem;padding:5px 8px;border-color:rgba(245,158,11,.4);color:#d97706">🟡 Asignados <b>${cnt.asignado}</b></button>
+        <button class="btn${filt==='completado'?' btn-filt-active':''}" onclick="setFilt('completado');renderViewerPanel()" style="font-size:.68rem;padding:5px 8px;border-color:rgba(99,102,241,.4);color:#4f46e5">✅ Completados <b>${cnt.completado}</b></button>
+        <button class="btn${filt==='urgente'?' btn-filt-active':''}" onclick="setFilt('urgente');renderViewerPanel()" style="font-size:.68rem;padding:5px 8px;border-color:rgba(239,68,68,.4);color:#dc2626;grid-column:1/-1">🔴 Sin trabajar +12m <b>${cnt.urgente}</b></button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: ALERTAS URGENTES -->
+    ${urgentes.length>0?`
+    <div class="vp-sect" style="border-left:3px solid #ef4444">
+      <div class="vp-sect-title" style="color:#dc2626">🚨 Territorios urgentes (${urgentes.length})</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${urgentes.map(u=>`
+          <div style="display:flex;align-items:center;gap:7px;padding:6px 8px;background:rgba(239,68,68,.06);border-radius:7px;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="closeViewerPanel();selectT(${u.n})">
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#dc2626;min-width:24px;text-align:center">${u.n}</div>
+            <div style="flex:1">
+              <div style="font-size:.7rem;font-weight:700;color:var(--dark)">Territorio ${u.n}</div>
+              <div style="font-size:.62rem;color:#dc2626">${u.dias!=null?u.dias+' días asignado':'Sin fecha'} · ${u.enc}</div>
+            </div>
+            <div style="font-size:.58rem;font-weight:700;color:#dc2626;background:rgba(239,68,68,.12);padding:2px 6px;border-radius:4px">URGENTE</div>
+          </div>`).join('')}
+      </div>
+    </div>`:
+    `<div class="vp-sect" style="border-left:3px solid #22c55e">
+      <div class="vp-sect-title" style="color:#15803d">✅ Sin urgencias</div>
+      <div style="font-size:.72rem;color:var(--gray)">No hay territorios con más de 12 meses asignados.</div>
+    </div>`}
+
+    <!-- SECCIÓN: ACCESO RÁPIDO INFORME -->
+    <div class="vp-sect">
+      <div class="vp-sect-title">📊 Informe</div>
+      <button class="btn pri" onclick="closeViewerPanel();toggleDash()" style="width:100%;font-size:.74rem;padding:8px">📋 Ver informe completo</button>
+    </div>
+  `;
+}
+
+function setFilt(f){ filt=f; renderPins(); updateAll(); }
+
+function vpLoadGist(){
+  const id = document.getElementById('vpGistInput').value.trim();
+  if(!id){ toast('⚠️ Ingresa el ID del Gist'); return; }
+  viewerGistId = id;
+  viewerJsonUrl = null;
+  activateViewerMode();
+  gistLoadRemote(id);
+  startViewerAutoRefresh();
+  closeViewerPanel();
+}
+
+function vpLoadUrl(){
+  const url = document.getElementById('vpUrlInput').value.trim();
+  if(!url){ toast('⚠️ Ingresa una URL'); return; }
+  viewerJsonUrl = url;
+  viewerGistId = null;
+  activateViewerMode();
+  loadFromUrl(url);
+  startViewerAutoRefresh();
+  closeViewerPanel();
+}
+
+function vpLoadFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      applyBackup(data);
+      activateViewerMode();
+      checkViewerAlerts();
+      toast('✅ JSON cargado correctamente');
+      closeViewerPanel();
+    }catch(err){ toast('❌ Error al leer el JSON'); }
+  };
+  r.readAsText(file);
+  e.target.value='';
+}
+
+function checkViewerAlerts(){
+  const urgentes = [];
+  for(let n=1;n<=33;n++){
+    if(gs(n)==='urgente') urgentes.push(n);
+  }
+  if(urgentes.length>0){
+    const banner = document.getElementById('viewerAlertBanner');
+    if(banner){
+      banner.style.display='flex';
+      document.getElementById('viewerAlertCount').textContent = urgentes.length+' territorio'+(urgentes.length>1?'s urgentes':' urgente');
+    }
+  }
 }
 
 

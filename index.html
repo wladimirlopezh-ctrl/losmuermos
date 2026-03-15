@@ -548,7 +548,7 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
       <button class="fb" onclick="setFilter('disponible',this)"><div class="fd" style="background:#22c55e"></div>Disponibles<span class="fn" id="fdi">—</span></button>
       <button class="fb" onclick="setFilter('asignado',this)"><div class="fd" style="background:#f59e0b"></div>Asignados<span class="fn" id="fas">—</span></button>
       <button class="fb" onclick="setFilter('completado',this)"><div class="fd" style="background:#6366f1"></div>Completados<span class="fn" id="fco">—</span></button>
-      <button class="fb" onclick="setFilter('urgente',this)"><div class="fd" style="background:#ef4444"></div>Sin trabajar +1 año<span class="fn" id="fur">—</span></button>
+      <button class="fb" onclick="setFilter('urgente',this)"><div class="fd" style="background:#ef4444"></div>Sin trabajar +2m<span class="fn" id="fur">—</span></button>
     </div>
     <div class="pb"><div class="pt">📈 Progreso</div><div id="progBars"></div></div>
     <div class="pb"><div class="pt">⚠️ Requieren atención</div><div id="urgList"></div></div>
@@ -2786,7 +2786,7 @@ function renderSyncTabFiltros(){
       <span>✅ Completados</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${filt==='completado'?'#fff':'#4f46e5'}">${cnt.completado}</span>
     </button>
     <button class="filt-btn f-urg${filt==='urgente'?' active':''}" onclick="applyFilt('urgente');renderSyncPanel()">
-      <span>🔴 Sin trabajar +12m</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${filt==='urgente'?'#fff':'#dc2626'}">${cnt.urgente}</span>
+      <span>🔴 Sin trabajar +2m</span><span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:${filt==='urgente'?'#fff':'#dc2626'}">${cnt.urgente}</span>
     </button>
   </div>
   <div class="sp-sect">
