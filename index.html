@@ -1960,15 +1960,8 @@ function renderInfResumen(){
     if(p.length){mzPendTotal+=p.length;terConPend.push({n,mz:p});}
   }
 
-  const sinTrabArr=[];
-  for(let n=1;n<=33;n++){
-    const d=DB[n]||{};
-    const lastDate=d.fechaDev||d.fechaAsig||null;
-    const dias=lastDate?Math.round((now-new Date(lastDate+'T12:00'))/86400000):null;
-    const st=gs(n);
-    if(st==='urgente'||st==='disponible') sinTrabArr.push({n,dias,st});
-  }
-  sinTrabArr.sort((a,b)=>(b.dias||9999)-(a.dias||9999));
+  // Usar getAlertData para territorios sin predicar +60 dias y no informados
+  const {sinPredicar:sinTrabArr, noInformados:noInfArr} = getAlertData();
 
   const zonaData=Object.entries(ZONES).map(([nombre,ters])=>{
     const trab=ters.filter(n=>{const mw=DB[n]?.monthsWorked||{};return Object.keys(mw).some(k=>k.startsWith(String(anioActual)));}).length;
@@ -2098,22 +2091,41 @@ function renderInfResumen(){
       </div>
     </div>
 
-    <div class="dbc" style="margin-bottom:12px">
-      <div class="dbc-t">🔴 Sin trabajar — más tiempo</div>
+    <div class="dbc" style="margin-bottom:12px;${sinTrabArr.length>0?'border-color:rgba(234,88,12,.35);':''}">
+      <div class="dbc-t">⏱ Sin predicar — más de 2 meses</div>
       ${sinTrabArr.length===0
-        ?'<div style="font-size:.75rem;color:#15803d;font-weight:600;padding:4px 0">✅ Todos los territorios han sido trabajados recientemente</div>'
-        :`<div class="db-grid db-row2" style="gap:6px">
+        ?'<div style="font-size:.75rem;color:#15803d;font-weight:600;padding:4px 0">✅ Todos los territorios tienen actividad reciente</div>'
+        :`<div style="display:flex;flex-direction:column;gap:5px">
           ${sinTrabArr.slice(0,10).map(t=>`
-            <div class="db-ter-row" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
-              <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:${t.st==='urgente'?'#dc2626':'#94a3b8'};min-width:26px;text-align:center">${t.n}</div>
+            <div class="db-ter-row" style="border-color:rgba(234,88,12,.2);background:rgba(234,88,12,.03)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+              <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:#c2410c;min-width:26px;text-align:center">${t.n}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-size:.65rem;font-weight:600;color:var(--dark)">Territorio ${t.n}</div>
-                <div style="font-size:.58rem;color:${t.dias!=null&&t.dias>365?'#dc2626':'var(--gray)'};">${t.dias!=null?t.dias+' días sin trabajar':'Sin historial'}</div>
+                <div style="font-size:.58rem;color:var(--gray)">👤 ${t.enc}</div>
               </div>
-              ${t.st==='urgente'?'<span class="db-urgente-badge">URGENTE</span>':''}
+              <span style="font-size:.56rem;font-weight:700;color:#c2410c;background:rgba(234,88,12,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${t.dias!=null?t.dias+'d':'—'}</span>
             </div>`).join('')}
           </div>
           ${sinTrabArr.length>10?`<div style="font-size:.62rem;color:var(--gray);text-align:center;padding:8px 0">y ${sinTrabArr.length-10} más…</div>`:''}`}
+    </div>
+
+    <div class="dbc" style="margin-bottom:12px;${`noInfArr.length>0?'border-color:rgba(168,85,247,.35);':''`}">
+      <div class="dbc-t">📋 Sin informe — encargados que no han devuelto</div>
+      ${noInfArr.length===0
+        ?'<div style="font-size:.75rem;color:#15803d;font-weight:600;padding:4px 0">✅ Todos los encargados han informado su territorio</div>'
+        :`<div style="display:flex;flex-direction:column;gap:5px">
+          ${noInfArr.slice(0,10).map(t=>`
+            <div class="db-ter-row" style="border-color:rgba(168,85,247,.2);background:rgba(168,85,247,.03)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+              <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:#7c3aed;min-width:26px;text-align:center">${t.n}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:.65rem;font-weight:600;color:var(--dark)">Territorio ${t.n}</div>
+                <div style="font-size:.58rem;color:var(--gray)">👤 ${t.enc}</div>
+                <div style="font-size:.56rem;color:var(--gray)">📅 Asignado: ${t.fecha}</div>
+              </div>
+              <span style="font-size:.56rem;font-weight:700;color:#7c3aed;background:rgba(168,85,247,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${t.dias!=null?t.dias+'d':'—'}</span>
+            </div>`).join('')}
+          </div>
+          ${noInfArr.length>10?`<div style="font-size:.62rem;color:var(--gray);text-align:center;padding:8px 0">y ${noInfArr.length-10} más…</div>`:''}`}
     </div>
 
     <div class="dbc">
