@@ -1281,6 +1281,22 @@ function selectSemOpt(n){
   document.getElementById('sopt2').classList.toggle('sel',n===2);
 }
 
+// Plantilla fija de estructura semanal (horarios + lugares, sin datos personales)
+const PLANTILLA_SEMANAL=[
+  {dia:'__L__', hora:'10:00', lugar:'Salón del Reino',        ter:'Predicación en las calles'},
+  {dia:'',      hora:'18:00', lugar:'Salón del Reino',        ter:''},
+  {dia:'__Ma__',hora:'10:00', lugar:'',                       ter:''},
+  {dia:'',      hora:'18:00', lugar:'',                       ter:''},
+  {dia:'__Mi__',hora:'10:00', lugar:'Salón del Reino',        ter:'Predicación en las calles'},
+  {dia:'__J__', hora:'10:00', lugar:'Salón del Reino',        ter:''},
+  {dia:'__V__', hora:'10:00', lugar:'',                       ter:''},
+  {dia:'',      hora:'18:30', lugar:'Salón del Reino',        ter:''},
+  {dia:'__Sa__',hora:'10:30', lugar:'',                       ter:''},
+  {dia:'',      hora:'10:30', lugar:'',                       ter:''},
+  {dia:'__Do__',hora:'10:30', lugar:'Salón del Reino',        ter:''},
+];
+const PLANTILLA_DIAS={'__L__':0,'__Ma__':1,'__Mi__':2,'__J__':3,'__V__':4,'__Sa__':5,'__Do__':6};
+
 function generarSemana(){
   const fechaStr=document.getElementById('semanaFecha').value;
   if(!fechaStr){toast('⚠️ Selecciona una fecha');return;}
@@ -1293,44 +1309,29 @@ function generarSemana(){
   const mesStr=lunes.getMonth()===domingo.getMonth()?mesIni:`${mesIni} / ${MESES_ES[domingo.getMonth()]}`;
   document.getElementById('subtitulo').innerText=`${dIni} al ${dFin} de ${mesStr}`;
 
-  // Mapa nombre día → nueva fecha "Lunes\nDD"
-  const diaFechaMap={};
-  DIAS_SEMANA.forEach((nombre,i)=>{
-    const fecha=new Date(lunes);fecha.setDate(lunes.getDate()+i);
-    diaFechaMap[nombre.toLowerCase()]=`${nombre}\n${String(fecha.getDate()).padStart(2,'0')}`;
-  });
+  // Intentar copiar lugares de la semana actual si tiene la estructura completa (11 filas)
+  const rowsActuales=getRows();
+  const lugaresActuales={};
+  if(rowsActuales.length===PLANTILLA_SEMANAL.length){
+    rowsActuales.forEach((r,i)=>{ lugaresActuales[i]=r.lugar; });
+  }
 
-  // Territorios fijos por día (siempre en PRIMERA fila del día)
-  const FIJOS={
-    'lunes':'Predicación en las calles',
-    'miércoles':'Predicación en las calles'
-  };
+  const FIJOS={0:'Predicación en las calles', 2:'Predicación en las calles'};
 
-  const rows=getRows();
-  let lastDiaKey='';
-  let firstOfDay=false;
-
-  const newRows=rows.map(r=>{
-    const tieneDia=r.dia&&r.dia.trim()!=='';
-    if(tieneDia){
-      // Extraer nombre del día (primera línea)
-      const partes=r.dia.replace(/<br\s*\/?>/gi,'\n').split('\n');
-      lastDiaKey=(partes[0]||'').trim().toLowerCase();
-      firstOfDay=true;
-    } else {
-      firstOfDay=false;
+  const newRows=PLANTILLA_SEMANAL.map((p,i)=>{
+    let diaStr='';
+    if(p.dia!==''){
+      const offset=PLANTILLA_DIAS[p.dia];
+      const fecha=new Date(lunes);fecha.setDate(lunes.getDate()+offset);
+      diaStr=`${DIAS_SEMANA[offset]}\n${String(fecha.getDate()).padStart(2,'0')}`;
     }
-
-    const nuevoDia=tieneDia?(diaFechaMap[lastDiaKey]||r.dia):'';
-    // Aplicar territorio fijo solo en la primera fila del día
-    const terFijo=(firstOfDay&&FIJOS[lastDiaKey])||'';
-
+    const offset=p.dia!==''?PLANTILLA_DIAS[p.dia]:null;
     return{
-      dia:nuevoDia,
-      hora:r.hora,
+      dia:diaStr,
+      hora:p.hora,
       enc:'',
-      lugar:r.lugar,
-      ter:terFijo
+      lugar:lugaresActuales[i]!==undefined?lugaresActuales[i]:p.lugar,
+      ter:(offset!==null&&FIJOS[offset])?FIJOS[offset]:p.ter
     };
   });
 
