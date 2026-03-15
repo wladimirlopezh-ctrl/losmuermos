@@ -1055,35 +1055,39 @@ async function generarCanvas(){
       const diaNum=parseInt((diaLines[1]||diaLines[0]||'').trim());
       const wText=(!isNaN(diaNum)&&climaDia[diaNum])?climaDia[diaNum]:null;
 
-      // Posición vertical: si hay clima, subimos el texto del día
-      const climaH=wText?18:0;
-      const textBlock=diaLines.length>1?28:16; // alto aprox del bloque nombre+número
-      const totalH=textBlock+climaH+(wText?4:0);
-      const startY=midY-totalH/2;
+      // Alturas fijas por elemento
+      const lineaNombre=16; // altura línea nombre (ej: "Lunes")
+      const lineaNum=14;    // altura línea número — pegado al nombre
+      const gap=5;          // espacio entre número y badge
+      const badgeH=15;      // altura badge clima
+
+      // Altura total del bloque según si hay clima o no
+      const bloqueH=wText?lineaNombre+gap+badgeH:lineaNombre;
+
+      // Punto de inicio centrado verticalmente
+      const startY=midY-bloqueH/2;
 
       ctx.fillStyle=C.greenDark;ctx.textAlign='center';
-      if(diaLines.length>1){
-        ctx.font=F.dia;ctx.fillText(diaLines[0],cellCX,startY+13,colW[0]-10);
-        ctx.font='bold 16px sans-serif';ctx.fillText(diaLines[1],cellCX,startY+28,colW[0]-10);
-      } else {
-        ctx.font=F.dia;ctx.fillText(r.dia,cellCX,startY+16,colW[0]-10);
-      }
 
-      // Badge clima debajo del número, dentro de la misma celda
+      // Dibujar texto del día: "Lunes 16" o solo "Lunes" en una línea
+      const textodia=diaLines.length>1?`${diaLines[0]} ${diaLines[1]}`:diaLines[0];
+      ctx.font=F.dia;
+      ctx.fillText(textodia,cellCX,startY+lineaNombre,colW[0]-8);
+
+      // Badge clima debajo, bien separado
       if(wText){
-        const badgeY=startY+textBlock+8;
-        ctx.font='10px sans-serif';
-        const wW=Math.min(ctx.measureText(wText).width+16,colW[0]-8);
-        const wX=cellCX-wW/2,wH=16,wR=8;
+        const by=startY+lineaNombre+gap;
+        ctx.font='9.5px sans-serif';
+        const wW=Math.min(ctx.measureText(wText).width+14,colW[0]-8);
+        const wX=cellCX-wW/2,wR=8;
         const isRain=wText.includes('%')&&parseInt(wText.match(/\d+/)?.[0]||'0')>=30;
         ctx.fillStyle=isRain?'rgba(59,130,246,.22)':'rgba(34,197,94,.18)';
         ctx.beginPath();
-        if(ctx.roundRect)ctx.roundRect(wX,badgeY,wW,wH,wR);
-        else roundRectFill(ctx,wX,badgeY,wW,wH,wR);
+        if(ctx.roundRect)ctx.roundRect(wX,by,wW,badgeH,wR);
+        else roundRectFill(ctx,wX,by,wW,badgeH,wR);
         ctx.fill();
         ctx.fillStyle=isRain?'#1e40af':'#15803d';
-        ctx.textAlign='center';
-        ctx.fillText(wText,cellCX,badgeY+11,colW[0]-8);
+        ctx.fillText(wText,cellCX,by+badgeH-3,colW[0]-8);
       }
       ctx.restore();
     }
