@@ -546,6 +546,22 @@ function mapFormatToTerrDB(mapDB){
   return entries;
 }
 
+// Extrae territorios rurales de las filas del programa (los que tienen 'Rural' en el campo ter)
+function rowsToRuralFormat(){
+  const rows=getRows();
+  const rurales=[];
+  const today=new Date().toISOString().slice(0,10);
+  rows.forEach(r=>{
+    if(!r.ter||!r.enc)return;
+    if(!r.ter.toLowerCase().includes('rural'))return;
+    const nombre=r.ter.replace(/pred[^:]*rural[^:]*/i,'').replace(':','').trim()||r.ter.trim();
+    const enc=r.enc.split('\n')[0].replace(/Grupos?\s+\d+[^:]*:\s*/i,'').trim();
+    if(!nombre||!enc)return;
+    rurales.push({nombre,enc,asig:today});
+  });
+  return rurales;
+}
+
 async function syncTerrToMapa(){
   gdEnsureToken(async()=>{
     driveSetStatus('⏳ Sincronizando territorios con el mapa...','#e0c34a');
@@ -604,10 +620,24 @@ async function syncTerrToMapa(){
         if(!mapaDB[n].monthsWorked)mapaDB[n].monthsWorked={};
       });
 
+      // Paso 3: incluir territorios rurales detectados en las filas
+      const ruralesNuevos=rowsToRuralFormat();
+      const ruralExistente=Array.isArray(mapaDB._rural)?mapaDB._rural:[];
+      let ruralAgregados=0;
+      ruralesNuevos.forEach(r=>{
+        const yaExiste=ruralExistente.some(x=>x.nombre.toLowerCase()===r.nombre.toLowerCase());
+        if(!yaExiste){
+          ruralExistente.push({id:'r'+Date.now()+'_'+Math.random().toString(36).slice(2,6),nombre:r.nombre,enc:r.enc,asig:r.asig,comp:'',obs:'Importado desde programa de predicación'});
+          ruralAgregados++;
+        }
+      });
+      mapaDB._rural=ruralExistente;
+
       const count=Object.keys(merged).length;
       await gdSaveFile(GD_FILE_TERR,JSON.stringify(mapaDB,null,2));
-      driveSetStatus(`✅ ${count} territorios sincronizados — ${new Date().toLocaleTimeString()}`,'#81c995');
-      toast(`🗺️ ${count} territorios enviados al mapa`);
+      const ruralMsg=ruralAgregados>0?` · ${ruralAgregados} rural${ruralAgregados>1?'es':''} nuevo${ruralAgregados>1?'s':''}` :'';
+      driveSetStatus(`✅ ${count} territorios sincronizados${ruralMsg} — ${new Date().toLocaleTimeString()}`,'#81c995');
+      toast(`🗺️ ${count} territorios enviados al mapa${ruralMsg}`);
     }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al sincronizar');}
   });
 }

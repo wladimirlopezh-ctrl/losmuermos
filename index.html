@@ -95,11 +95,15 @@ header{
 .layout{display:flex;height:calc(100vh - 50px);}
 .layout.edit-mode{height:calc(100vh - 88px);}
 
-.panel{width:218px;flex-shrink:0;background:var(--w);overflow-y:auto;display:flex;flex-direction:column;}
+.panel{width:218px;min-width:160px;max-width:420px;flex-shrink:0;background:var(--w);overflow-y:auto;display:flex;flex-direction:column;position:relative;}
 .panel.L{border-right:1px solid var(--bdr);}
 .panel.R{border-left:1px solid var(--bdr);}
 .panel::-webkit-scrollbar{width:3px;}
 .panel::-webkit-scrollbar-thumb{background:#dde;border-radius:2px;}
+.resize-handle{position:absolute;top:0;bottom:0;width:5px;z-index:20;cursor:col-resize;background:transparent;transition:background .15s;}
+.resize-handle:hover,.resize-handle.dragging{background:rgba(27,67,50,.4);}
+.panel.L .resize-handle{right:-3px;}
+.panel.R .resize-handle{left:-3px;}
 
 .map-area{flex:1;overflow:hidden;background:#d8dde4;position:relative;}
 .map-area.edit-mode{cursor:default !important;}
@@ -243,10 +247,12 @@ body.dark .dash-act-row{border-bottom-color:#22263a;}
 .casig{fill:#f59e0b;stroke:#d97706;stroke-width:1.5;}
 .ccomp{fill:#6366f1;stroke:#4f46e5;stroke-width:1.5;}
 .curg{fill:#ef4444;stroke:#dc2626;stroke-width:1.5;animation:pu 1.8s infinite;}
+.cnowork{fill:#ef4444;stroke:#7f1d1d;stroke-width:2.5;animation:pblink 0.9s infinite;}
 .chid{fill:#cbd5e1;stroke:#94a3b8;stroke-width:1;opacity:.4;}
 /* Edit mode: bright outline, dashed */
 .edit-pin circle.tc{stroke-dasharray:4 2;stroke:#f59e0b;stroke-width:2.5;filter:drop-shadow(0 0 6px #f59e0b);}
 @keyframes pu{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes pblink{0%,100%{fill:#ef4444;stroke:#7f1d1d;filter:drop-shadow(0 0 4px #ef4444);}50%{fill:#ff2020;stroke:#ff0000;filter:drop-shadow(0 0 14px #ff4444);}}
 
 .tip{position:fixed;background:#1e2235;color:#fff;border-radius:8px;padding:7px 11px;font-size:.7rem;z-index:9999;pointer-events:none;box-shadow:0 5px 18px rgba(0,0,0,.3);min-width:125px;}
 .tip b{font-family:'Playfair Display',serif;font-size:.88rem;display:block;margin-bottom:2px;}
@@ -526,7 +532,8 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
 </div>
 
 <div class="layout" id="layout">
-  <div class="panel L">
+  <div class="panel L" id="panelL">
+    <div class="resize-handle" id="resizeL" title="Arrastra para redimensionar"></div>
     <div class="pb"><div class="pt">📊 Resumen</div><div id="statCards"></div></div>
     <div class="pb">
       <div class="pt" style="display:flex;justify-content:space-between;align-items:center">
@@ -563,6 +570,7 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
   </div>
 
   <div class="panel R" id="panelR">
+    <div class="resize-handle" id="resizeR" title="Arrastra para redimensionar"></div>
     <div class="pb" id="detPanel"><div class="pt">📍 Detalle</div><div class="de">👆 Toca un territorio en el mapa</div></div>
     <div class="pb"><div class="pt">🕐 Actividad reciente</div><div id="actList"></div></div>
     <div class="pb">
@@ -1008,6 +1016,19 @@ function renderPins(){
   const g=document.getElementById('pg');
   g.innerHTML='';
   const cnt={'disponible':0,'asignado':0,'completado':0,'urgente':0};
+  // Detectar territorios sin predicar +60 dias para parpadeo rojo
+  const noWorkSet=new Set();
+  try{
+    const hoy=Date.now();const UMBRAL=60*24*60*60*1000;
+    for(let n=1;n<=33;n++){
+      const d=DB[n]||{};const hist=d.historial||[];
+      if(hist.length>0){
+        const devs=hist.filter(h=>h.tipo==='devolucion').map(h=>new Date(h.fecha).getTime()).filter(x=>!isNaN(x));
+        if(devs.length>0){if(hoy-Math.max(...devs)>UMBRAL)noWorkSet.add(n);}
+        else{const fa=hist.map(h=>new Date(h.fecha).getTime()).filter(x=>!isNaN(x));if(fa.length>0&&hoy-Math.min(...fa)>UMBRAL)noWorkSet.add(n);}
+      } else if(!d.encargado){noWorkSet.add(n);}
+    }
+  }catch(e){}
 
   for(let n=1;n<=33;n++){
     const st=gs(n);
@@ -1016,6 +1037,7 @@ function renderPins(){
     const show=filt==='all'||filt===st;
     const isSel=sel===n;
     const r=invR(13,isSel), sw=invSW(isSel), fs=invFS(n);
+    const isNoWork=noWorkSet.has(n)&&st!=='urgente';
 
     const grp=document.createElementNS('http://www.w3.org/2000/svg','g');
     grp.setAttribute('class','tpin'+(isSel?' sel':'')+(editMode?' draggable edit-pin':''));
@@ -1031,7 +1053,7 @@ function renderPins(){
 
     const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
     circle.setAttribute('cx',cx);circle.setAttribute('cy',cy);circle.setAttribute('r',r);
-    circle.setAttribute('class','tc '+(show?SCLS[st]:'chid'));
+    circle.setAttribute('class','tc '+(show?(isNoWork?'cnowork':SCLS[st]):'chid'));
     circle.setAttribute('stroke-width',sw);
     grp.appendChild(circle);
 
@@ -1344,7 +1366,22 @@ function applyBackup(data){
     if(data.pins) PIN_POS=data.pins;
     if(data.rural) RURAL=data.rural;
   } else {
-    DB=data;
+    // Formato plano desde Drive: {1:{...}, 2:{...}, _rural:[...]}
+    // Separar _rural del resto antes de asignar a DB
+    const {_rural, ...mapaPlano} = data;
+    DB=mapaPlano;
+    // Importar rurales nuevos sin borrar los existentes
+    if(Array.isArray(_rural) && _rural.length>0){
+      let nuevosRurales=0;
+      _rural.forEach(r=>{
+        const yaExiste=RURAL.some(x=>x.nombre&&r.nombre&&x.nombre.toLowerCase()===r.nombre.toLowerCase());
+        if(!yaExiste){
+          RURAL.push({id:r.id||('r'+Date.now()+'_'+Math.random().toString(36).slice(2,6)),nombre:r.nombre||'',enc:r.enc||'',asig:r.asig||'',comp:r.comp||'',obs:r.obs||''});
+          nuevosRurales++;
+        }
+      });
+      if(nuevosRurales>0) toast(`🌿 ${nuevosRurales} territorio${nuevosRurales>1?'s rurales':'  rural'} importado${nuevosRurales>1?'s':''} desde el programa`);
+    }
   }
   save();saveCamps();savePins();saveRural();
   renderPins();updateAll();renderCampSidebar();
@@ -2713,56 +2750,97 @@ function renderSyncTabFiltros(){
 }
 
 // ── TAB ALERTAS ──
+function getAlertData(){
+  const urgentes=[], sinPredicar=[], noInformados=[], advertencias=[];
+  const HOY = Date.now();
+  const DOS_MESES = 60*24*3600*1000;
+  const SEIS_MESES = 180*24*3600*1000;
+  const DOCE_MESES = 365*24*3600*1000;
+  for(let n=1;n<=33;n++){
+    const d=DB[n]||{};
+    const st=gs(n);
+    // Urgentes (gs() ya detecta +12m asignado)
+    if(st==='urgente'){
+      const dias=d.fechaAsig?Math.round((HOY-new Date(d.fechaAsig+'T12:00'))/86400000):null;
+      urgentes.push({n,enc:d.encargado||'Sin encargado',dias,fecha:d.fechaAsig||'—'});
+    }
+    // Sin predicar +2 meses: última fecha de devolución hace más de 60 días
+    const hist=(d.historial||[]);
+    const ultimaDev = hist.length ? hist[hist.length-1].fecha : null;
+    if(ultimaDev){
+      const diasDesdeUltimaDev = Math.round((HOY-new Date(ultimaDev+'T12:00'))/86400000);
+      if(diasDesdeUltimaDev >= 60 && st !== 'urgente'){
+        sinPredicar.push({n, enc:d.encargado||'—', dias:diasDesdeUltimaDev, fecha:ultimaDev, st});
+      }
+    } else if(!ultimaDev && !d.fechaAsig){
+      // Nunca trabajado
+      sinPredicar.push({n, enc:'—', dias:null, fecha:'Sin historial', st});
+    }
+    // No informados: asignados sin ninguna devolución registrada
+    if(st==='asignado' && hist.length===0){
+      const diasAsig = d.fechaAsig ? Math.round((HOY-new Date(d.fechaAsig+'T12:00'))/86400000) : null;
+      noInformados.push({n, enc:d.encargado||'—', dias:diasAsig, fecha:d.fechaAsig||'—'});
+    }
+    // Advertencia +6 meses asignado (que no sea ya urgente)
+    if(st==='asignado'){
+      const dias=d.fechaAsig?Math.round((HOY-new Date(d.fechaAsig+'T12:00'))/86400000):0;
+      if(dias>=180) advertencias.push({n,enc:d.encargado||'—',dias});
+    }
+  }
+  return {urgentes, sinPredicar, noInformados, advertencias};
+}
+
 function renderSyncTabAlertas(){
-  const urgentes = [];
-  for(let n=1;n<=33;n++){
-    if(gs(n)==='urgente'){
-      const d = DB[n]||{};
-      const dias = d.fechaAsig ? Math.round((Date.now()-new Date(d.fechaAsig+'T12:00'))/86400000) : null;
-      urgentes.push({n, enc:d.encargado||'Sin encargado', dias, fechaAsig:d.fechaAsig||'—'});
-    }
-  }
-  // También territorios asignados que llevan más de 6 meses (advertencia)
-  const advertencias = [];
-  for(let n=1;n<=33;n++){
-    if(gs(n)==='asignado'){
-      const d = DB[n]||{};
-      const dias = d.fechaAsig ? Math.round((Date.now()-new Date(d.fechaAsig+'T12:00'))/86400000) : 0;
-      if(dias >= 180) advertencias.push({n, enc:d.encargado||'—', dias});
-    }
-  }
+  const {urgentes, sinPredicar, noInformados, advertencias} = getAlertData();
+  const terRow=(t,color,badge)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(${color},.06);border-radius:7px;border:1px solid rgba(${color},.2);margin-bottom:5px;cursor:pointer" onclick="closeSyncPanel();selectT(${t.n})">
+      <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:rgb(${color});min-width:26px;text-align:center">${t.n}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.71rem;font-weight:700;color:var(--dark)">Territorio ${t.n}</div>
+        <div style="font-size:.62rem;color:var(--gray)">👤 ${t.enc}</div>
+        <div style="font-size:.6rem;color:var(--gray)">📅 ${t.fecha||t.fechaAsig||'—'}${t.dias!=null?' · '+t.dias+' días':''}</div>
+      </div>
+      <span style="font-size:.56rem;font-weight:700;color:rgb(${color});background:rgba(${color},.12);padding:2px 6px;border-radius:4px;flex-shrink:0;white-space:nowrap">${badge}</span>
+    </div>`;
+
   return `
-  ${urgentes.length > 0 ? `
+  ${urgentes.length>0?`
   <div class="sp-sect" style="border-color:rgba(239,68,68,.4)">
     <div class="sp-sect-title" style="color:#dc2626">🚨 Urgentes — +12 meses (${urgentes.length})</div>
-    ${urgentes.map(u=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(239,68,68,.06);border-radius:7px;border:1px solid rgba(239,68,68,.18);margin-bottom:5px;cursor:pointer" onclick="closeSyncPanel();selectT(${u.n})">
-        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:#dc2626;min-width:26px;text-align:center">${u.n}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:.72rem;font-weight:700;color:var(--dark)">Territorio ${u.n}</div>
-          <div style="font-size:.63rem;color:#dc2626">👤 ${u.enc}</div>
-          <div style="font-size:.6rem;color:var(--gray)">📅 ${u.fechaAsig} · ${u.dias!=null?u.dias+' días':''}</div>
-        </div>
-        <span style="font-size:.58rem;font-weight:700;color:#dc2626;background:rgba(239,68,68,.12);padding:2px 6px;border-radius:4px;flex-shrink:0">URGENTE</span>
-      </div>`).join('')}
-  </div>` : `
+    ${urgentes.map(u=>terRow({...u,fecha:u.fecha},'239,68,68','URGENTE')).join('')}
+  </div>`:`
   <div class="sp-sect" style="border-color:rgba(34,197,94,.3)">
-    <div class="sp-sect-title" style="color:#15803d">✅ Sin urgencias</div>
+    <div class="sp-sect-title" style="color:#15803d">✅ Sin urgencias (+12m)</div>
     <div style="font-size:.72rem;color:var(--gray)">Ningún territorio lleva más de 12 meses asignado.</div>
   </div>`}
 
-  ${advertencias.length > 0 ? `
+  ${noInformados.length>0?`
+  <div class="sp-sect" style="border-color:rgba(168,85,247,.4)">
+    <div class="sp-sect-title" style="color:#7c3aed">📋 No informados — sin devolución (${noInformados.length})</div>
+    <div style="font-size:.64rem;color:var(--gray);margin-bottom:8px">Asignados pero sin ninguna devolución registrada.</div>
+    ${noInformados.map(t=>terRow({...t,fecha:t.fecha},'168,85,247','SIN INFORME')).join('')}
+  </div>`:`
+  <div class="sp-sect" style="border-color:rgba(34,197,94,.3)">
+    <div class="sp-sect-title" style="color:#15803d">✅ Todos informados</div>
+    <div style="font-size:.72rem;color:var(--gray)">Todos los territorios asignados tienen al menos una devolución.</div>
+  </div>`}
+
+  ${sinPredicar.length>0?`
+  <div class="sp-sect" style="border-color:rgba(234,88,12,.4)">
+    <div class="sp-sect-title" style="color:#c2410c">⏱ Sin predicar +2 meses (${sinPredicar.length})</div>
+    <div style="font-size:.64rem;color:var(--gray);margin-bottom:8px">Última devolución registrada hace más de 60 días.</div>
+    ${sinPredicar.map(t=>terRow({...t},'234,88,12',t.dias!=null?t.dias+'d sin pred.':'Sin historial')).join('')}
+  </div>`:`
+  <div class="sp-sect" style="border-color:rgba(34,197,94,.3)">
+    <div class="sp-sect-title" style="color:#15803d">✅ Predicación al día</div>
+    <div style="font-size:.72rem;color:var(--gray)">Todos tienen actividad reciente (menos de 2 meses).</div>
+  </div>`}
+
+  ${advertencias.length>0?`
   <div class="sp-sect" style="border-color:rgba(245,158,11,.35)">
-    <div class="sp-sect-title" style="color:#d97706">⚠️ Atención — +6 meses (${advertencias.length})</div>
-    ${advertencias.map(a=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(245,158,11,.06);border-radius:7px;border:1px solid rgba(245,158,11,.2);margin-bottom:5px;cursor:pointer" onclick="closeSyncPanel();selectT(${a.n})">
-        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#d97706;min-width:26px;text-align:center">${a.n}</div>
-        <div style="flex:1">
-          <div style="font-size:.7rem;font-weight:700">Territorio ${a.n} · ${a.enc}</div>
-          <div style="font-size:.62rem;color:var(--gray)">${a.dias} días asignado</div>
-        </div>
-      </div>`).join('')}
-  </div>` : ''}`;
+    <div class="sp-sect-title" style="color:#d97706">⚠️ Atención — +6 meses asignado (${advertencias.length})</div>
+    ${advertencias.map(a=>terRow({...a,fecha:a.fecha||'—'},'245,158,11',a.dias+'d asignado')).join('')}
+  </div>`:''}`;
 }
 
 // ── LÓGICA DE FILTROS ──
@@ -2877,16 +2955,26 @@ function showSyncBanner(title, sub){
 }
 
 function checkAlerts(){
-  const urgentes = [];
-  for(let n=1;n<=33;n++) if(gs(n)==='urgente') urgentes.push(n);
+  const {urgentes, sinPredicar, noInformados} = getAlertData();
+  const total = urgentes.length + sinPredicar.length + noInformados.length;
   const banner = document.getElementById('alertBanner');
-  if(urgentes.length > 0){
-    document.getElementById('alertBannerCount').textContent = urgentes.length+' territorio'+(urgentes.length>1?'s urgentes':' urgente');
+  if(total > 0){
+    const partes = [];
+    if(urgentes.length)    partes.push(urgentes.length+' urgente'+(urgentes.length>1?'s':''));
+    if(noInformados.length) partes.push(noInformados.length+' sin informe');
+    if(sinPredicar.length)  partes.push(sinPredicar.length+' sin predicar +2m');
+    document.getElementById('alertBannerCount').textContent = partes.join(' · ');
     banner.style.display = 'flex';
-    // Ocultar automáticamente después de 10 segundos
-    setTimeout(()=>{ banner.style.display='none'; }, 10000);
+    setTimeout(()=>{ banner.style.display='none'; }, 12000);
   } else {
     banner.style.display = 'none';
+  }
+  // Actualizar badge del botón Herramientas
+  const btn = document.getElementById('toolsBtn');
+  if(btn){
+    btn.innerHTML = total>0
+      ? `🛠 Herramientas <span style="background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:.6rem;font-weight:900;margin-left:3px">${total}</span>`
+      : '🛠 Herramientas';
   }
 }
 
@@ -3002,6 +3090,61 @@ function descargarWord(){
   toast('📄 Descargando registro Word...');
 }
 
+// ── PANELES REDIMENSIONABLES ──
+function initPanelResize(){
+  function makeResizable(handleId, panelId, side){
+    const handle = document.getElementById(handleId);
+    const panel  = document.getElementById(panelId);
+    if(!handle||!panel) return;
+    let startX, startW;
+    const onDown = e => {
+      startX = e.clientX || e.touches?.[0].clientX;
+      startW = panel.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup',   onUp);
+      document.addEventListener('touchmove', onMove, {passive:false});
+      document.addEventListener('touchend',  onUp);
+    };
+    const onMove = e => {
+      const cx = e.clientX || e.touches?.[0].clientX;
+      if(cx===undefined) return;
+      const dx = cx - startX;
+      // Left panel: drag right = wider; Right panel: drag left = wider
+      const newW = side==='L' ? startW+dx : startW-dx;
+      const clamped = Math.min(420, Math.max(160, newW));
+      panel.style.width = clamped+'px';
+    };
+    const onUp = () => {
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend',  onUp);
+      // Save widths
+      try{
+        localStorage.setItem('lm_panelL_w', document.getElementById('panelL')?.offsetWidth||218);
+        localStorage.setItem('lm_panelR_w', document.getElementById('panelR')?.offsetWidth||218);
+      }catch(e){}
+    };
+    handle.addEventListener('mousedown', onDown);
+    handle.addEventListener('touchstart', onDown, {passive:false});
+  }
+  makeResizable('resizeL','panelL','L');
+  makeResizable('resizeR','panelR','R');
+  // Restore saved widths
+  try{
+    const wL = parseInt(localStorage.getItem('lm_panelL_w'));
+    const wR = parseInt(localStorage.getItem('lm_panelR_w'));
+    if(wL>=160&&wL<=420) document.getElementById('panelL').style.width=wL+'px';
+    if(wR>=160&&wR<=420) document.getElementById('panelR').style.width=wR+'px';
+  }catch(e){}
+}
+
 // ── INIT ──
 (()=>{
   const s=document.getElementById('mn');
@@ -3011,6 +3154,8 @@ function descargarWord(){
   // Cargar config Gist si existe
   gistLoadConfig();
   if(gistToken && gistId){ setGistDot('ok'); syncGistId = gistId; }
+  // Paneles redimensionables
+  initPanelResize();
   // Revisar alertas al inicio
   checkAlerts();
 })();
