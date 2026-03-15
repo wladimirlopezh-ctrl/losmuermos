@@ -1166,6 +1166,7 @@ function applyTheme(t, saveToDb=true) {
   document.body.style.background = `linear-gradient(160deg,${t.bg1} 0%,${t.bg2} 50%,${t.bg1} 100%)`;
   // Mark active swatch
   document.querySelectorAll('.theme-swatch').forEach(s => s.classList.toggle('active', s.dataset.id === t.id));
+  // El tema no rehace el DOM, el clima se conserva
 }
 
 function buildThemeBar() {
@@ -1243,8 +1244,12 @@ function applyFont(f){
   document.body.style.fontFamily=`'${f.body}',sans-serif`;
   document.querySelectorAll('h1,.card-title,thead th,th').forEach(el=>el.style.fontFamily=`'${f.display}',serif`);
   document.querySelectorAll('.btn,.btn-sm,input,label').forEach(el=>el.style.fontFamily=`'${f.body}',sans-serif`);
-  render(defaultRows);
+  // Usar filas actuales, no defaultRows
+  const rowsActuales=getRows();
+  render(rowsActuales.length?rowsActuales:defaultRows);
   document.querySelectorAll('.font-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===f.id));
+  // Reaplicar clima si estaba cargado
+  if(Object.keys(climaCache).length) setTimeout(applyClimaToTable, 50);
 }
 
 function buildFontBar(){
