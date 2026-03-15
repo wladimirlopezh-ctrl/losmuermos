@@ -1026,7 +1026,7 @@ function renderPins(){
     for(let n=1;n<=33;n++){
       const d=DB[n]||{};const hist=d.historial||[];
       if(hist.length>0){
-        const devs=hist.filter(h=>h.tipo==='devolucion').map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
+        const devs=hist.map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
         if(devs.length>0&&hoy-Math.max(...devs)>UMBRAL)noWorkSet.add(n);
       }
       if(!noWorkSet.has(n)&&d.fechaDev){
@@ -2779,7 +2779,7 @@ function getAlertData(){
       urgentes.push({n,enc:d.encargado||'Sin encargado',dias,fecha:d.fechaAsig||'—'});
     }
     // Obtener la fecha más reciente de devolución (historial o fechaDev directa)
-    const devsHist=hist.filter(h=>h.tipo==='devolucion').map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
+    const devsHist=hist.map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
     const fechaDevDirecta=parseF(d.fechaDev);
     const todasDevs=[...devsHist,...(isNaN(fechaDevDirecta)?[]:[fechaDevDirecta])];
     const ultimaDevTs=todasDevs.length?Math.max(...todasDevs):null;
