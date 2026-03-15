@@ -1018,23 +1018,20 @@ function renderPins(){
   const g=document.getElementById('pg');
   g.innerHTML='';
   const cnt={'disponible':0,'asignado':0,'completado':0,'urgente':0};
-  // Detectar territorios sin predicar +60 dias para parpadeo rojo
-  // Solo marca territorios que TUVIERON actividad pero la ultima devolucion fue hace >60 dias
+  // Detectar territorios sin predicar +60 dias (misma logica que getAlertData)
   const noWorkSet=new Set();
-  // Parsea fechas en formato YYYY-MM-DD o DD-MM-YYYY
-  const parseF=s=>{if(!s)return NaN;if(/^\d{4}-/.test(s))return new Date(s).getTime();const[a,b,c]=s.split('-');return new Date(`${c}-${b}-${a}`).getTime();};
+  const parseF=s=>{if(!s||s==='—')return NaN;if(/^\d{4}-/.test(s))return new Date(s+'T12:00').getTime();const p=s.split('-');if(p.length===3)return new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`).getTime();return new Date(s).getTime();};
   try{
     const hoy=Date.now();const UMBRAL=60*24*60*60*1000;
     for(let n=1;n<=33;n++){
-      const d=DB[n]||{};const hist=d.historial||[];
-      if(hist.length>0){
-        const devs=hist.map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
-        if(devs.length>0&&hoy-Math.max(...devs)>UMBRAL)noWorkSet.add(n);
-      }
-      if(!noWorkSet.has(n)&&d.fechaDev){
-        const t=parseF(d.fechaDev);
-        if(!isNaN(t)&&hoy-t>UMBRAL)noWorkSet.add(n);
-      }
+      const d=DB[n]||{};const st=gs(n);
+      if(st==='urgente')continue; // urgente ya tiene su propio color
+      const hist=d.historial||[];
+      const devsHist=hist.map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
+      const fechaDevDirecta=parseF(d.fechaDev);
+      const todasDevs=[...devsHist,...(isNaN(fechaDevDirecta)?[]:[fechaDevDirecta])];
+      const ultimaDevTs=todasDevs.length?Math.max(...todasDevs):null;
+      if(ultimaDevTs!==null && hoy-ultimaDevTs>UMBRAL) noWorkSet.add(n);
     }
   }catch(e){}
 
@@ -1176,7 +1173,7 @@ function updateStats(){
     <div class="sc G"><div class="sn">${c.disponible}</div><div><div class="sl">Disponibles</div><div class="ss">para asignar</div></div></div>
     <div class="sc A"><div class="sn">${c.asignado}</div><div><div class="sl">Asignados</div><div class="ss">en proceso</div></div></div>
     <div class="sc I"><div class="sn">${c.completado}</div><div><div class="sl">Completados</div><div class="ss">este ciclo</div></div></div>
-    <div class="sc R"><div class="sn">${c.urgente}</div><div><div class="sl">Sin trabajar</div><div class="ss">+12 meses</div></div></div>`;
+    <div class="sc R"><div class="sn" id="cntSinPred">—</div><div><div class="sl">Sin trabajar</div><div class="ss">+2 meses</div></div></div>`;
 }
 function updateProg(){
   const s=Array.from({length:33},(_,i)=>gs(i+1));
@@ -1197,6 +1194,8 @@ function updateUrgent(){
 
   // Sin predicar +2 meses
   const {sinPredicar, noInformados} = getAlertData();
+  const cntEl = document.getElementById('cntSinPred');
+  if(cntEl) cntEl.textContent = sinPredicar.length;
   const elSP = document.getElementById('sinPredList');
   if(elSP) elSP.innerHTML = sinPredicar.length
     ? sinPredicar.map(t=>`<div class="ui" style="cursor:pointer" onclick="selectT(${t.n})">
