@@ -517,6 +517,7 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
     <button class="btn" id="ruralBtn" onclick="openRuralModal()" title="Territorios Rurales">🌿 Rurales</button>
     <button class="btn pri" id="assignBtn" onclick="openAssign()">➕ Asignar</button>
     <button class="btn" id="toolsBtn" onclick="openSyncPanel()" title="Herramientas: Gist, JSON, filtros, alertas" style="background:#1e40af;color:#fff;border-color:#1e40af;">🛠 Herramientas</button>
+    <button class="btn" onclick="diagAlert()" title="Diagnóstico alertas" style="font-size:.6rem;padding:3px 7px;background:#7c3aed;color:#fff;border-color:#7c3aed;">🔍 Diag</button>
     <input type="file" id="ii" accept=".json" style="display:none" onchange="importData(event)"/>
   </div>
 </header>
@@ -2797,6 +2798,32 @@ function renderSyncTabFiltros(){
 }
 
 // ── TAB ALERTAS ──
+function diagAlert(){
+  // Diagnóstico: muestra en consola los datos reales de todos los territorios con actividad
+  console.group('=== DIAGNÓSTICO getAlertData ===');
+  console.log('HOY:', new Date().toISOString());
+  for(let n=1;n<=33;n++){
+    const d=DB[n]||{};
+    const hist=d.historial||[];
+    if(hist.length>0||d.fechaDev||d.fechaAsig){
+      console.log(`T${n}:`, {
+        estado: d.estado,
+        encargado: d.encargado,
+        fechaAsig: d.fechaAsig,
+        fechaDev: d.fechaDev,
+        historialLen: hist.length,
+        ultimaEntrada: hist.length ? hist[hist.length-1] : null
+      });
+    }
+  }
+  const result = getAlertData();
+  console.log('sinPredicar:', result.sinPredicar);
+  console.log('noInformados:', result.noInformados);
+  console.log('urgentes:', result.urgentes);
+  console.groupEnd();
+  alert('Diagnóstico en consola (F12). sinPredicar:'+result.sinPredicar.length+' noInformados:'+result.noInformados.length+' urgentes:'+result.urgentes.length);
+}
+
 function getAlertData(){
   const urgentes=[], sinPredicar=[], noInformados=[], advertencias=[];
   const HOY = Date.now();
