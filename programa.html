@@ -773,7 +773,6 @@ function getRows(){
       const diaName=diaEl.querySelector('.dia-name');
       const src=diaName||diaEl;
       lastDia=src.innerHTML
-        .replace(/<span[^>]*>\n<\/span>/gi,'\n')
         .replace(/<br\s*\/?>/gi,'\n')
         .replace(/&nbsp;/g,' ')
         .replace(/<[^>]+>/g,'')
@@ -816,7 +815,7 @@ function render(rows){
     const tr=document.createElement('tr');
     let diaCell='';
     if(spans[i]>0){
-      const diaHtml=r.dia.replace(/\n/g,' <span style="display:none">\n</span>');
+      const diaHtml=r.dia.replace(/\n/g,' ');
       diaCell=`<td class="dia" data-f="dia" rowspan="${spans[i]}" ${ce}>${diaHtml}</td>`;
     }
     tr.innerHTML=`
@@ -1064,9 +1063,13 @@ async function generarCanvas(){
       const diaLines=r.dia.split('\n');
       ctx.save();ctx.beginPath();ctx.rect(cardX+2,groupRowY,colW[0]-5,diaH);ctx.clip();
 
-      // Extraer número del día para buscar clima
-      const diaNum=parseInt((diaLines[1]||diaLines[0]||'').trim());
+      // Extraer número del día — funciona con "Lunes\n16" o "Lunes 16"
+      const numMatch=r.dia.match(/\b(\d{1,2})\b/);
+      const diaNum=numMatch?parseInt(numMatch[1]):NaN;
       const wText=(!isNaN(diaNum)&&climaDia[diaNum])?climaDia[diaNum]:null;
+
+      // Texto del día: unir todo en una línea "Lunes 16"
+      const textodia=r.dia.replace(/\n/g,' ').trim();
 
       // Alturas reales de cada elemento
       const textoH=20;  // altura real de "Lunes 16" con F.dia (~18px)
@@ -1080,9 +1083,6 @@ async function generarCanvas(){
       const startY=midY-bloqueH/2;
 
       ctx.fillStyle=C.greenDark;ctx.textAlign='center';
-
-      // Dibujar texto del día: "Lunes 16" o solo "Lunes" en una línea
-      const textodia=diaLines.length>1?`${diaLines[0]} ${diaLines[1]}`:diaLines[0];
       ctx.font=F.dia;
       ctx.fillText(textodia,cellCX,startY+textoH,colW[0]-8);
 
