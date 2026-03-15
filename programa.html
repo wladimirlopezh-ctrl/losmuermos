@@ -767,7 +767,10 @@ function getRows(){
   return trs.map(tr=>{
     const diaEl=tr.querySelector('[data-f="dia"]');
     if(diaEl){
-      lastDia=diaEl.innerText.trim();
+      // Leer solo nodos de texto directos, ignorando elementos hijos
+      let texto='';
+      diaEl.childNodes.forEach(n=>{if(n.nodeType===3)texto+=n.textContent;});
+      lastDia=texto.trim()||diaEl.innerText.split('\n')[0].trim();
     }
     return{
       dia:diaEl?lastDia:'',
