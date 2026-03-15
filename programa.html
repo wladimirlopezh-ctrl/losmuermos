@@ -104,6 +104,45 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 .tab-panel{display:none;width:100%;max-width:900px;}
 .tab-panel.active{display:block;}
 
+/* ══ NUEVA SEMANA MODAL ══ */
+#semanaModal{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#semanaModal.open{display:flex;}
+.semana-box{background:#2c2c2e;border-radius:16px;padding:28px;width:92%;max-width:400px;border-top:4px solid var(--gold);box-shadow:0 24px 60px rgba(0,0,0,.6);}
+.semana-box h3{color:var(--gold);font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:6px;}
+.semana-sub{font-size:.75rem;color:#888;margin-bottom:18px;}
+.semana-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+.semana-opt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);cursor:pointer;transition:all .2s;}
+.semana-opt:hover{background:rgba(255,255,255,.05);border-color:rgba(224,195,74,.4);}
+.semana-opt.sel{background:rgba(224,195,74,.1);border-color:var(--gold);}
+.semana-opt-ico{font-size:1.2rem;flex-shrink:0;margin-top:1px;}
+.semana-opt-text{font-size:.82rem;color:#ccc;line-height:1.4;}
+.semana-opt-text strong{color:#fff;display:block;font-size:.85rem;margin-bottom:1px;}
+.semana-date-row{display:flex;align-items:center;gap:8px;margin-bottom:18px;}
+.semana-date-row label{font-size:.72rem;color:#999;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
+.semana-date-row input{flex:1;padding:8px 10px;background:#1c1c1e;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#e0e0e0;font-size:.88rem;outline:none;}
+.semana-date-row input:focus{border-color:var(--gold);}
+.semana-btns{display:flex;gap:8px;justify-content:flex-end;}
+
+/* ══ HISTORIAL TAB ══ */
+.hist-tab-wrap{background:rgba(255,255,255,.03);border-radius:16px;border:1px solid rgba(255,255,255,.07);overflow:hidden;}
+.hist-tab-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid rgba(255,255,255,.07);}
+.hist-tab-title{font-family:'Playfair Display',serif;font-size:1.05rem;color:#e0e0e0;font-weight:700;}
+.hist-tab-sub{font-size:.72rem;color:#666;margin-top:2px;}
+#histBody{padding:16px 18px;}
+#histBody::-webkit-scrollbar{width:3px;}
+.hist-empty{text-align:center;color:#666;font-size:.82rem;padding:30px 20px;line-height:1.8;}
+.hist-section-title{font-size:.62rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 6px;}
+.hist-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;margin-bottom:5px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}
+.hist-row:hover{background:rgba(255,255,255,.06);}
+.hist-rank{width:24px;height:24px;border-radius:6px;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hist-ter-num{width:34px;height:34px;border-radius:8px;background:var(--gd);color:#fff;font-size:.9rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hist-info{flex:1;min-width:0;}
+.hist-ter-name{font-size:.82rem;font-weight:700;color:#e0e0e0;}
+.hist-ter-sub{font-size:.68rem;color:#777;margin-top:1px;}
+.hist-bar-wrap{width:90px;flex-shrink:0;}
+.hist-bar-bg{height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:3px;}
+.hist-bar-fill{height:100%;border-radius:3px;}
+
 /* ══ TERRITORIES ══ */
 .terr-toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
 .terr-card{
@@ -209,7 +248,39 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--gd);color:white;padding:12px 22px;border-radius:30px;font-size:.85rem;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.3);transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:9999;border-left:4px solid var(--gold);}
 .toast.show{transform:translateY(0);opacity:1;}
 
-@media print{body{background:white;padding:0;}.toolbar,.drive-status,.theme-bar{display:none;}.col-act,.act-col{display:none !important;}.card{box-shadow:none;border-radius:0;}}
+@media print{
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
+  html,body{margin:0;padding:0;background:white !important;width:100%;height:auto;}
+  .toolbar,.drive-status,.theme-bar,.tabs,.tab-panel:not(#tab-programa),
+  .col-act,.act-col,#previewModal,#semanaModal,#histModal,
+  .zoom-ctrl,.viewer-alert-banner{display:none !important;}
+  body{display:block !important;align-items:unset !important;}
+  #tab-programa{display:block !important;width:100% !important;max-width:100% !important;}
+  .card{
+    box-shadow:none !important;
+    border-radius:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    page-break-inside:avoid;
+    border:3px solid var(--gold) !important;
+  }
+  .header{
+    background:linear-gradient(135deg,var(--gd) 0%,var(--gm) 100%) !important;
+    -webkit-print-color-adjust:exact !important;
+  }
+  .header h1{color:#fff !important;font-size:1.4rem !important;}
+  .header .subtitle{color:var(--gl) !important;}
+  .gold-bar{background:linear-gradient(90deg,transparent,var(--gold),transparent) !important;}
+  thead th{background:var(--gm) !important;color:#fff !important;font-size:.72rem !important;padding:8px 10px !important;}
+  td.dia{background:linear-gradient(180deg,var(--gl),#daf4e4) !important;font-size:.78rem !important;padding:7px 8px !important;}
+  tbody td{font-size:.75rem !important;padding:6px 8px !important;}
+  .hora-pill{background:var(--gd) !important;color:#fff !important;font-size:.7rem !important;padding:2px 8px !important;}
+  .badge{background:linear-gradient(135deg,var(--gm),var(--gd)) !important;color:#fff !important;font-size:.7rem !important;padding:3px 7px !important;}
+  .weather-badge{font-size:.58rem !important;padding:1px 5px !important;}
+  tbody tr:nth-child(odd){background:#fff !important;}
+  tbody tr:nth-child(even){background:var(--alt) !important;}
+  @page{margin:10mm;size:A4 landscape;}
+}
 
 /* ── Theme bar ── */
 .theme-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;padding:6px 0;}
@@ -242,6 +313,7 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   <button class="btn btn-drive-save" onclick="driveGuardar()">☁️ Guardar en Drive</button>
   <button class="btn btn-drive" onclick="driveCargar()">☁️ Cargar desde Drive</button>
   <button class="btn" style="background:rgba(56,189,248,.18);color:#38bdf8;border:1px solid rgba(56,189,248,.3)" onclick="climaCache={};initClima()" title="Actualizar pronóstico del tiempo">🌤 Clima</button>
+  <button class="btn" style="background:rgba(224,195,74,.18);color:var(--gold);border:1px solid rgba(224,195,74,.3)" onclick="openSemanaModal()">📅 Nueva semana</button>
 </div>
 <div class="drive-status" id="driveStatus"></div>
 
@@ -253,8 +325,9 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 
 <!-- Tab navigation -->
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('programa',this)">📋 Programa</button>
-  <button class="tab-btn" onclick="switchTab('territorios',this)">🗺️ Territorios</button>
+  <button class="tab-btn active" id="tbPrograma" onclick="switchTab('programa',this)">📋 Programa</button>
+  <button class="tab-btn" id="tbHistorial" onclick="switchTab('historial',this)">📊 Historial</button>
+  <button class="tab-btn" onclick="window.open('https://wladimirlopezh-ctrl.github.io/losmuermos/','_blank')" style="background:rgba(64,145,108,.2);color:#a8e6c8;border-color:rgba(64,145,108,.35)">🗺️ Mapa Territorios ↗</button>
 </div>
 
 <!-- TAB: Programa -->
@@ -281,41 +354,37 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 </div>
 </div><!-- /tab-programa -->
 
-<!-- TAB: Territorios -->
-<div class="tab-panel" id="tab-territorios">
-  <div class="terr-toolbar">
-    <button class="btn btn-add" onclick="openTerrModal()">➕ Asignar territorio</button>
-    <button class="btn btn-save-json" onclick="exportTerrJSON()">💾 Guardar territorios</button>
-    <button class="btn btn-load-json" onclick="document.getElementById('inputTerrJSON').click()">📂 Cargar territorios</button>
-    <input type="file" id="inputTerrJSON" accept=".json" style="display:none" onchange="importTerrJSON(event)"/>
-    <button class="btn" style="background:rgba(66,133,244,.15);color:#4285f4;border:1px solid rgba(66,133,244,.3)" onclick="syncTerrToMapa()" title="Enviar territorios al mapa">🗺️ → Mapa</button>
-    <button class="btn" style="background:rgba(66,133,244,.15);color:#4285f4;border:1px solid rgba(66,133,244,.3)" onclick="syncTerrFromMapa()" title="Recibir territorios del mapa">🗺️ ← Mapa</button>
-    <button class="btn" style="background:rgba(255,255,255,.08)" onclick="filterTerr('all')" id="fAll">Todos</button>
-    <button class="btn" style="background:rgba(251,191,36,.15);color:#fbbf24" onclick="filterTerr('asignado')" id="fAsig">🟡 Asignados</button>
-    <button class="btn" style="background:rgba(52,211,153,.12);color:#34d399" onclick="filterTerr('completado')" id="fComp">✅ Completados</button>
-    <button class="btn" style="background:rgba(132,204,22,.12);color:#84cc16" onclick="filterTerr('disponible')" id="fDisp">🟢 Disponibles</button>
+<!-- TAB: Historial -->
+<div class="tab-panel" id="tab-historial">
+  <div class="hist-tab-wrap">
+    <div class="hist-tab-head">
+      <div>
+        <div class="hist-tab-title">📊 Historial de territorios</div>
+        <div class="hist-tab-sub">Menos asignados en los últimos 2 meses — datos del Mapa</div>
+      </div>
+      <button class="btn" style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);font-size:.72rem" onclick="renderHistorial()">🔄 Actualizar</button>
+    </div>
+    <div id="histBody"><div class="hist-empty">Abre esta pestaña para cargar los datos.</div></div>
   </div>
-  <div id="terrStats" class="terr-stats"></div>
-  <div id="terrList"></div>
-</div><!-- /tab-territorios -->
+</div><!-- /tab-historial -->
 
-
-<div id="previewModal">
-  <div class="preview-box">
-    <div class="preview-header">
-      <span>👁 Vista previa</span>
-      <button onclick="closePreview()" title="Cerrar">✕</button>
+<!-- MODAL: Nueva semana -->
+<div id="semanaModal">
+  <div class="semana-box">
+    <h3>📅 Nueva semana vacía</h3>
+    <p class="semana-sub">Se generarán los 7 días (lunes a domingo) en blanco para completar.</p>
+    <div class="semana-date-row">
+      <label>Lunes</label>
+      <input type="date" id="semanaFecha"/>
     </div>
-    <div class="preview-scroll" id="previewScroll">
-      <div class="preview-spin" id="previewSpin">Generando imagen…</div>
-    </div>
-    <div class="preview-actions" id="previewActions" style="display:none">
-      <button class="btn-sm" onclick="closePreview()" style="background:#444;color:#fff">Cerrar</button>
-      <button class="btn-sm" id="btnDownload" style="background:var(--gd);color:#fff">⬇️ Descargar</button>
-      <button class="btn-sm" id="btnShare" style="background:var(--gold);color:#1a1a1c;font-weight:700">📤 Compartir</button>
+    <div class="semana-btns">
+      <button class="btn" style="background:rgba(255,255,255,.08);color:#aaa" onclick="closeSemanaModal()">Cancelar</button>
+      <button class="btn" style="background:var(--gm);color:#fff" onclick="generarSemana()">✅ Generar</button>
     </div>
   </div>
 </div>
+
+
 
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -851,74 +920,35 @@ function importarJSON(event){
 // ── Drive functions defined above in OAuth block ──
 
 
-// ── Preview Modal ──
-let _previewBlob=null;
-
-async function mostrarPreview(){
-  const modal=document.getElementById('previewModal');
-  const scroll=document.getElementById('previewScroll');
-  const actions=document.getElementById('previewActions');
-  const spin=document.getElementById('previewSpin');
-  _previewBlob=null;
-  scroll.innerHTML='';
-  scroll.appendChild(spin);
-  spin.style.display='flex';
-  actions.style.display='none';
-  modal.classList.add('open');
-  document.body.style.overflow='hidden';
-
-  const canvas=await generarCanvas();
-  if(!canvas){spin.textContent='❌ Error al generar imagen';return;}
-
-  canvas.toBlob(blob=>{
-    _previewBlob=blob;
-    const img=document.createElement('img');
-    img.src=URL.createObjectURL(blob);
-    img.alt='Vista previa';
-    scroll.innerHTML='';
-    scroll.appendChild(img);
-    actions.style.display='flex';
-    document.getElementById('btnDownload').onclick=()=>descargarPreview();
-    document.getElementById('btnShare').onclick=()=>compartirPreview();
-  },'image/png');
-}
-
-function closePreview(){
-  document.getElementById('previewModal').classList.remove('open');
-  document.body.style.overflow='';
-}
-
-function descargarPreview(){
-  if(!_previewBlob)return;
-  const link=document.createElement('a');
-  link.download='programa_predicacion.png';
-  link.href=URL.createObjectURL(_previewBlob);
-  link.click();
-  toast('✅ Imagen descargada');
-}
-
-async function compartirPreview(){
-  if(!_previewBlob)return;
-  const file=new File([_previewBlob],'programa_predicacion.png',{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{
-      await navigator.share({files:[file],title:'Programa de Predicación',text:document.getElementById('subtitulo').innerText});
-      toast('✅ ¡Compartido!');closePreview();
-    }catch(e){if(e.name!=='AbortError')toast('⚠️ No se pudo compartir');}
-    return;
-  }
+// ── COMPARTIR IMAGEN (directo, sin modal) ──
+async function copiarImagen(){
+  const toastEl=document.getElementById('toast');
+  toastEl.textContent='⏳ Generando imagen…';toastEl.classList.add('show');
   try{
-    await navigator.clipboard.write([new ClipboardItem({'image/png':_previewBlob})]);
-    toast('✅ ¡Imagen copiada! Pégala en WhatsApp Web (Ctrl+V)');
-  }catch(e){descargarPreview();}
+    const canvas=await generarCanvas();
+    canvas.toBlob(async blob=>{
+      const file=new File([blob],'programa_predicacion.png',{type:'image/png'});
+      // Intentar Web Share API (móvil / Android)
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({files:[file],title:'Programa de Predicación',text:document.getElementById('subtitulo').innerText});
+          toast('✅ ¡Compartido!');return;
+        }catch(e){if(e.name==='AbortError'){toast('');return;}}
+      }
+      // Fallback: copiar al portapapeles (desktop)
+      try{
+        await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        toast('✅ Imagen copiada — pégala en WhatsApp (Ctrl+V)');return;
+      }catch(e){}
+      // Último fallback: descargar
+      const link=document.createElement('a');
+      link.download='programa_predicacion.png';
+      link.href=URL.createObjectURL(blob);
+      link.click();
+      toast('✅ Imagen descargada');
+    },'image/png');
+  }catch(e){toast('❌ Error al generar imagen');}
 }
-
-document.getElementById('previewModal').addEventListener('click',e=>{
-  if(e.target===document.getElementById('previewModal'))closePreview();
-});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePreview();});
-
-async function copiarImagen(){mostrarPreview();}
 
 
 async function generarCanvas(){
@@ -927,88 +957,166 @@ async function generarCanvas(){
   const rows=getRows();
   const titulo=document.getElementById('titulo').innerText.trim();
   const subtitulo=document.getElementById('subtitulo').innerText.trim().toUpperCase();
-  const SCALE=2, W=1500,H=1500;
-  const cv=document.createElement('canvas');cv.width=W*SCALE;cv.height=H*SCALE;
+
+  // Recopilar clima por día (del DOM)
+  const climaDia={};
+  document.querySelectorAll('td.dia').forEach(td=>{
+    const badge=td.querySelector('.weather-badge:not(.loading)');
+    if(!badge)return;
+    const num=parseInt(td.innerText.trim().split(/\s+/).pop());
+    if(!isNaN(num))climaDia[num]=badge.textContent.trim();
+  });
+
+  // ── Dimensiones HD para WhatsApp (1080×1080 cuadrado) ──
+  const SIZE=1080, SCALE=2;
+  const cv=document.createElement('canvas');cv.width=SIZE*SCALE;cv.height=SIZE*SCALE;
   const ctx=cv.getContext('2d');ctx.scale(SCALE,SCALE);
-  const bg=ctx.createLinearGradient(0,0,W,H);
-  bg.addColorStop(0,C.bgDark);bg.addColorStop(0.5,C.bgMid);bg.addColorStop(1,C.bgDark);
-  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-  const pad=60,cardX=pad,cardY=pad,cardW=W-pad*2;
-  const headerH=155,goldBarH=7,theadH=52,rowH=68;
+
+  // Fondo degradado
+  const bg=ctx.createLinearGradient(0,0,SIZE,SIZE);
+  bg.addColorStop(0,C.bgDark);bg.addColorStop(0.45,C.bgMid);bg.addColorStop(1,C.bgDark);
+  ctx.fillStyle=bg;ctx.fillRect(0,0,SIZE,SIZE);
+
+  const pad=32;
+  const cardX=pad,cardY=pad,cardW=SIZE-pad*2;
+  const headerH=110,goldBarH=5,theadH=38;
+
+  // Ajustar rowH dinámicamente según cantidad de filas y clima
+  const hasClima=Object.keys(climaDia).length>0;
+  const rowH=hasClima?60:52;
+
   const cardH=headerH+goldBarH+theadH+rows.length*rowH;
-  ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=40;ctx.shadowOffsetY=10;
-  roundRect(ctx,cardX,cardY,cardW,cardH,22);ctx.fillStyle=C.white;ctx.fill();ctx.restore();
-  ctx.save();roundRect(ctx,cardX-4,cardY-4,cardW+8,cardH+8,25);ctx.strokeStyle=C.gold;ctx.lineWidth=7;ctx.stroke();ctx.restore();
-  ctx.save();ctx.beginPath();roundRectTop(ctx,cardX,cardY,cardW,headerH,22);
+
+  // Sombra + card
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.55)';ctx.shadowBlur=30;ctx.shadowOffsetY=8;
+  roundRect(ctx,cardX,cardY,cardW,cardH,18);ctx.fillStyle=C.white;ctx.fill();ctx.restore();
+  // Borde dorado
+  ctx.save();roundRect(ctx,cardX-3,cardY-3,cardW+6,cardH+6,20);ctx.strokeStyle=C.gold;ctx.lineWidth=5;ctx.stroke();ctx.restore();
+
+  // Header
+  ctx.save();ctx.beginPath();roundRectTop(ctx,cardX,cardY,cardW,headerH,18);
   const hg=ctx.createLinearGradient(cardX,cardY,cardX+cardW,cardY+headerH);
   hg.addColorStop(0,C.greenDark);hg.addColorStop(1,C.greenMid);ctx.fillStyle=hg;ctx.fill();ctx.restore();
+
   const F=currentFont.canvas;
-  ctx.fillStyle=C.white;ctx.font=F.title;ctx.textAlign='center';ctx.fillText(titulo,W/2,cardY+72);
-  ctx.fillStyle=C.greenLight;ctx.font='300 26px sans-serif';ctx.fillText(subtitulo,W/2,cardY+115);
-  ctx.fillStyle=C.gold;ctx.font='bold 28px sans-serif';ctx.textAlign='left';ctx.fillText('✦',cardX+30,cardY+82);ctx.textAlign='right';ctx.fillText('✦',cardX+cardW-30,cardY+82);
+  ctx.fillStyle=C.white;ctx.font=F.title;ctx.textAlign='center';ctx.fillText(titulo,SIZE/2,cardY+52);
+  ctx.fillStyle=C.greenLight;ctx.font='300 20px sans-serif';ctx.fillText(subtitulo,SIZE/2,cardY+84);
+  ctx.fillStyle=C.gold;ctx.font='bold 22px sans-serif';
+  ctx.textAlign='left';ctx.fillText('✦',cardX+22,cardY+60);
+  ctx.textAlign='right';ctx.fillText('✦',cardX+cardW-22,cardY+60);
+
+  // Gold bar
   let y=cardY+headerH;
-  const gbg=ctx.createLinearGradient(cardX,y,cardX+cardW,y);gbg.addColorStop(0,'transparent');gbg.addColorStop(0.5,C.gold);gbg.addColorStop(1,'transparent');
+  const gbg=ctx.createLinearGradient(cardX,y,cardX+cardW,y);
+  gbg.addColorStop(0,'transparent');gbg.addColorStop(0.5,C.gold);gbg.addColorStop(1,'transparent');
   ctx.fillStyle=gbg;ctx.fillRect(cardX,y,cardW,goldBarH);y+=goldBarH;
-  const cols=[0.14,0.10,0.19,0.23,0.34];const colW=cols.map(f=>Math.round(cardW*f));
+
+  // Thead
+  const cols=[0.13,0.09,0.20,0.24,0.34];const colW=cols.map(f=>Math.round(cardW*f));
   ctx.save();ctx.fillStyle=C.greenMid;ctx.fillRect(cardX,y,cardW,theadH);ctx.restore();
   const headers=['Día','Hora','Encargado','Lugar de Reunión','Territorio y Modalidad'];
   ctx.fillStyle=C.white;ctx.font=F.thead;ctx.textAlign='center';
-  let cx=cardX;headers.forEach((h,i)=>{ctx.fillText(h,cx+colW[i]/2,y+34,colW[i]-10);cx+=colW[i];});
+  let cx=cardX;headers.forEach((h,i)=>{ctx.fillText(h,cx+colW[i]/2,y+26,colW[i]-8);cx+=colW[i];});
   y+=theadH;
+
+  // Calcular spans
   const spans=new Array(rows.length).fill(1);
   for(let i=0;i<rows.length;i++){if(rows[i].dia!==''){let j=i+1;while(j<rows.length&&rows[j].dia===''){spans[i]++;j++;}}}
-  const drawnDia=new Set();const groupStart={};
+  const groupStart={};
   for(let i=0;i<rows.length;i++){if(rows[i].dia){for(let j=i;j<i+spans[i];j++)groupStart[j]=i;}}
+
+  // Fondos de filas
   rows.forEach((r,i)=>{
     const rowY=y+i*rowH;const isOdd=i%2===0;
     ctx.fillStyle=isOdd?C.white:C.greenAlt;ctx.fillRect(cardX,rowY,cardW,rowH);
     const gi=groupStart[i];
     if(gi!==undefined){
-      const groupRowY=y+gi*rowH;const diaH=spans[gi]*rowH;
-      const dg=ctx.createLinearGradient(cardX,groupRowY,cardX,groupRowY+diaH);
+      const dg=ctx.createLinearGradient(cardX,y+gi*rowH,cardX,y+gi*rowH+spans[gi]*rowH);
       dg.addColorStop(0,C.greenLight);dg.addColorStop(1,'#daf4e4');
       ctx.fillStyle=dg;ctx.fillRect(cardX,rowY,colW[0],rowH);
     }
   });
+
+  // Contenido de filas
+  const drawnDia=new Set();
   rows.forEach((r,i)=>{
     const rowY=y+i*rowH;const gi=groupStart[i];
+    // Celda día (con clima)
     if(r.dia&&!drawnDia.has(i)){
-      drawnDia.add(i);const groupRowY=y+gi*rowH;const diaH=spans[i]*rowH;
-      const cellCX=cardX+colW[0]/2;const midY=groupRowY+diaH/2;const diaLines=r.dia.split('\n');
+      drawnDia.add(i);
+      const groupRowY=y+gi*rowH;const diaH=spans[i]*rowH;
+      const cellCX=cardX+colW[0]/2;const midY=groupRowY+diaH/2;
+      const diaLines=r.dia.split('\n');
       ctx.save();ctx.beginPath();ctx.rect(cardX+2,groupRowY,colW[0]-5,diaH);ctx.clip();
       ctx.fillStyle=C.greenDark;ctx.textAlign='center';
-      if(diaLines.length>1){ctx.font=F.dia;ctx.fillText(diaLines[0],cellCX,midY-12,colW[0]-12);ctx.font=F.dia;ctx.fillText(diaLines[1],cellCX,midY+12,colW[0]-12);}
-      else{ctx.font=F.dia;ctx.fillText(r.dia,cellCX,midY+8,colW[0]-12);}
+      // Extraer número del día para buscar clima
+      const diaNum=parseInt((diaLines[1]||diaLines[0]||'').trim());
+      const wText=(!isNaN(diaNum)&&climaDia[diaNum])?climaDia[diaNum]:null;
+      const offsetY=wText?-10:0;
+      if(diaLines.length>1){
+        ctx.font=F.dia;ctx.fillText(diaLines[0],cellCX,midY-10+offsetY,colW[0]-12);
+        ctx.font='bold 17px sans-serif';ctx.fillText(diaLines[1],cellCX,midY+10+offsetY,colW[0]-12);
+      } else {
+        ctx.font=F.dia;ctx.fillText(r.dia,cellCX,midY+offsetY,colW[0]-12);
+      }
+      // Badge clima
+      if(wText){
+        ctx.font='11px sans-serif';
+        const wW=Math.min(ctx.measureText(wText).width+14,colW[0]-10);
+        const wX=cellCX-wW/2,wY=midY+24+offsetY,wH=17,wR=8;
+        // Color badge según contenido
+        const isRain=wText.includes('%')&&parseInt(wText.match(/\d+/)?.[0]||'0')>=30;
+        ctx.fillStyle=isRain?'rgba(59,130,246,.2)':'rgba(34,197,94,.15)';
+        ctx.beginPath();ctx.roundRect?ctx.roundRect(wX,wY,wW,wH,wR):roundRectFill(ctx,wX,wY,wW,wH,wR);
+        ctx.fill();
+        ctx.fillStyle=isRain?'#1d4ed8':'#15803d';
+        ctx.textAlign='center';ctx.fillText(wText,cellCX,wY+12,colW[0]-10);
+      }
       ctx.restore();
     }
     if(gi!==undefined){ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]-3,rowY,3,rowH);}
     ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0],rowY+rowH-1,cardW-colW[0],1);
+
     let cx2=cardX+colW[0];
-    const horaX=cx2+colW[1]/2,horaY=rowY+rowH/2,pillW=90,pillH=32,pillR=16;
+    // Hora pill
+    const horaX=cx2+colW[1]/2,horaY=rowY+rowH/2,pillW=76,pillH=26,pillR=13;
     ctx.save();ctx.fillStyle=C.greenDark;roundRectFill(ctx,horaX-pillW/2,horaY-pillH/2,pillW,pillH,pillR);
-    ctx.fillStyle=C.white;ctx.font=F.badge;ctx.textAlign='center';ctx.fillText(r.hora,horaX,horaY+7);ctx.restore();
+    ctx.fillStyle=C.white;ctx.font=F.badge;ctx.textAlign='center';ctx.fillText(r.hora,horaX,horaY+6);ctx.restore();
     cx2+=colW[1];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+
+    // Encargado
     ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
     const encLines=r.enc.split('\n');
-    if(encLines.length>1){ctx.fillText(encLines[0],cx2+colW[2]/2,rowY+rowH/2-10,colW[2]-10);ctx.fillText(encLines[1],cx2+colW[2]/2,rowY+rowH/2+14,colW[2]-10);}
-    else{ctx.fillText(r.enc,cx2+colW[2]/2,rowY+rowH/2+7,colW[2]-10);}
+    if(encLines.length>1){
+      ctx.fillText(encLines[0],cx2+colW[2]/2,rowY+rowH/2-8,colW[2]-8);
+      ctx.fillText(encLines[1],cx2+colW[2]/2,rowY+rowH/2+10,colW[2]-8);
+    } else {ctx.fillText(r.enc,cx2+colW[2]/2,rowY+rowH/2+6,colW[2]-8);}
     cx2+=colW[2];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+
+    // Lugar
     ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
-    ctx.fillText(r.lugar,cx2+colW[3]/2,rowY+rowH/2+7,colW[3]-10);
+    ctx.fillText(r.lugar,cx2+colW[3]/2,rowY+rowH/2+6,colW[3]-8);
     cx2+=colW[3];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+
+    // Territorio badge
     const badgeX=cx2+colW[4]/2,badgeY=rowY+rowH/2;
     ctx.font=F.badge;
-    const bW=Math.min(ctx.measureText(r.ter).width+22,colW[4]-16),bH=32,bR=7;
+    const bW=Math.min(ctx.measureText(r.ter).width+20,colW[4]-14),bH=26,bR=6;
     const bg2=ctx.createLinearGradient(badgeX-bW/2,badgeY,badgeX+bW/2,badgeY);
     bg2.addColorStop(0,C.greenMid);bg2.addColorStop(1,C.greenDark);
     ctx.save();ctx.fillStyle=bg2;roundRectFill(ctx,badgeX-bW/2,badgeY-bH/2,bW,bH,bR);
-    ctx.fillStyle=C.white;ctx.textAlign='center';ctx.fillText(r.ter,badgeX,badgeY+7,bW-10);ctx.restore();
+    ctx.fillStyle=C.white;ctx.textAlign='center';ctx.fillText(r.ter,badgeX,badgeY+6,bW-8);ctx.restore();
   });
-  const finalH=cardY+cardH+pad;const finalY=Math.max(0,Math.round((H-finalH)/2));
-  const out=document.createElement('canvas');out.width=W*SCALE;out.height=W*SCALE;
+
+  // Centrar verticalmente en el cuadrado final
+  const finalH=cardY+cardH+pad;
+  const out=document.createElement('canvas');out.width=SIZE*SCALE;out.height=SIZE*SCALE;
   const octx=out.getContext('2d');octx.scale(SCALE,SCALE);
-  const obg=octx.createLinearGradient(0,0,W,W);obg.addColorStop(0,C.bgDark);obg.addColorStop(0.5,C.bgMid);obg.addColorStop(1,C.bgDark);
-  octx.fillStyle=obg;octx.fillRect(0,0,W,W);octx.drawImage(cv,0,finalY,W,W);
+  const obg=octx.createLinearGradient(0,0,SIZE,SIZE);
+  obg.addColorStop(0,C.bgDark);obg.addColorStop(0.45,C.bgMid);obg.addColorStop(1,C.bgDark);
+  octx.fillStyle=obg;octx.fillRect(0,0,SIZE,SIZE);
+  const drawY=Math.max(0,Math.round((SIZE-finalH)/2));
+  octx.drawImage(cv,0,drawY,SIZE,SIZE);
   return out;
 }
 
@@ -1139,6 +1247,106 @@ function buildFontBar(){
   });
 }
 
+// ── NUEVA SEMANA ──
+const DIAS_SEMANA=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const MESES_ES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let semOpt=1;
+
+function openSemanaModal(){
+  const hoy=new Date();
+  const dow=hoy.getDay();
+  const diasHastaLunes=dow===1?7:(dow===0?1:(8-dow));
+  const proximoLunes=new Date(hoy);
+  proximoLunes.setDate(hoy.getDate()+diasHastaLunes);
+  document.getElementById('semanaFecha').value=proximoLunes.toISOString().slice(0,10);
+  document.getElementById('semanaModal').classList.add('open');
+}
+function closeSemanaModal(){document.getElementById('semanaModal').classList.remove('open');}
+function selectSemOpt(n){
+  semOpt=n;
+  document.getElementById('sopt1').classList.toggle('sel',n===1);
+  document.getElementById('sopt2').classList.toggle('sel',n===2);
+}
+
+function generarSemana(){
+  const fechaStr=document.getElementById('semanaFecha').value;
+  if(!fechaStr){toast('⚠️ Selecciona una fecha');return;}
+  const lunes=new Date(fechaStr+'T12:00');
+  if(lunes.getDay()!==1){toast('⚠️ La fecha debe ser un lunes');return;}
+  const domingo=new Date(lunes);domingo.setDate(lunes.getDate()+6);
+  const dIni=String(lunes.getDate()).padStart(2,'0');
+  const dFin=String(domingo.getDate()).padStart(2,'0');
+  const mesIni=MESES_ES[lunes.getMonth()];
+  const mesStr=lunes.getMonth()===domingo.getMonth()?mesIni:`${mesIni} / ${MESES_ES[domingo.getMonth()]}`;
+  document.getElementById('subtitulo').innerText=`${dIni} al ${dFin} de ${mesStr}`;
+
+  const newRows=[];
+  DIAS_SEMANA.forEach((nombre,i)=>{
+    const fecha=new Date(lunes);fecha.setDate(lunes.getDate()+i);
+    newRows.push({dia:`${nombre}\n${String(fecha.getDate()).padStart(2,'0')}`,hora:'',enc:'',lugar:'',ter:''});
+  });
+
+  render(newRows);saveLocal();closeSemanaModal();
+  climaCache={};setTimeout(initClima,200);
+  toast(`✅ Semana ${dIni}–${dFin} de ${mesIni} generada`);
+}
+
+// ── HISTORIAL TERRITORIOS ──
+function renderHistorial(){
+  const el=document.getElementById('histBody');
+  el.innerHTML='<div class="hist-empty">Leyendo datos del mapa…</div>';
+  let mapaDB={};
+  try{const raw=localStorage.getItem('lm_t4');if(raw)mapaDB=JSON.parse(raw);}catch(e){}
+  if(!Object.keys(mapaDB).length){
+    el.innerHTML='<div class="hist-empty">⚠️ No se encontraron datos del mapa.<br>Asegúrate de abrir este archivo desde<br>el mismo dominio que el mapa (GitHub Pages).</div>';
+    return;
+  }
+  const ahora=Date.now();
+  const dosMesesMs=60*24*3600*1000;
+  const parseF=s=>{if(!s||s==='—')return NaN;if(/^\d{4}-/.test(s))return new Date(s+'T12:00').getTime();const p=s.split('-');if(p.length===3)return new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`).getTime();return new Date(s).getTime();};
+  const stLabel={'disponible':'🟢 Disponible','asignado':'🟡 Asignado','completado':'✅ Completado','urgente':'🔴 Urgente'};
+  const fdCorta=s=>{const ts=parseF(s);if(isNaN(ts))return'—';return new Date(ts).toLocaleDateString('es-CL',{day:'2-digit',month:'short'});};
+
+  const resultados=[];
+  for(let n=1;n<=33;n++){
+    const d=mapaDB[n]||{};
+    const hist=d.historial||[];
+    let asig2m=hist.filter(h=>{const ts=parseF(h.fecha);return!isNaN(ts)&&(ahora-ts)<=dosMesesMs;}).length;
+    const faTs=parseF(d.fechaAsig);
+    if(!isNaN(faTs)&&(ahora-faTs)<=dosMesesMs&&(d.estado==='asignado'||d.estado==='urgente'))asig2m++;
+    const ultimaFecha=hist.length?hist[hist.length-1].fecha:d.fechaDev||d.fechaAsig||null;
+    resultados.push({n,asig2m,ultimaFecha,encargado:d.encargado||'',estado:d.estado||'disponible'});
+  }
+  resultados.sort((a,b)=>{
+    if(a.asig2m!==b.asig2m)return a.asig2m-b.asig2m;
+    const ta=parseF(a.ultimaFecha)||0,tb=parseF(b.ultimaFecha)||0;
+    return ta-tb;
+  });
+
+  const maxAsig=Math.max(...resultados.map(r=>r.asig2m),1);
+  const nunca=resultados.filter(r=>r.asig2m===0);
+  const pocos=resultados.filter(r=>r.asig2m>0&&r.asig2m<3);
+
+  let html='';
+  const mkRow=(r,i,color)=>`<div class="hist-row">
+    <div class="hist-rank" style="background:${color==='red'?'rgba(239,68,68,.15)':'rgba(251,191,36,.15)'};color:${color==='red'?'#ef4444':'#fbbf24'}">${i+1}</div>
+    <div class="hist-ter-num">${r.n}</div>
+    <div class="hist-info">
+      <div class="hist-ter-name">Territorio ${r.n}${r.encargado?' · '+r.encargado:''}</div>
+      <div class="hist-ter-sub">${stLabel[r.estado]||'—'} · Último: ${fdCorta(r.ultimaFecha)}</div>
+    </div>
+    <div class="hist-bar-wrap">
+      <div style="font-size:.6rem;color:#666;text-align:right">${r.asig2m} asig.</div>
+      <div class="hist-bar-bg"><div class="hist-bar-fill" style="width:${Math.round(r.asig2m/maxAsig*100)}%;background:${color==='red'?'#ef4444':'#f59e0b'}"></div></div>
+    </div>
+  </div>`;
+
+  if(nunca.length){html+=`<div class="hist-section-title">🔴 Sin asignación en 2 meses (${nunca.length})</div>`;nunca.forEach((r,i)=>html+=mkRow(r,i,'red'));}
+  if(pocos.length){html+=`<div class="hist-section-title" style="margin-top:12px">🟡 Pocas asignaciones — 1 a 2 veces (${pocos.length})</div>`;pocos.forEach((r,i)=>html+=mkRow(r,i,'yellow'));}
+  if(!nunca.length&&!pocos.length)html='<div class="hist-empty">✅ Todos los territorios han sido asignados al menos 3 veces en los últimos 2 meses.</div>';
+  el.innerHTML=html;
+}
+
 // ── INIT ──
 // ══════════════════════════════════════════════
 //  TAB SYSTEM
@@ -1148,7 +1356,7 @@ function switchTab(id, btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
-  if(id==='territorios') renderTerr();
+  if(id==='historial') renderHistorial();
 }
 
 // ══════════════════════════════════════════════
