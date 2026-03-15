@@ -552,6 +552,8 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
     </div>
     <div class="pb"><div class="pt">📈 Progreso</div><div id="progBars"></div></div>
     <div class="pb"><div class="pt">⚠️ Requieren atención</div><div id="urgList"></div></div>
+    <div class="pb"><div class="pt">⏱ Sin predicar +2 meses</div><div id="sinPredList"></div></div>
+    <div class="pb"><div class="pt">📋 Sin informe</div><div id="noInfList"></div></div>
   </div>
 
   <div class="map-area" id="mapArea">
@@ -1192,6 +1194,33 @@ function updateUrgent(){
   document.getElementById('urgList').innerHTML=urg.length
     ?urg.map(u=>`<div class="ui"><div class="un">${u.n}</div><div><div style="font-weight:600">T${u.n}</div><div style="font-size:.62rem;color:var(--gray)">${u.enc}${u.mo?` · ${u.mo}m`:''}</div></div><button class="btn" style="font-size:.6rem;padding:2px 5px;margin-left:auto" onclick="openAssign(${u.n})">✏️</button></div>`).join('')
     :'<div style="font-size:.68rem;color:var(--gray)">✅ Ninguno</div>';
+
+  // Sin predicar +2 meses
+  const {sinPredicar, noInformados} = getAlertData();
+  const elSP = document.getElementById('sinPredList');
+  if(elSP) elSP.innerHTML = sinPredicar.length
+    ? sinPredicar.map(t=>`<div class="ui" style="cursor:pointer" onclick="selectT(${t.n})">
+        <div class="un" style="background:rgba(234,88,12,.15);color:#c2410c">${t.n}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:.68rem">T${t.n}</div>
+          <div style="font-size:.6rem;color:var(--gray)">👤 ${t.enc}</div>
+        </div>
+        <span style="font-size:.58rem;font-weight:700;color:#c2410c;white-space:nowrap">${t.dias!=null?t.dias+'d':'—'}</span>
+      </div>`).join('')
+    : '<div style="font-size:.68rem;color:var(--gray)">✅ Ninguno</div>';
+
+  // Sin informe
+  const elNI = document.getElementById('noInfList');
+  if(elNI) elNI.innerHTML = noInformados.length
+    ? noInformados.map(t=>`<div class="ui" style="cursor:pointer" onclick="selectT(${t.n})">
+        <div class="un" style="background:rgba(168,85,247,.15);color:#7c3aed">${t.n}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:.68rem">T${t.n}</div>
+          <div style="font-size:.6rem;color:var(--gray)">👤 ${t.enc}</div>
+        </div>
+        <span style="font-size:.58rem;font-weight:700;color:#7c3aed;white-space:nowrap">${t.dias!=null?t.dias+'d':'—'}</span>
+      </div>`).join('')
+    : '<div style="font-size:.68rem;color:var(--gray)">✅ Ninguno</div>';
 }
 function updateActivity(){
   const acts=[];
