@@ -684,8 +684,14 @@ async function syncTerrToMapa(){
       // renderTerr() omitido — tab territorios no disponible en esta vista
 
       // Paso 2: leer mapa actual desde Drive
-      let mapaDB={};
-      try{const existing=await gdLoadFile(GD_FILE_TERR);if(existing)mapaDB=existing;}catch(e){}
+      let mapaRaw={};
+      try{const existing=await gdLoadFile(GD_FILE_TERR);if(existing)mapaRaw=existing;}catch(e){}
+
+      // El mapa guarda en formato fullBackup: {db:{...}, camps:[], pins:{}, rural:[]}
+      // Detectar formato y extraer el db correctamente
+      const esFormatoCompleto=mapaRaw&&mapaRaw.db&&typeof mapaRaw.db==='object';
+      let mapaDB=esFormatoCompleto?{...mapaRaw.db}:(mapaRaw||{});
+      const mapaExtra=esFormatoCompleto?{camps:mapaRaw.camps||[],pins:mapaRaw.pins||{},activeCampId:mapaRaw.activeCampId||null,rural:mapaRaw.rural||[]}:{camps:[],pins:{},activeCampId:null,rural:[]};
 
       // Fuente 1: pestaña Territorios (TERR_DB, ya actualizada arriba)
       const fromTerrDB=terrDBToMapFormat();
@@ -696,22 +702,51 @@ async function syncTerrToMapa(){
       const merged={...fromRowsMapa,...fromTerrDB};
 
       Object.entries(merged).forEach(([n,d])=>{
-        if(!mapaDB[n])mapaDB[n]={monthsWorked:{}};
-        mapaDB[n].encargado=d.encargado||mapaDB[n].encargado||'';
-        // Solo sobreescribir fechaAsig si NO es continuación y hay fecha nueva
-        if(!d._esContinuacion&&d.fechaAsig)mapaDB[n].fechaAsig=d.fechaAsig;
-        else if(!mapaDB[n].fechaAsig&&d.fechaAsig)mapaDB[n].fechaAsig=d.fechaAsig;
-        mapaDB[n].fechaDev=d.fechaDev||mapaDB[n].fechaDev||'';
-        mapaDB[n].estado=d.estado||mapaDB[n].estado||'asignado';
-        mapaDB[n].modalidad=d.modalidad||mapaDB[n].modalidad||'';
-        mapaDB[n].manzana=d.manzana||mapaDB[n].manzana||'';
-        mapaDB[n].obs=d.obs||mapaDB[n].obs||'';
-        if(!mapaDB[n].monthsWorked)mapaDB[n].monthsWorked={};
+        // Si el territorio no existe en el mapa, crearlo desde cero
+        if(!mapaDB[n])mapaDB[n]={};
+
+        // SIEMPRE preservar estos campos — nunca sobrescribir
+        const historialExistente=mapaDB[n].historial||[];
+        const monthsWorkedExistente=mapaDB[n].monthsWorked||{};
+        const mzPendientesExistente=mapaDB[n].mzPendientes||[];
+
+        // Detectar si es una nueva asignación (encargado distinto al actual)
+        const encActual=mapaDB[n].encargado||'';
+        const encNuevo=d.encargado||'';
+        const esContinuacion=d._esContinuacion||
+          (encNuevo&&encActual&&encNuevo.toLowerCase()===encActual.toLowerCase());
+
+        // Solo actualizar encargado y fechaAsig si es nueva asignación
+        if(encNuevo){
+          mapaDB[n].encargado=encNuevo;
+        }
+        if(!esContinuacion&&d.fechaAsig){
+          mapaDB[n].fechaAsig=d.fechaAsig;
+        } else if(!mapaDB[n].fechaAsig&&d.fechaAsig){
+          mapaDB[n].fechaAsig=d.fechaAsig;
+        }
+
+        // Solo actualizar estado si el mapa no lo tiene o viene como asignado
+        if(!mapaDB[n].estado||d.estado==='asignado'){
+          mapaDB[n].estado=d.estado||mapaDB[n].estado||'asignado';
+        }
+
+        // Actualizar campos secundarios solo si no existen
+        if(!mapaDB[n].modalidad)mapaDB[n].modalidad=d.modalidad||'Casa en casa';
+        if(!mapaDB[n].manzana&&d.manzana)mapaDB[n].manzana=d.manzana;
+        if(!mapaDB[n].obs&&d.obs)mapaDB[n].obs=d.obs;
+        if(!mapaDB[n].fechaDev&&d.fechaDev)mapaDB[n].fechaDev=d.fechaDev;
+
+        // RESTAURAR siempre los campos preservados
+        mapaDB[n].historial=historialExistente;
+        mapaDB[n].monthsWorked=monthsWorkedExistente;
+        mapaDB[n].mzPendientes=mzPendientesExistente;
       });
 
       // Paso 3: incluir territorios rurales detectados en las filas
       const ruralesNuevos=rowsToRuralFormat();
-      const ruralExistente=Array.isArray(mapaDB._rural)?mapaDB._rural:[];
+      const ruralExistente=Array.isArray(mapaExtra.rural)&&mapaExtra.rural.length?mapaExtra.rural
+        :(Array.isArray(mapaDB._rural)?mapaDB._rural:[]);
       let ruralAgregados=0;
       ruralesNuevos.forEach(r=>{
         const yaExiste=ruralExistente.some(x=>x.nombre.toLowerCase()===r.nombre.toLowerCase());
@@ -720,15 +755,19 @@ async function syncTerrToMapa(){
           ruralAgregados++;
         }
       });
-      mapaDB._rural=ruralExistente;
+
+      // Guardar en el mismo formato que usa el mapa (fullBackup)
+      const savePayload=esFormatoCompleto
+        ?{db:mapaDB, camps:mapaExtra.camps, activeCampId:mapaExtra.activeCampId, pins:mapaExtra.pins, rural:ruralExistente}
+        :{...mapaDB, _rural:ruralExistente};
 
       const count=Object.keys(merged).length;
-      await gdSaveFile(GD_FILE_TERR,JSON.stringify(mapaDB,null,2));
+      await gdSaveFile(GD_FILE_TERR,JSON.stringify(savePayload,null,2));
 
       // Escribir en localStorage para sincronización inmediata con el mapa
       try{localStorage.setItem('lm_t4',JSON.stringify(mapaDB));}catch(e){}
-      if(Array.isArray(mapaDB._rural)){
-        try{localStorage.setItem('lm_rural',JSON.stringify(mapaDB._rural));}catch(e){}
+      if(ruralExistente.length){
+        try{localStorage.setItem('lm_rural',JSON.stringify(ruralExistente));}catch(e){}
       }
 
       const ruralMsg=ruralAgregados>0?` · ${ruralAgregados} rural${ruralAgregados>1?'es':''} nuevo${ruralAgregados>1?'s':''}` :'';
