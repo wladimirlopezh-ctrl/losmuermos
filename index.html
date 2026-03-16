@@ -503,9 +503,6 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
     <button class="btn" id="dashBtn" onclick="toggleDash()" title="Informe">📋 Informe</button>
     <button class="btn" id="campBtn" onclick="openCampModal()" title="Campañas">🏕 Campañas</button>
     <button class="btn warn" id="editBtn" onclick="toggleEditMode()">✏️ Mover pines</button>
-    <button class="btn xl" id="excelBtn" onclick="exportExcel()" title="Exportar reporte Excel">
-      <span>📊</span> Excel
-    </button>
     <button class="btn" id="gistBtn" onclick="openGistModal()" title="Publicar datos para visualizadores">
       🌐 Publicar <span class="sync-dot" id="gistDot" title="Sin configurar"></span>
     </button>
@@ -513,12 +510,9 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
       <svg width="14" height="14" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
       Drive <span class="sync-dot" id="syncDot" title="Sin conectar"></span>
     </button>
-    <button class="btn" id="wordBtn" onclick="descargarWord()" title="Descargar Registro Word actualizado">📄 Word</button>
-    <button class="btn" id="jsonBtn" onclick="exportData()">💾 JSON</button>
-    <button class="btn" id="importBtn" onclick="document.getElementById('ii').click()">📂 Importar</button>
     <button class="btn" id="ruralBtn" onclick="openRuralModal()" title="Territorios Rurales">🌿 Rurales</button>
-    <button class="btn pri" id="assignBtn" onclick="openAssign()">➕ Asignar</button>
-    <button class="btn" id="toolsBtn" onclick="openSyncPanel()" title="Herramientas: Gist, JSON, filtros, alertas" style="background:#1e40af;color:#fff;border-color:#1e40af;">🛠 Herramientas</button>
+    <button class="btn" id="meetBtn" onclick="openMeetModal()" title="Lugares de reunión">🏠 Reunión</button>
+    <button class="btn" id="toolsBtn" onclick="openSyncPanel()" title="Herramientas" style="background:#1e40af;color:#fff;border-color:#1e40af;">🛠 Herramientas</button>
     <input type="file" id="ii" accept=".json" style="display:none" onchange="importData(event)"/>
   </div>
 </header>
@@ -553,7 +547,7 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
       <button class="fb" onclick="setFilter('urgente',this)"><div class="fd" style="background:#ef4444"></div>Sin trabajar +2m<span class="fn" id="fur">—</span></button>
     </div>
     <div class="pb"><div class="pt">📈 Progreso</div><div id="progBars"></div></div>
-    <div class="pb"><div class="pt">⚠️ Requieren atención</div><div id="urgList"></div></div>
+
     <div class="pb"><div class="pt">⏱ Sin predicar +2 meses</div><div id="sinPredList"></div></div>
     <div class="pb"><div class="pt">📋 Sin informe</div><div id="noInfList"></div></div>
   </div>
@@ -829,12 +823,15 @@ const BC={'disponible':'background:#dcfce7;color:#15803d','asignado':'background
 let DB = JSON.parse(localStorage.getItem('lm_t4')||'{}');
 // Pin positions — loaded from localStorage, fallback to defaults
 let PIN_POS = JSON.parse(localStorage.getItem('lm_pins')||'null') || Object.fromEntries(Object.entries(DEFAULT_POS).map(([k,v])=>[k,[...v]]));
+// Meeting place pins
+let MEET_PINS = JSON.parse(localStorage.getItem('lm_meet')||'[]');
 
 let filt='all', sel=null;
 let editMode=false;
 
 const save=()=>{try{localStorage.setItem('lm_t4',JSON.stringify(DB));}catch{} autoSaveDrive();}
 const savePins=()=>{try{localStorage.setItem('lm_pins',JSON.stringify(PIN_POS));}catch{} autoSaveDrive();}
+const saveMeet=()=>{try{localStorage.setItem('lm_meet',JSON.stringify(MEET_PINS));}catch{} autoSaveDrive();}
 const saveCamps=()=>{try{localStorage.setItem('lm_camps',JSON.stringify(CAMPS));localStorage.setItem('lm_activeCamp',activeCampId||'');}catch(e){} autoSaveDrive();}; // redefinida abajo
 const saveRural=()=>{try{localStorage.setItem('lm_rural',JSON.stringify(RURAL));}catch(e){} autoSaveDrive();};
 
@@ -906,6 +903,17 @@ function syncPinScale(){
     const glow=g.querySelector('circle.glow');
     if(glow) glow.setAttribute('r',22/scale);
   });
+  // Scale meeting pins
+  document.querySelectorAll('.meet-pin').forEach(grp=>{
+    const id=grp.dataset.mid;
+    const m=MEET_PINS.find(x=>x.id===id);
+    if(m) updateMeetPinPosition(grp,m);
+    const lbl=grp.querySelector('text');
+    if(lbl) lbl.style.fontSize=(9/scale)+'px';
+    grp.querySelectorAll('polygon,rect').forEach(el=>{
+      el.setAttribute('stroke-width',1/scale);
+    });
+  });
 }
 
 function zoom(f){
@@ -932,6 +940,7 @@ function toggleEditMode(){
   document.getElementById('layout').classList.toggle('edit-mode',editMode);
   document.getElementById('mapArea').classList.toggle('edit-mode',editMode);
   renderPins();
+  renderMeetPins();
   if(!editMode){ savePins(); toast('📌 Posiciones guardadas'); gistAutoPublish(); }
 }
 
@@ -1188,16 +1197,8 @@ function updateProg(){
     <div class="pr" style="margin-top:2px"><span>Disponibles (${di})</span><span>${Math.round(di/33*100)}%</span></div><div class="bar"><div class="bf" style="width:${di/33*100}%;background:var(--green)"></div></div>`;
 }
 function updateUrgent(){
-  const urg=[];
-  for(let i=1;i<=33;i++)if(gs(i)==='urgente'){
-    const d=DB[i]||{};urg.push({n:i,enc:d.encargado||'—',mo:d.fechaAsig?Math.round((Date.now()-new Date(d.fechaAsig))/2592e6):null});
-  }
-  document.getElementById('urgList').innerHTML=urg.length
-    ?urg.map(u=>`<div class="ui"><div class="un">${u.n}</div><div><div style="font-weight:600">T${u.n}</div><div style="font-size:.62rem;color:var(--gray)">${u.enc}${u.mo?` · ${u.mo}m`:''}</div></div><button class="btn" style="font-size:.6rem;padding:2px 5px;margin-left:auto" onclick="openAssign(${u.n})">✏️</button></div>`).join('')
-    :'<div style="font-size:.68rem;color:var(--gray)">✅ Ninguno</div>';
-
-  // Sin predicar +2 meses
   const {sinPredicar, noInformados} = getAlertData();
+
   const cntEl = document.getElementById('cntSinPred');
   if(cntEl) cntEl.textContent = sinPredicar.length;
   const elSP = document.getElementById('sinPredList');
@@ -1212,7 +1213,6 @@ function updateUrgent(){
       </div>`).join('')
     : '<div style="font-size:.68rem;color:var(--gray)">✅ Ninguno</div>';
 
-  // Sin informe
   const elNI = document.getElementById('noInfList');
   if(elNI) elNI.innerHTML = noInformados.length
     ? noInformados.map(t=>`<div class="ui" style="cursor:pointer" onclick="selectT(${t.n})">
@@ -1395,7 +1395,7 @@ function saveDevolucion(){
   gistAutoPublish();
 }
 document.getElementById('devModal').addEventListener('click',e=>{if(e.target===document.getElementById('devModal'))closeDevModal();});
-function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null,pins:PIN_POS,rural:RURAL};}
+function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null,pins:PIN_POS,rural:RURAL,meet:MEET_PINS};}
 function applyBackup(data){
   if(data.db){
     DB=data.db;
@@ -1403,6 +1403,7 @@ function applyBackup(data){
     activeCampId=data.activeCampId||null;
     if(data.pins) PIN_POS=data.pins;
     if(data.rural) RURAL=data.rural;
+    if(data.meet) MEET_PINS=data.meet;
   } else {
     // Formato plano desde Drive: {1:{...}, 2:{...}, _rural:[...]}
     // Separar _rural del resto antes de asignar a DB
@@ -1421,8 +1422,8 @@ function applyBackup(data){
       if(nuevosRurales>0) toast(`🌿 ${nuevosRurales} territorio${nuevosRurales>1?'s rurales':'  rural'} importado${nuevosRurales>1?'s':''} desde el programa`);
     }
   }
-  save();saveCamps();savePins();saveRural();
-  renderPins();updateAll();renderCampSidebar();
+  save();saveCamps();savePins();saveRural();saveMeet();
+  renderPins();renderMeetPins();updateAll();renderCampSidebar();
   if(dashVisible) renderDashboard();
 }
 function exportData(){
@@ -1864,7 +1865,14 @@ function toggleDash(){
 
 function renderDashboard(){
   const el = document.getElementById('dashContent');
-  el.innerHTML = renderInfHeader() + (infTab==='resumen' ? renderInfResumen() : renderInfCampana());
+  const tab = infTab==='resumen' ? renderInfResumen()
+    : infTab==='campana' ? renderInfCampana()
+    : infTab==='sinasignar' ? renderInfSinAsignar()
+    : infTab==='calor' ? renderInfCalor()
+    : infTab==='mensual' ? renderInfMensual()
+    : infTab==='historico' ? renderInfHistorico()
+    : renderInfResumen();
+  el.innerHTML = renderInfHeader() + tab;
 }
 
 function renderInfHeader(){
@@ -1959,8 +1967,12 @@ function renderInfHeader(){
       <button class="db-back" onclick="toggleDash()">🗺 Volver al mapa</button>
     </div>
     <div class="inf-tabs">
-      <button class="inf-tab ${infTab==='resumen'?'active':''}" onclick="infTab='resumen';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📊 Resumen general</button>
-      <button class="inf-tab ${infTab==='campana'?'active':''}" onclick="infTab='campana';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">🏕 Informe de campaña</button>
+      <button class="inf-tab ${infTab==='resumen'?'active':''}" onclick="infTab='resumen';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📊 Resumen</button>
+      <button class="inf-tab ${infTab==='campana'?'active':''}" onclick="infTab='campana';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">🏕 Campaña</button>
+      <button class="inf-tab ${infTab==='sinasignar'?'active':''}" onclick="infTab='sinasignar';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📋 Sin asignar</button>
+      <button class="inf-tab ${infTab==='calor'?'active':''}" onclick="infTab='calor';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">🌡️ Calor</button>
+      <button class="inf-tab ${infTab==='mensual'?'active':''}" onclick="infTab='mensual';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📅 Mensual</button>
+      <button class="inf-tab ${infTab==='historico'?'active':''}" onclick="infTab='historico';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📆 Histórico</button>
     </div>`;
 }
 
@@ -2171,6 +2183,8 @@ function renderInfResumen(){
         <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(239,68,68,.5)"></div>+12 meses</div>
       </div>
     </div>
+
+    ${renderInfRurales()}
 
   </div>`;
 }
@@ -2800,10 +2814,15 @@ function renderSyncTabJson(){
 
   <div class="sp-sect">
     <div class="sp-sect-title">💾 Exportar datos</div>
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:6px;margin-bottom:6px">
       <button onclick="exportData();closeSyncPanel()" class="btn" style="flex:1;font-size:.7rem;padding:7px">💾 JSON</button>
       <button onclick="exportExcel();closeSyncPanel()" class="btn xl" style="flex:1;font-size:.7rem;padding:7px">📊 Excel</button>
     </div>
+    <button onclick="descargarWord();closeSyncPanel()" class="btn" style="width:100%;font-size:.7rem;padding:7px">📝 Word</button>
+  </div>
+  <div class="sp-sect">
+    <div class="sp-sect-title">➕ Asignar territorio</div>
+    <button onclick="closeSyncPanel();openAssign(null)" class="btn pri" style="width:100%;font-size:.72rem;padding:8px">✏️ Asignar territorio</button>
   </div>`;
 }
 
@@ -2866,13 +2885,21 @@ function getAlertData(){
     const ultimaDevTs=todasDevs.length?Math.max(...todasDevs):null;
     const ultimaDevStr=ultimaDevTs?new Date(ultimaDevTs).toLocaleDateString('es-CL'):null;
     // Sin predicar +2 meses: tuvo actividad pero última devolución fue hace >60 días
-    if(ultimaDevTs!==null && st!=='urgente'){
-      const dias=Math.round((HOY-ultimaDevTs)/86400000);
-      if(dias>=60) sinPredicar.push({n,enc:d.encargado||'—',dias,fecha:ultimaDevStr,st});
+    // O nunca tuvo actividad registrada (ultimaDevTs===null) y está disponible o asignado
+    if(st!=='urgente'){
+      if(ultimaDevTs!==null){
+        const dias=Math.round((HOY-ultimaDevTs)/86400000);
+        if(dias>=60) sinPredicar.push({n,enc:d.encargado||'—',dias,fecha:ultimaDevStr,st});
+      } else if(st==='disponible'||(st==='asignado'&&todasDevs.length===0)){
+        // Sin ningún historial de actividad — contar desde fechaAsig si existe, si no poner null
+        const tRef=parseF(d.fechaAsig);
+        const dias=!isNaN(tRef)?Math.round((HOY-tRef)/86400000):null;
+        if(dias===null||dias>=60) sinPredicar.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'Sin registro',st});
+      }
     }
-    // No informados: territorio ASIGNADO con encargado pero sin ninguna devolución registrada
-    // (ni en historial ni en fechaDev) — no ha enviado informe
-    if(st==='asignado' && d.encargado && todasDevs.length===0){
+    // No informados: todos los territorios ASIGNADOS con encargado que no han devuelto aún
+    // (estado asignado = están en proceso, no han informado que terminaron)
+    if((st==='asignado'||st==='urgente') && d.encargado){
       const tAsig=parseF(d.fechaAsig);
       const dias=!isNaN(tAsig)?Math.round((HOY-tAsig)/86400000):null;
       noInformados.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'—'});
@@ -3242,11 +3269,520 @@ function initPanelResize(){
   }catch(e){}
 }
 
+// ── NUEVOS INFORMES ──
+
+function renderInfSinAsignar(){
+  const parseF=s=>{if(!s)return NaN;if(/^\d{4}-/.test(s))return new Date(s+'T12:00').getTime();const p=s.split('-');return p.length===3?new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`).getTime():NaN;};
+  const fmtD=s=>{const ts=parseF(s);return isNaN(ts)?'—':new Date(ts).toLocaleDateString('es-CL',{day:'2-digit',month:'short'});};
+  const ahora=Date.now();
+  const dosMesesMs=60*24*3600*1000;
+  const sinAsignar=[];
+  for(let n=1;n<=33;n++){
+    const d=DB[n]||{};
+    const hist=d.historial||[];
+    let tieneReciente=false;
+    hist.forEach(h=>{const ts=parseF(h.fecha);if(!isNaN(ts)&&(ahora-ts)<=dosMesesMs)tieneReciente=true;});
+    const faTs=parseF(d.fechaAsig);
+    if(!isNaN(faTs)&&(ahora-faTs)<=dosMesesMs&&d.encargado)tieneReciente=true;
+    if(!tieneReciente){
+      let ultimaTs=null;
+      hist.forEach(h=>{const ts=parseF(h.fecha);if(!isNaN(ts)&&(!ultimaTs||ts>ultimaTs))ultimaTs=ts;});
+      if(!ultimaTs&&d.fechaDev){const ts=parseF(d.fechaDev);if(!isNaN(ts))ultimaTs=ts;}
+      if(!ultimaTs&&d.fechaAsig){const ts=parseF(d.fechaAsig);if(!isNaN(ts))ultimaTs=ts;}
+      const dias=ultimaTs?Math.round((ahora-ultimaTs)/86400000):null;
+      sinAsignar.push({n,dias,enc:d.encargado||'',estado:gs(n),ultimaFecha:ultimaTs?new Date(ultimaTs).toISOString().slice(0,10):null});
+    }
+  }
+  sinAsignar.sort((a,b)=>(b.dias||9999)-(a.dias||9999));
+  if(!sinAsignar.length)return`<div class="dbc" style="text-align:center;padding:32px">
+    <div style="font-size:2rem;margin-bottom:8px">✅</div>
+    <div style="font-weight:700;color:var(--dark);margin-bottom:4px">Todos los territorios activos</div>
+    <div style="font-size:.72rem;color:var(--gray)">Todos han sido asignados en los últimos 2 meses.</div>
+  </div>`;
+  const stColors={disponible:'#15803d',asignado:'#d97706',completado:'#4f46e5',urgente:'#dc2626'};
+  const stLabel={disponible:'🟢 Disponible',asignado:'🟡 Asignado',completado:'✅ Completado',urgente:'🔴 Urgente'};
+  const filas=sinAsignar.map(t=>{
+    const urgente=t.dias!==null&&t.dias>180;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;border:1.5px solid ${urgente?'rgba(239,68,68,.3)':'var(--bdr)'};margin-bottom:6px;background:${urgente?'rgba(239,68,68,.03)':'var(--w)'};cursor:pointer" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+      <div style="width:34px;height:34px;border-radius:8px;background:${urgente?'rgba(239,68,68,.15)':'rgba(27,67,50,.08)'};color:${urgente?'#dc2626':'var(--gd)'};font-size:.88rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${t.n}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.78rem;font-weight:700;color:var(--dark)">Territorio ${t.n}${t.enc?' · '+t.enc:''}</div>
+        <div style="font-size:.62rem;color:var(--gray);margin-top:2px"><span style="color:${stColors[t.estado]}">${stLabel[t.estado]}</span>${t.ultimaFecha?` · Última actividad: ${fmtD(t.ultimaFecha)}`:'· Sin historial'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:${urgente?'#dc2626':'#d97706'};line-height:1">${t.dias||'?'}</div>
+        <div style="font-size:.52rem;color:var(--gray)">días</div>
+      </div>
+    </div>`;
+  }).join('');
+  return`<div class="dbc"><div class="dbc-t">📋 Sin asignación en los últimos 2 meses — ${sinAsignar.length} territorios</div>${filas}</div>`;
+}
+
+function renderInfCalor(){
+  const parseF=s=>{if(!s)return NaN;if(/^\d{4}-/.test(s))return new Date(s+'T12:00').getTime();const p=s.split('-');return p.length===3?new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`).getTime():NaN;};
+  const ahora=Date.now();
+  const datos=[];
+  for(let n=1;n<=33;n++){
+    const d=DB[n]||{};const hist=d.historial||[];
+    let ultimaTs=null;
+    if(hist.length){const max=Math.max(...hist.map(h=>parseF(h.fecha)||0));if(max>0)ultimaTs=max;}
+    if(!ultimaTs&&d.fechaDev){const ts=parseF(d.fechaDev);if(!isNaN(ts))ultimaTs=ts;}
+    if(!ultimaTs&&d.fechaAsig){const ts=parseF(d.fechaAsig);if(!isNaN(ts))ultimaTs=ts;}
+    const dias=ultimaTs?Math.round((ahora-ultimaTs)/86400000):null;
+    const encCorto=(d.encargado||'').split(' ')[0];
+    datos.push({n,dias,enc:d.encargado||'',encCorto,estado:gs(n)});
+  }
+  const col=d=>{
+    if(d===null)return{bg:'#f1f5f9',txt:'#94a3b8'};
+    if(d<=30)return{bg:'rgba(34,197,94,.75)',txt:'#fff'};
+    if(d<=60)return{bg:'rgba(34,197,94,.38)',txt:'#14532d'};
+    if(d<=90)return{bg:'rgba(245,158,11,.45)',txt:'#78350f'};
+    if(d<=180)return{bg:'rgba(239,68,68,.38)',txt:'#7f1d1d'};
+    return{bg:'rgba(239,68,68,.75)',txt:'#fff'};
+  };
+  const celdas=datos.map(t=>{
+    const c=col(t.dias);const asig=t.estado==='asignado'||t.estado==='urgente';
+    return`<div onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)" title="T${t.n}${t.enc?' — '+t.enc:''}${t.dias!==null?' · '+t.dias+'d':''}"
+      style="aspect-ratio:1;border-radius:7px;background:${c.bg};display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid rgba(0,0,0,.07);transition:transform .1s;overflow:hidden;padding:2px"
+      onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform=''">
+      <div style="font-size:.7rem;font-weight:900;color:${c.txt};line-height:1">${t.n}</div>
+      <div style="font-size:.42rem;font-weight:600;color:${c.txt};opacity:.85;line-height:1.2;text-align:center;padding:0 1px;overflow:hidden;max-width:100%">${asig&&t.encCorto?t.encCorto:(t.dias!==null?t.dias+'d':'—')}</div>
+    </div>`;
+  }).join('');
+  const leg=[
+    {bg:'rgba(34,197,94,.75)',l:'≤30d'},{bg:'rgba(34,197,94,.38)',l:'31–60d'},
+    {bg:'rgba(245,158,11,.45)',l:'61–90d'},{bg:'rgba(239,68,68,.38)',l:'91–180d'},
+    {bg:'rgba(239,68,68,.75)',l:'>180d'},{bg:'#f1f5f9',l:'Sin datos'},
+  ].map(l=>`<div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:12px;height:12px;border-radius:2px;background:${l.bg};flex-shrink:0"></div>${l.l}</div>`).join('');
+  const sinTrab=datos.filter(t=>!t.dias||(t.dias>60)).sort((a,b)=>(b.dias||9999)-(a.dias||9999)).slice(0,5);
+  return`<div class="dbc" style="margin-bottom:12px">
+    <div class="dbc-t">🌡️ Mapa de calor — días desde última actividad</div>
+    <div style="font-size:.62rem;color:var(--gray);margin-bottom:8px">Asignados muestran encargado · Toca para ver detalle</div>
+    <div style="display:grid;grid-template-columns:repeat(11,1fr);gap:5px;margin-bottom:10px">${celdas}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">${leg}</div>
+  </div>
+  <div class="dbc"><div class="dbc-t">🔴 Más tiempo sin trabajar</div>
+    ${sinTrab.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+      <div style="width:28px;height:28px;border-radius:6px;background:rgba(239,68,68,.12);color:#dc2626;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">T${t.n}</div>
+      <div style="flex:1"><div style="font-size:.78rem;font-weight:600;color:var(--dark)">${t.enc||'Sin encargado'}</div>
+      <div style="font-size:.62rem;color:var(--gray)">${t.dias?t.dias+' días sin actividad':'Sin registro'}</div></div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:#dc2626">${t.dias||'?'}<span style="font-size:.55rem;font-weight:400">d</span></div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderInfMensual(){
+  const now=new Date();const anio=now.getFullYear();
+  const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const dataMes=meses.map((lbl,i)=>{
+    const k=`${anio}-${String(i+1).padStart(2,'0')}`;
+    let trabajados=0,devoluciones=0;
+    for(let n=1;n<=33;n++){
+      if(DB[n]?.monthsWorked?.[k])trabajados++;
+      (DB[n]?.historial||[]).forEach(h=>{if((h.fecha||'').startsWith(k))devoluciones++;});
+    }
+    return{lbl,trabajados,devoluciones,mes:i+1};
+  });
+  const maxVal=Math.max(...dataMes.map(m=>Math.max(m.trabajados,m.devoluciones)),1);
+  const mesActual=now.getMonth();
+  const barras=dataMes.map((m,i)=>{
+    const act=i===mesActual;
+    const hT=Math.round(m.trabajados/maxVal*100);const hD=Math.round(m.devoluciones/maxVal*100);
+    return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+      <div style="display:flex;align-items:flex-end;gap:1px;height:100px">
+        <div style="width:9px;border-radius:2px 2px 0 0;background:${act?'var(--gd)':'rgba(34,197,94,.4)'};height:${hT}px;min-height:2px" title="${m.trabajados} trabajados"></div>
+        <div style="width:9px;border-radius:2px 2px 0 0;background:${act?'var(--indigo)':'rgba(99,102,241,.4)'};height:${hD}px;min-height:${m.devoluciones?2:0}px" title="${m.devoluciones} devoluciones"></div>
+      </div>
+      <div style="font-size:.5rem;color:${act?'var(--gd)':'var(--gray)'};font-weight:${act?700:400}">${m.lbl}</div>
+    </div>`;
+  }).join('');
+  const filas=dataMes.filter(m=>m.trabajados||m.devoluciones).map(m=>`
+    <tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:5px 8px;font-size:.72rem;font-weight:600;color:var(--dark)">${m.lbl} ${anio}</td>
+      <td style="padding:5px 8px;font-size:.72rem;text-align:center;color:#15803d;font-weight:700">${m.trabajados}</td>
+      <td style="padding:5px 8px;font-size:.72rem;text-align:center;color:#4f46e5;font-weight:700">${m.devoluciones}</td>
+    </tr>`).join('');
+  return`<div class="dbc" style="margin-bottom:12px">
+    <div class="dbc-t">📅 Actividad mensual ${anio}</div>
+    <div style="display:flex;align-items:flex-end;gap:2px;padding:8px 0;overflow-x:auto">${barras}</div>
+    <div style="display:flex;gap:14px;margin-top:6px;padding-top:8px;border-top:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(34,197,94,.4)"></div>Trabajados</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(99,102,241,.4)"></div>Devoluciones</div>
+    </div>
+  </div>
+  <div class="dbc"><div class="dbc-t">Resumen por mes</div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:1.5px solid var(--bdr)">
+        <th style="padding:5px 8px;font-size:.6rem;font-weight:700;color:var(--gray);text-align:left;text-transform:uppercase">Mes</th>
+        <th style="padding:5px 8px;font-size:.6rem;font-weight:700;color:#15803d;text-align:center">Trabajados</th>
+        <th style="padding:5px 8px;font-size:.6rem;font-weight:700;color:#4f46e5;text-align:center">Devoluciones</th>
+      </tr></thead>
+      <tbody>${filas||`<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--gray);font-size:.75rem">Sin actividad en ${anio}</td></tr>`}</tbody>
+    </table>
+  </div>`;
+}
+
+// ── INFORME: TERRITORIOS RURALES ──
+function renderInfRurales(){
+  if(!RURAL||!RURAL.length) return`
+    <div class="dbc" style="border-style:dashed;text-align:center;padding:20px">
+      <div style="font-size:.78rem;color:var(--gray)">🌿 Sin territorios rurales registrados</div>
+      <button class="btn" onclick="toggleDash();setTimeout(openRuralModal,120)" style="margin-top:10px;font-size:.7rem">Agregar territorios rurales</button>
+    </div>`;
+
+  const fmtD=s=>{if(!s)return'—';try{return new Date(s+'T12:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});}catch{return s;}};
+  const ahora=Date.now();
+
+  const sorted=[...RURAL].sort((a,b)=>{
+    // Primero los sin completar, luego por fecha asignación desc
+    if(!a.comp&&b.comp)return -1;
+    if(a.comp&&!b.comp)return 1;
+    return (b.asig||'').localeCompare(a.asig||'');
+  });
+
+  const activos=sorted.filter(r=>!r.comp);
+  const completados=sorted.filter(r=>r.comp);
+
+  const mkFila=r=>{
+    const diasAsig=r.asig?Math.round((ahora-new Date(r.asig+'T12:00').getTime())/86400000):null;
+    const completado=!!r.comp;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;border:1.5px solid ${completado?'rgba(99,102,241,.25)':'rgba(34,197,94,.25)'};margin-bottom:6px;background:${completado?'rgba(99,102,241,.03)':'rgba(34,197,94,.03)'}">
+      <div style="width:30px;height:30px;border-radius:8px;background:${completado?'rgba(99,102,241,.12)':'rgba(34,197,94,.12)'};color:${completado?'#4f46e5':'#15803d'};display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0">${completado?'✅':'🌿'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.78rem;font-weight:700;color:var(--dark)">${r.nombre||'Sin nombre'}</div>
+        <div style="font-size:.62rem;color:var(--gray);margin-top:1px">
+          👤 ${r.enc||'Sin encargado'}
+          ${r.asig?` · Asignado: ${fmtD(r.asig)}`:''}
+          ${r.comp?` · Completado: ${fmtD(r.comp)}`:''}
+          ${r.obs?` · ${r.obs}`:''}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${!completado&&diasAsig!==null?`<div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#d97706;line-height:1">${diasAsig}</div><div style="font-size:.5rem;color:var(--gray)">días</div>`:''}
+        ${completado?`<span style="font-size:.6rem;font-weight:700;color:#4f46e5;background:rgba(99,102,241,.1);padding:2px 6px;border-radius:4px">Completado</span>`:''}
+      </div>
+    </div>`;
+  };
+
+  return`<div class="dbc">
+    <div class="dbc-t">🌿 Territorios rurales — ${RURAL.length} en total</div>
+    <div style="display:flex;gap:12px;margin-bottom:12px">
+      <div style="flex:1;text-align:center;padding:8px;border-radius:8px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2)">
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:#15803d">${activos.length}</div>
+        <div style="font-size:.6rem;color:var(--gray)">En proceso</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px;border-radius:8px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2)">
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:#4f46e5">${completados.length}</div>
+        <div style="font-size:.6rem;color:var(--gray)">Completados</div>
+      </div>
+    </div>
+    ${activos.length?`<div style="font-size:.62rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">En proceso</div>${activos.map(mkFila).join('')}`:''}
+    ${completados.length?`<div style="font-size:.62rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin:10px 0 6px">Completados</div>${completados.map(mkFila).join('')}`:''}
+    <button onclick="toggleDash();setTimeout(openRuralModal,120)" style="width:100%;margin-top:10px;padding:7px;border-radius:8px;border:1.5px dashed var(--bdr);background:transparent;cursor:pointer;font-size:.7rem;color:var(--gray)">🌿 Gestionar territorios rurales</button>
+  </div>`;
+}
+
+function renderInfHistorico(){
+  const ANOS=[2024,2025,2026];
+  const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const parseF=s=>{if(!s)return NaN;if(/^\d{4}-/.test(s))return new Date(s+'T12:00').getTime();const p=s.split('-');return p.length===3?new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`).getTime():NaN;};
+
+  // Totales por año
+  const totAno=ANOS.map(a=>{
+    let trabajados=0,devoluciones=0,publicadores=new Set();
+    for(let n=1;n<=33;n++){
+      const d=DB[n]||{};
+      // Meses trabajados
+      for(let m=1;m<=12;m++){
+        const k=`${a}-${String(m).padStart(2,'0')}`;
+        if(d.monthsWorked?.[k])trabajados++;
+      }
+      // Devoluciones
+      (d.historial||[]).forEach(h=>{
+        const ts=parseF(h.fecha);
+        if(!isNaN(ts)&&new Date(ts).getFullYear()===a){
+          devoluciones++;
+          if(h.enc&&h.enc!=='—')publicadores.add(h.enc);
+        }
+      });
+    }
+    return{anio:a,trabajados,devoluciones,publicadores:publicadores.size};
+  });
+
+  // Detalle mensual por año
+  const detallePorAno=ANOS.map(a=>{
+    const mesesData=meses.map((lbl,i)=>{
+      const k=`${a}-${String(i+1).padStart(2,'0')}`;
+      let t=0,d=0;
+      for(let n=1;n<=33;n++){
+        if(DB[n]?.monthsWorked?.[k])t++;
+        (DB[n]?.historial||[]).forEach(h=>{if((h.fecha||'').startsWith(k))d++;});
+      }
+      return{lbl,t,d};
+    });
+    const maxV=Math.max(...mesesData.map(m=>Math.max(m.t,m.d)),1);
+    return{anio:a,mesesData,maxV};
+  });
+
+  // Top publicadores histórico
+  const encMap={};
+  for(let n=1;n<=33;n++){
+    (DB[n]?.historial||[]).forEach(h=>{
+      const e=h.enc||'';if(!e||e==='—')return;
+      if(!encMap[e])encMap[e]={enc:e,total:0};
+      encMap[e].total++;
+    });
+  }
+  const topEnc=Object.values(encMap).sort((a,b)=>b.total-a.total).slice(0,8);
+  const maxEnc=Math.max(...topEnc.map(e=>e.total),1);
+
+  const kpiColor=['#15803d','#4f46e5','#d97706'];
+
+  const kpis=totAno.map((a,i)=>`
+    <div style="flex:1;text-align:center;padding:12px 8px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--w)">
+      <div style="font-size:.6rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">${a.anio}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:${kpiColor[i]};line-height:1">${a.devoluciones}</div>
+      <div style="font-size:.58rem;color:var(--gray);margin-top:2px">entregas</div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-around">
+        <div style="text-align:center"><div style="font-size:.78rem;font-weight:700;color:${kpiColor[i]}">${a.trabajados}</div><div style="font-size:.52rem;color:var(--gray)">trabajados</div></div>
+        <div style="text-align:center"><div style="font-size:.78rem;font-weight:700;color:${kpiColor[i]}">${a.publicadores}</div><div style="font-size:.52rem;color:var(--gray)">publicadores</div></div>
+      </div>
+    </div>`).join('');
+
+  const graficos=detallePorAno.map(({anio,mesesData,maxV},ai)=>{
+    const barras=mesesData.map(m=>{
+      const hT=Math.round(m.t/maxV*80);const hD=Math.round(m.d/maxV*80);
+      return`<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1">
+        <div style="display:flex;align-items:flex-end;gap:1px;height:80px">
+          <div style="width:7px;border-radius:2px 2px 0 0;background:${kpiColor[ai]};opacity:.7;height:${hT}px;min-height:${m.t?2:0}px"></div>
+          <div style="width:7px;border-radius:2px 2px 0 0;background:${kpiColor[ai]};opacity:.35;height:${hD}px;min-height:${m.d?2:0}px"></div>
+        </div>
+        <div style="font-size:.46rem;color:var(--gray)">${m.lbl}</div>
+      </div>`;
+    }).join('');
+    return`<div class="dbc" style="margin-bottom:10px">
+      <div class="dbc-t">${anio} — actividad mensual</div>
+      <div style="display:flex;align-items:flex-end;gap:1px;padding:6px 0">${barras}</div>
+      <div style="display:flex;gap:12px;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:var(--gray)"><div style="width:8px;height:8px;border-radius:2px;background:${kpiColor[ai]};opacity:.7"></div>Trabajados</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:var(--gray)"><div style="width:8px;height:8px;border-radius:2px;background:${kpiColor[ai]};opacity:.35"></div>Entregas</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const rankEnc=topEnc.length?`<div class="dbc" style="margin-bottom:10px">
+    <div class="dbc-t">👤 Top publicadores — histórico total</div>
+    ${topEnc.map((e,i)=>{
+      const pct=Math.round(e.total/maxEnc*100);
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9">
+        <div style="width:20px;text-align:center;font-size:.78rem">${medal||`<span style="font-size:.6rem;color:var(--gray);font-weight:700">${i+1}</span>`}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.75rem;font-weight:700;color:var(--dark)">${e.enc}</div>
+          <div style="height:4px;background:#f1f5f9;border-radius:2px;overflow:hidden;margin-top:4px">
+            <div style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gd),var(--gm));width:${pct}%"></div>
+          </div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--gd);min-width:28px;text-align:right">${e.total}</div>
+      </div>`;
+    }).join('')}
+  </div>`:'';
+
+  return`
+    <div class="dbc" style="margin-bottom:10px">
+      <div class="dbc-t">📆 Resumen histórico 2024–2026</div>
+      <div style="display:flex;gap:8px">${kpis}</div>
+    </div>
+    ${graficos}
+    ${rankEnc}
+    ${renderInfRurales()}`;
+}
+
+// ── LUGARES DE REUNIÓN ──
+function openMeetModal(){
+  document.getElementById('meetModal').style.display='block';
+  renderMeetList();
+}
+function closeMeetModal(){
+  document.getElementById('meetModal').style.display='none';
+}
+function addMeetPin(){
+  const inp=document.getElementById('meetNameInput');
+  const nombre=(inp.value||'').trim();
+  if(!nombre){inp.focus();return;}
+  // Default position: center of map
+  const id='meet_'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+  MEET_PINS.push({id, nombre, x:460, y:759});
+  saveMeet();
+  renderMeetPins();
+  renderMeetList();
+  inp.value='';
+  inp.focus();
+  toast('🏠 Lugar "'+nombre+'" agregado al mapa');
+}
+function deleteMeetPin(id){
+  MEET_PINS=MEET_PINS.filter(m=>m.id!==id);
+  saveMeet();
+  renderMeetPins();
+  renderMeetList();
+}
+function renameMeetPin(id, nombre){
+  const m=MEET_PINS.find(m=>m.id===id);
+  if(m){m.nombre=nombre;saveMeet();renderMeetPins();}
+}
+function renderMeetList(){
+  const el=document.getElementById('meetList');
+  if(!el)return;
+  if(MEET_PINS.length===0){
+    el.innerHTML='<div style="text-align:center;color:var(--gray);font-size:.75rem;padding:20px 0">Sin lugares agregados aún</div>';
+    return;
+  }
+  el.innerHTML=MEET_PINS.map(m=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--brd)">
+      <span style="font-size:1.1rem">🏠</span>
+      <input value="${m.nombre.replace(/"/g,'&quot;')}" style="flex:1;border:none;background:transparent;color:var(--txt);font-size:.8rem;outline:none;font-weight:500"
+        onchange="renameMeetPin('${m.id}',this.value)"
+        onblur="renameMeetPin('${m.id}',this.value)"/>
+      <span style="font-size:.6rem;color:var(--gray)">📍 ${m.x},${m.y}</span>
+      <button onclick="deleteMeetPin('${m.id}')" style="background:#fee2e2;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.75rem;color:#dc2626" title="Eliminar">✕</button>
+    </div>`).join('');
+}
+
+function renderMeetPins(){
+  // Use a separate SVG group for meeting pins
+  let mg=document.getElementById('meet-pg');
+  if(!mg){
+    mg=document.createElementNS('http://www.w3.org/2000/svg','g');
+    mg.setAttribute('id','meet-pg');
+    document.getElementById('mapSvg').appendChild(mg);
+  }
+  mg.innerHTML='';
+  MEET_PINS.forEach(m=>{
+    const grp=document.createElementNS('http://www.w3.org/2000/svg','g');
+    grp.setAttribute('id','mpin-'+m.id);
+    grp.setAttribute('class','meet-pin'+(editMode?' draggable edit-pin':''));
+    grp.dataset.mid=m.id;
+
+    // House shape: body rect + roof triangle
+    const s=14/scale; // size unit, scales with zoom
+    const cx=m.x, cy=m.y;
+    // Roof
+    const roof=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    roof.setAttribute('points',`${cx},${cy-s*1.1} ${cx-s*0.95},${cy-s*0.1} ${cx+s*0.95},${cy-s*0.1}`);
+    roof.setAttribute('fill','#0284c7');
+    roof.setAttribute('stroke','#fff');
+    roof.setAttribute('stroke-width',1/scale);
+    grp.appendChild(roof);
+    // Body
+    const body=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    body.setAttribute('x',cx-s*0.72);body.setAttribute('y',cy-s*0.1);
+    body.setAttribute('width',s*1.44);body.setAttribute('height',s*1.0);
+    body.setAttribute('rx',s*0.12);
+    body.setAttribute('fill','#0284c7');
+    body.setAttribute('stroke','#fff');
+    body.setAttribute('stroke-width',1/scale);
+    grp.appendChild(body);
+    // Door
+    const door=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    door.setAttribute('x',cx-s*0.22);door.setAttribute('y',cy+s*0.3);
+    door.setAttribute('width',s*0.44);door.setAttribute('height',s*0.6);
+    door.setAttribute('rx',s*0.08);
+    door.setAttribute('fill','#fff');door.setAttribute('opacity','0.85');
+    grp.appendChild(door);
+    // Label
+    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lbl.setAttribute('x',cx);lbl.setAttribute('y',cy+s*1.5);
+    lbl.setAttribute('text-anchor','middle');
+    lbl.setAttribute('dominant-baseline','middle');
+    lbl.style.fontSize=(9/scale)+'px';
+    lbl.style.fontWeight='600';
+    lbl.setAttribute('fill','#0284c7');
+    lbl.setAttribute('stroke','var(--card)');
+    lbl.setAttribute('stroke-width',2.5/scale);
+    lbl.setAttribute('paint-order','stroke');
+    lbl.textContent=m.nombre;
+    grp.appendChild(lbl);
+
+    if(editMode){
+      grp.addEventListener('mousedown',e=>startMeetDrag(e,m.id));
+      grp.addEventListener('touchstart',e=>startMeetDrag(e,m.id),{passive:false});
+      grp.style.cursor='grab';
+    } else {
+      grp.addEventListener('mouseenter',e=>showMeetTip(m,e));
+      grp.addEventListener('mouseleave',hideTip);
+    }
+    mg.appendChild(grp);
+  });
+}
+
+function showMeetTip(m,e){
+  hideTip();
+  const t=document.createElement('div');t.className='tip';
+  t.innerHTML=`<b>🏠 ${m.nombre}</b><div style="opacity:.7;font-size:.7rem">Lugar de reunión</div>`;
+  document.body.appendChild(t);tip=t;
+  const mv=ev=>{tip&&(tip.style.left=(ev.clientX+14)+'px',tip.style.top=(ev.clientY-55)+'px');};
+  t._mv=mv;document.addEventListener('mousemove',mv);
+  t.style.left=(e.clientX+14)+'px';t.style.top=(e.clientY-55)+'px';
+}
+
+function startMeetDrag(e, id){
+  if(!editMode)return;
+  e.stopPropagation();e.preventDefault();
+  const m=MEET_PINS.find(x=>x.id===id);
+  if(!m)return;
+  hideTip();
+  const svg=document.getElementById('mapSvg');
+  const pt=svg.createSVGPoint();
+  const getCoords=(cx,cy)=>{pt.x=cx;pt.y=cy;const p=pt.matrixTransform(svg.getScreenCTM().inverse());return [p.x,p.y];};
+  const [sx,sy]=getCoords(e.clientX||e.touches?.[0].clientX, e.clientY||e.touches?.[0].clientY);
+  const offX=m.x-sx, offY=m.y-sy;
+  const grp=document.getElementById('mpin-'+id);
+  if(grp)grp.style.cursor='grabbing';
+
+  const onMove=me=>{
+    const cx=me.clientX||(me.touches?.[0].clientX);
+    const cy=me.clientY||(me.touches?.[0].clientY);
+    if(cx===undefined)return;
+    const [svgX,svgY]=getCoords(cx,cy);
+    m.x=Math.round(svgX+offX);
+    m.y=Math.round(svgY+offY);
+    // Move all elements in group
+    if(grp) updateMeetPinPosition(grp, m);
+  };
+  const onUp=()=>{
+    if(grp)grp.style.cursor='grab';
+    saveMeet();
+    // Update coord display in modal if open
+    renderMeetList();
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchmove',onMove);
+    document.removeEventListener('touchend',onUp);
+  };
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
+}
+
+function updateMeetPinPosition(grp, m){
+  const cx=m.x, cy=m.y;
+  const s=14/scale;
+  const roof=grp.querySelector('polygon');
+  const body=grp.querySelectorAll('rect')[0];
+  const door=grp.querySelectorAll('rect')[1];
+  const lbl=grp.querySelector('text');
+  if(roof) roof.setAttribute('points',`${cx},${cy-s*1.1} ${cx-s*0.95},${cy-s*0.1} ${cx+s*0.95},${cy-s*0.1}`);
+  if(body){body.setAttribute('x',cx-s*0.72);body.setAttribute('y',cy-s*0.1);}
+  if(door){door.setAttribute('x',cx-s*0.22);door.setAttribute('y',cy+s*0.3);}
+  if(lbl){lbl.setAttribute('x',cx);lbl.setAttribute('y',cy+s*1.5);}
+}
+
 // ── INIT ──
 (()=>{
   const s=document.getElementById('mn');
   for(let i=1;i<=33;i++){const o=document.createElement('option');o.value=i;o.textContent='Territorio '+i;s.appendChild(o);}
-  initZoom();initMapPan();renderPins();updateAll();renderCampSidebar();
+  initZoom();initMapPan();renderPins();renderMeetPins();updateAll();renderCampSidebar();
   window.addEventListener('resize',resetZoom);
   // Cargar config Gist si existe
   gistLoadConfig();
@@ -3294,6 +3830,30 @@ function initPanelResize(){
       </div>
       <!-- Lista -->
       <div id="ruralList"></div>
+    </div>
+  </div>
+</div>
+<!-- MODAL LUGARES DE REUNIÓN -->
+<div id="meetModal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);overflow-y:auto;padding:16px" onclick="if(event.target===this)closeMeetModal()">
+  <div style="max-width:480px;margin:0 auto;background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="background:linear-gradient(135deg,#0ea5e9,#0284c7);padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div style="color:#fff">
+        <div style="font-size:1rem;font-weight:700">🏠 Lugares de reunión</div>
+        <div style="font-size:.7rem;opacity:.85;margin-top:2px">Los pines aparecen en el mapa y son arrastrables en modo edición</div>
+      </div>
+      <button onclick="closeMeetModal()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem;color:#fff">✕</button>
+    </div>
+    <div style="padding:16px">
+      <!-- Agregar nuevo -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input id="meetNameInput" placeholder="Nombre del lugar (ej: Salón del Reino)" style="flex:1;padding:8px 10px;border:1.5px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--txt);font-size:.8rem" onkeydown="if(event.key==='Enter')addMeetPin()"/>
+        <button onclick="addMeetPin()" style="background:#0284c7;color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.8rem;white-space:nowrap">➕ Agregar</button>
+      </div>
+      <!-- Lista -->
+      <div id="meetList"></div>
+      <div style="margin-top:12px;font-size:.65rem;color:var(--gray);text-align:center">
+        💡 Activa <strong>✏️ Mover pines</strong> para arrastrar los pines de reunión en el mapa
+      </div>
     </div>
   </div>
 </div>
