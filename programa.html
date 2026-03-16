@@ -1001,32 +1001,18 @@ async function copiarImagen(){
   toastEl.textContent='⏳ Generando imagen…';toastEl.classList.add('show');
   try{
     const canvas=await generarCanvas();
-    // Limitar a 1080px máximo — estándar WhatsApp para fotos de grupo
-    const MAX=1080;
-    const srcW=canvas.width,srcH=canvas.height;
-    let finalCanvas=canvas;
-    if(srcW>MAX||srcH>MAX){
-      const ratio=Math.min(MAX/srcW,MAX/srcH);
-      const dstW=Math.round(srcW*ratio),dstH=Math.round(srcH*ratio);
-      const tmp=document.createElement('canvas');tmp.width=dstW;tmp.height=dstH;
-      const tctx=tmp.getContext('2d');tctx.drawImage(canvas,0,0,dstW,dstH);
-      finalCanvas=tmp;
-    }
-    finalCanvas.toBlob(async blob=>{
+    canvas.toBlob(async blob=>{
       const file=new File([blob],'programa_predicacion.jpg',{type:'image/jpeg'});
-      // Intentar Web Share API (móvil / Android)
       if(navigator.canShare&&navigator.canShare({files:[file]})){
         try{
           await navigator.share({files:[file],title:'Programa de Predicación',text:document.getElementById('subtitulo').innerText});
           toast('✅ ¡Compartido!');return;
         }catch(e){if(e.name==='AbortError'){toast('');return;}}
       }
-      // Fallback: copiar al portapapeles (desktop)
       try{
         await navigator.clipboard.write([new ClipboardItem({'image/jpeg':blob})]);
         toast('✅ Imagen copiada — pégala en WhatsApp (Ctrl+V)');return;
       }catch(e){}
-      // Último fallback: descargar
       const link=document.createElement('a');
       link.download='programa_predicacion.jpg';
       link.href=URL.createObjectURL(blob);
@@ -1058,27 +1044,29 @@ async function generarCanvas(){
     if(!isNaN(num))climaDia[num]=badge.textContent.trim();
   });
 
-  // ── HD optimizado: SCALE 2x, ancho 1080, alto dinámico ──
+  // ── Renderizar a tamaño interno, luego escalar a cuadrado 1080×1080 ──
   const SCALE=2;
   const W=1080;
-  const pad=38;
+  const pad=32;
   const cardX=pad,cardY=pad,cardW=W-pad*2;
-  const headerH=126,goldBarH=6,theadH=44;
+  const headerH=110,goldBarH=5,theadH=38;
   const hasClima=Object.keys(climaDia).length>0;
-  const rowH=hasClima?74:60;
+  const rowH=hasClima?62:52;
   const cardH=headerH+goldBarH+theadH+rows.length*rowH;
-  // Alto total: contenido + margen uniforme arriba y abajo
-  const H=cardY+cardH+pad+pad;
-  // Canvas de trabajo (W x H)
-  const cv=document.createElement('canvas');cv.width=W*SCALE;cv.height=H*SCALE;
-  const ctx=cv.getContext('2d');ctx.scale(SCALE,SCALE);
+  const H=cardY+cardH+pad;
+
+  // Calcular escala para que todo quepa en 1080×1080
+  const fitScale=Math.min(1, 1080/H);
+  const renderW=Math.round(W/fitScale);
+  const renderH=Math.round(H/fitScale);
+
+  const cv=document.createElement('canvas');cv.width=renderW*SCALE;cv.height=renderH*SCALE;
+  const ctx=cv.getContext('2d');ctx.scale(SCALE/fitScale,SCALE/fitScale);
 
   // Fondo
   const bg=ctx.createLinearGradient(0,0,W,H);
   bg.addColorStop(0,C.bgDark);bg.addColorStop(0.45,C.bgMid);bg.addColorStop(1,C.bgDark);
   ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-
-  // Card sombra + fondo blanco
   ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=28;ctx.shadowOffsetY=8;
   roundRect(ctx,cardX,cardY,cardW,cardH,18);ctx.fillStyle=C.white;ctx.fill();ctx.restore();
   // Borde dorado
@@ -1189,14 +1177,16 @@ async function generarCanvas(){
     ctx.fillStyle=C.white;ctx.textAlign='center';ctx.fillText(r.ter,bX,bY+7,bW-8);ctx.restore();
   });
 
-  // Canvas final: rectangular ajustado al contenido (no cuadrado forzado)
-  // Esto evita que WhatsApp recorte la imagen
-  const out=document.createElement('canvas');out.width=W*SCALE;out.height=H*SCALE;
+  // Canvas final cuadrado 1080×1080 para WhatsApp grupo
+  const SIZE=1080;
+  const out=document.createElement('canvas');out.width=SIZE*SCALE;out.height=SIZE*SCALE;
   const octx=out.getContext('2d');octx.scale(SCALE,SCALE);
-  const obg=octx.createLinearGradient(0,0,W,H);
+  const obg=octx.createLinearGradient(0,0,SIZE,SIZE);
   obg.addColorStop(0,C.bgDark);obg.addColorStop(0.45,C.bgMid);obg.addColorStop(1,C.bgDark);
-  octx.fillStyle=obg;octx.fillRect(0,0,W,H);
-  octx.drawImage(cv,0,0);
+  octx.fillStyle=obg;octx.fillRect(0,0,SIZE,SIZE);
+  // Centrar verticalmente el contenido en el cuadrado
+  const offY=Math.max(0,Math.round((SIZE-H*fitScale)/2));
+  octx.drawImage(cv,0,offY*SCALE,SIZE*SCALE,Math.round(H*fitScale)*SCALE);
   return out;
 }
 
