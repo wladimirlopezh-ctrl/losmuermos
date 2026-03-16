@@ -74,7 +74,8 @@ tbody tr:hover{background:#b6e8c3;}
 tbody td{padding:11px 14px;text-align:center;font-size:.88rem;color:var(--td);border-right:1px solid var(--row-border);border-bottom:1px solid var(--row-border);vertical-align:middle;line-height:1.45;}
 tbody td:last-child{border-right:none;}
 td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;text-align:center;vertical-align:middle;}
-td.clima-col{background:linear-gradient(180deg,var(--gl),#daf4e4) !important;text-align:center;vertical-align:middle;padding:4px 6px !important;border-right:1px solid var(--row-border);}
+td.clima-col{background:linear-gradient(180deg,var(--gl),#daf4e4) !important;text-align:center;vertical-align:middle;padding:4px 6px !important;border-right:3px solid var(--gm) !important;}
+td[data-f="hora"]{border-left:3px solid var(--gm) !important;}
 .weather-badge{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:700;font-family:'Lato',sans-serif;padding:4px 10px;border-radius:20px;white-space:nowrap;letter-spacing:.2px;}
 .weather-badge.rain-high{background:rgba(59,130,246,.18);color:#1d4ed8;border:1px solid rgba(59,130,246,.35);}
 .weather-badge.rain-mid{background:rgba(148,163,184,.15);color:#475569;border:1px solid rgba(148,163,184,.3);}
@@ -680,7 +681,7 @@ async function syncTerrToMapa(){
         }
       });
       saveTerr();
-      renderTerr();
+      // renderTerr() omitido — tab territorios no disponible en esta vista
 
       // Paso 2: leer mapa actual desde Drive
       let mapaDB={};
@@ -743,7 +744,8 @@ async function syncTerrFromMapa(){
         if(idx>=0){TERR_DB[idx].encargado=e.encargado;TERR_DB[idx].fechaAsig=e.fechaAsig;}
         else TERR_DB.push(e);
       });
-      saveTerr();renderTerr();
+      saveTerr();
+      // renderTerr() omitido — tab territorios no disponible en esta vista
       driveSetStatus(`✅ Territorios cargados desde mapa — ${new Date().toLocaleTimeString()}`,'#81c995');
       toast('🗺️ Territorios cargados desde el mapa');
     }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al cargar desde mapa');}
@@ -899,27 +901,6 @@ function saveLocal(){
     localStorage.setItem('progDB',JSON.stringify(data));
   }catch(e){}
 }
-function restoreEstilo(data){
-  // Restaurar tema
-  if(data.temaId){
-    const t=data.temaId==='custom'&&data.temaCustom
-      ?data.temaCustom
-      :THEMES.find(t=>t.id===data.temaId);
-    if(t)applyTheme(t,false);
-  }
-  // Restaurar fuente
-  if(data.fuenteId){
-    const f=FONTS.find(f=>f.id===data.fuenteId);
-    if(f){
-      currentFont=f;
-      document.body.style.fontFamily=`'${f.body}',sans-serif`;
-      document.querySelectorAll('h1,.card-title,thead th,th').forEach(el=>el.style.fontFamily=`'${f.display}',serif`);
-      document.querySelectorAll('.btn,.btn-sm,input,label').forEach(el=>el.style.fontFamily=`'${f.body}',sans-serif`);
-      document.querySelectorAll('.font-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===f.id));
-    }
-  }
-}
-
 function loadLocal(){
   try{
     const raw=localStorage.getItem('progDB');
@@ -1125,6 +1106,9 @@ async function generarCanvas(){
     }
 
     if(gi!==undefined){ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]-3,rowY,3,rowH);}
+    // Mismo separador verde entre clima y hora
+    ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]+colW[1]-3,rowY,3,rowH);
+    // Línea separadora horizontal inferior (desde hora en adelante)
     ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0]+colW[1],rowY+rowH-1,cardW-colW[0]-colW[1],1);
 
     let cx2=cardX+colW[0]+colW[1];
@@ -1287,6 +1271,19 @@ function applyFont(f){
   document.querySelectorAll('.font-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===f.id));
   // Reaplicar clima si estaba cargado
   if(Object.keys(climaCache).length) setTimeout(applyClimaToTable, 50);
+}
+
+function restoreEstilo(data){
+  if(data.temaId){
+    const t=data.temaId==='custom'&&data.temaCustom
+      ?data.temaCustom
+      :THEMES.find(t=>t.id===data.temaId);
+    if(t)applyTheme(t,false);
+  }
+  if(data.fuenteId){
+    const f=FONTS.find(f=>f.id===data.fuenteId);
+    if(f)applyFont(f);
+  }
 }
 
 function buildFontBar(){
@@ -1487,6 +1484,8 @@ function terrById(id){ return TERR_DB.find(e=>e.id===id); }
 
 // ── Stats ──
 function renderTerrStats(){
+  const el=document.getElementById('terrStats');
+  if(!el)return;
   const total=TERR_DB.length;
   const asig=TERR_DB.filter(e=>e.estado==='asignado').length;
   const comp=TERR_DB.filter(e=>e.estado==='completado').length;
@@ -1503,7 +1502,7 @@ function renderTerrStats(){
 function renderTerr(){
   renderTerrStats();
   const list=document.getElementById('terrList');
-  list.innerHTML='';
+  if(!list)return;
 
   // Group entries by territory number
   const byTerr={};
