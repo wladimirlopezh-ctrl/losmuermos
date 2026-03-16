@@ -725,13 +725,18 @@ async function syncTerrToMapa(){
       const count=Object.keys(merged).length;
       await gdSaveFile(GD_FILE_TERR,JSON.stringify(mapaDB,null,2));
 
-      // Escribir también en localStorage para sincronización inmediata
-      // (funciona cuando programa y mapa están en el mismo dominio — GitHub Pages)
+      // Escribir en localStorage para sincronización inmediata con el mapa
       try{localStorage.setItem('lm_t4',JSON.stringify(mapaDB));}catch(e){}
+      if(Array.isArray(mapaDB._rural)){
+        try{localStorage.setItem('lm_rural',JSON.stringify(mapaDB._rural));}catch(e){}
+      }
 
       const ruralMsg=ruralAgregados>0?` · ${ruralAgregados} rural${ruralAgregados>1?'es':''} nuevo${ruralAgregados>1?'s':''}` :'';
       driveSetStatus(`✅ ${count} territorios sincronizados${ruralMsg} — ${new Date().toLocaleTimeString()}`,'#81c995');
-      toast(`🗺️ ${count} territorios enviados al mapa${ruralMsg}`);
+      toast(`🗺️ ${count} territorios enviados — abriendo mapa…`);
+
+      // Abrir el mapa en nueva pestaña para visualizar y guardar desde Drive
+      setTimeout(()=>window.open('https://wladimirlopezh-ctrl.github.io/losmuermos/','_blank'),1200);
     }catch(e){driveSetStatus('❌ Error: '+e.message,'#e57373');toast('❌ Error al sincronizar');}
   });
 }
