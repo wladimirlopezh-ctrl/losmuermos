@@ -1163,7 +1163,7 @@ function renderDetail(n){
 function toggleM(n,k){
   if(!DB[n])DB[n]={};if(!DB[n].monthsWorked)DB[n].monthsWorked={};
   DB[n].monthsWorked[k]?delete DB[n].monthsWorked[k]:(DB[n].monthsWorked[k]=true);
-  save();renderDetail(n);updateHeatmap();
+  save();renderDetail(n);updateHeatmap();gistAutoPublish();
 }
 
 // ── UPDATES ──
@@ -1286,7 +1286,7 @@ function saveM(){
 }
 function clearT(n){
   if(!confirm(`¿Limpiar Territorio ${n}?`))return;
-  delete DB[n];save();if(sel===n)sel=null;renderPins();updateAll();
+  delete DB[n];save();if(sel===n)sel=null;renderPins();updateAll();gistAutoPublish();
   document.getElementById('detPanel').innerHTML='<div class="pt">📍 Detalle</div><div class="de">👆 Toca un territorio en el mapa</div>';
   toast(`🗑 Territorio ${n} limpiado`);
 }
@@ -2684,7 +2684,7 @@ function copyGistUrl(){
 // ── SISTEMA DE SINCRONIZACIÓN Y HERRAMIENTAS ──
 let syncGistId = null;       // Gist configurado para auto-refresco
 let autoRefreshInterval = null;
-let autoRefreshMins = 5;
+let autoRefreshMins = 3;
 let currentFilt = 'all';     // filtro activo del panel
 let syncPanelTab = 'gist';
 
@@ -3250,7 +3250,14 @@ function initPanelResize(){
   window.addEventListener('resize',resetZoom);
   // Cargar config Gist si existe
   gistLoadConfig();
-  if(gistToken && gistId){ setGistDot('ok'); syncGistId = gistId; }
+  if(gistToken && gistId){
+    setGistDot('ok');
+    syncGistId = gistId;
+    // Arrancar autorefresh fijo cada 3 minutos automáticamente
+    autoRefreshMins = 3;
+    autoRefreshInterval = setInterval(()=>{ manualGistRefresh(true); }, 3 * 60 * 1000);
+    updateAutoRefreshLabel();
+  }
   // Paneles redimensionables
   initPanelResize();
   // Revisar alertas al inicio
