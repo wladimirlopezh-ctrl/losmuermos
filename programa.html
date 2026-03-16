@@ -1044,24 +1044,17 @@ async function generarCanvas(){
     if(!isNaN(num))climaDia[num]=badge.textContent.trim();
   });
 
-  // ── Renderizar a tamaño interno, luego escalar a cuadrado 1080×1080 ──
-  const SCALE=2;
-  const W=1080;
-  const pad=32;
+  // ── Canvas cuadrado 1500×1500 @2x — formato que WhatsApp muestra completo ──
+  const SCALE=2, W=1500, H=1500;
+  const pad=60;
   const cardX=pad,cardY=pad,cardW=W-pad*2;
-  const headerH=110,goldBarH=5,theadH=38;
+  const headerH=155,goldBarH=7,theadH=52;
   const hasClima=Object.keys(climaDia).length>0;
-  const rowH=hasClima?62:52;
+  const rowH=hasClima?62:56;
   const cardH=headerH+goldBarH+theadH+rows.length*rowH;
-  const H=cardY+cardH+pad;
 
-  // Calcular escala para que todo quepa en 1080×1080
-  const fitScale=Math.min(1, 1080/H);
-  const renderW=Math.round(W/fitScale);
-  const renderH=Math.round(H/fitScale);
-
-  const cv=document.createElement('canvas');cv.width=renderW*SCALE;cv.height=renderH*SCALE;
-  const ctx=cv.getContext('2d');ctx.scale(SCALE/fitScale,SCALE/fitScale);
+  const cv=document.createElement('canvas');cv.width=W*SCALE;cv.height=H*SCALE;
+  const ctx=cv.getContext('2d');ctx.scale(SCALE,SCALE);
 
   // Fondo
   const bg=ctx.createLinearGradient(0,0,W,H);
@@ -1177,16 +1170,15 @@ async function generarCanvas(){
     ctx.fillStyle=C.white;ctx.textAlign='center';ctx.fillText(r.ter,bX,bY+7,bW-8);ctx.restore();
   });
 
-  // Canvas final cuadrado 1080×1080 para WhatsApp grupo
-  const SIZE=1080;
-  const out=document.createElement('canvas');out.width=SIZE*SCALE;out.height=SIZE*SCALE;
+  // Canvas final cuadrado 1500×1500 centrado verticalmente
+  const finalH=cardY+cardH+pad;
+  const finalY=Math.max(0,Math.round((H-finalH)/2));
+  const out=document.createElement('canvas');out.width=W*SCALE;out.height=W*SCALE;
   const octx=out.getContext('2d');octx.scale(SCALE,SCALE);
-  const obg=octx.createLinearGradient(0,0,SIZE,SIZE);
-  obg.addColorStop(0,C.bgDark);obg.addColorStop(0.45,C.bgMid);obg.addColorStop(1,C.bgDark);
-  octx.fillStyle=obg;octx.fillRect(0,0,SIZE,SIZE);
-  // Centrar verticalmente el contenido en el cuadrado
-  const offY=Math.max(0,Math.round((SIZE-H*fitScale)/2));
-  octx.drawImage(cv,0,offY*SCALE,SIZE*SCALE,Math.round(H*fitScale)*SCALE);
+  const obg=octx.createLinearGradient(0,0,W,W);
+  obg.addColorStop(0,C.bgDark);obg.addColorStop(0.5,C.bgMid);obg.addColorStop(1,C.bgDark);
+  octx.fillStyle=obg;octx.fillRect(0,0,W,W);
+  octx.drawImage(cv,0,finalY,W,W);
   return out;
 }
 
