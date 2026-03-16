@@ -1001,8 +1001,19 @@ async function copiarImagen(){
   toastEl.textContent='⏳ Generando imagen…';toastEl.classList.add('show');
   try{
     const canvas=await generarCanvas();
-    canvas.toBlob(async blob=>{
-      const file=new File([blob],'programa_predicacion.png',{type:'image/png'});
+    // Limitar tamaño máximo para compatibilidad con WhatsApp (max 1600px en lado mayor)
+    const MAX=1600;
+    const srcW=canvas.width,srcH=canvas.height;
+    let finalCanvas=canvas;
+    if(srcW>MAX||srcH>MAX){
+      const ratio=Math.min(MAX/srcW,MAX/srcH);
+      const dstW=Math.round(srcW*ratio),dstH=Math.round(srcH*ratio);
+      const tmp=document.createElement('canvas');tmp.width=dstW;tmp.height=dstH;
+      const tctx=tmp.getContext('2d');tctx.drawImage(canvas,0,0,dstW,dstH);
+      finalCanvas=tmp;
+    }
+    finalCanvas.toBlob(async blob=>{
+      const file=new File([blob],'programa_predicacion.jpg',{type:'image/jpeg'});
       // Intentar Web Share API (móvil / Android)
       if(navigator.canShare&&navigator.canShare({files:[file]})){
         try{
@@ -1012,16 +1023,16 @@ async function copiarImagen(){
       }
       // Fallback: copiar al portapapeles (desktop)
       try{
-        await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        await navigator.clipboard.write([new ClipboardItem({'image/jpeg':blob})]);
         toast('✅ Imagen copiada — pégala en WhatsApp (Ctrl+V)');return;
       }catch(e){}
       // Último fallback: descargar
       const link=document.createElement('a');
-      link.download='programa_predicacion.png';
+      link.download='programa_predicacion.jpg';
       link.href=URL.createObjectURL(blob);
       link.click();
       toast('✅ Imagen descargada');
-    },'image/png');
+    },'image/jpeg',0.95);
   }catch(e){toast('❌ Error al generar imagen');}
 }
 
