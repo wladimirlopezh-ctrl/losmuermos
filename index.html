@@ -907,12 +907,7 @@ function syncPinScale(){
   document.querySelectorAll('.meet-pin').forEach(grp=>{
     const id=grp.dataset.mid;
     const m=MEET_PINS.find(x=>x.id===id);
-    if(m) updateMeetPinPosition(grp,m);
-    const lbl=grp.querySelector('text');
-    if(lbl) lbl.style.fontSize=(9/scale)+'px';
-    grp.querySelectorAll('polygon,rect').forEach(el=>{
-      el.setAttribute('stroke-width',1/scale);
-    });
+    if(m){grp._meetNombre=m.nombre;_drawHouseInGroup(grp,m.x,m.y,14/scale);}
   });
 }
 
@@ -3600,6 +3595,13 @@ function renderInfHistorico(){
 
 // ── LUGARES DE REUNIÓN ──
 function openMeetModal(){
+  const isDark=document.body.classList.contains('dark');
+  const inner=document.getElementById('meetModalInner');
+  const body=document.getElementById('meetModalBody');
+  const inp=document.getElementById('meetNameInput');
+  if(inner) inner.style.background=isDark?'#1a1d27':'#fff';
+  if(body) body.style.background=isDark?'#0f1117':'#f8fafc';
+  if(inp){inp.style.background=isDark?'#1a1d27':'#fff';inp.style.color=isDark?'#e8edf5':'#1e293b';inp.style.borderColor=isDark?'#2a2f3e':'#cbd5e1';}
   document.getElementById('meetModal').style.display='block';
   renderMeetList();
 }
@@ -3633,23 +3635,98 @@ function renameMeetPin(id, nombre){
 function renderMeetList(){
   const el=document.getElementById('meetList');
   if(!el)return;
+  const isDark=document.body.classList.contains('dark');
+  const cardBg=isDark?'#1a1d27':'#fff';
+  const cardBorder=isDark?'#2a2f3e':'#e2e8f0';
+  const txtColor=isDark?'#e8edf5':'#1e293b';
   if(MEET_PINS.length===0){
-    el.innerHTML='<div style="text-align:center;color:var(--gray);font-size:.75rem;padding:20px 0">Sin lugares agregados aún</div>';
+    el.innerHTML=`<div style="text-align:center;color:#94a3b8;font-size:.75rem;padding:20px 0">Sin lugares agregados aún</div>`;
     return;
   }
   el.innerHTML=MEET_PINS.map(m=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--brd)">
-      <span style="font-size:1.1rem">🏠</span>
-      <input value="${m.nombre.replace(/"/g,'&quot;')}" style="flex:1;border:none;background:transparent;color:var(--txt);font-size:.8rem;outline:none;font-weight:500"
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:${cardBg};border-radius:10px;margin-bottom:7px;border:1.5px solid ${cardBorder};box-shadow:0 1px 4px rgba(0,0,0,.05)">
+      <div style="width:28px;height:28px;background:linear-gradient(135deg,#0ea5e9,#0369a1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><polygon points="10,2 1,9 3,9 3,18 8,18 8,13 12,13 12,18 17,18 17,9 19,9" fill="white" stroke="white" stroke-width="0.5"/></svg>
+      </div>
+      <input value="${m.nombre.replace(/"/g,'&quot;')}" style="flex:1;border:none;background:transparent;color:${txtColor};font-size:.82rem;outline:none;font-weight:500"
         onchange="renameMeetPin('${m.id}',this.value)"
         onblur="renameMeetPin('${m.id}',this.value)"/>
-      <span style="font-size:.6rem;color:var(--gray)">📍 ${m.x},${m.y}</span>
-      <button onclick="deleteMeetPin('${m.id}')" style="background:#fee2e2;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.75rem;color:#dc2626" title="Eliminar">✕</button>
+      <button onclick="deleteMeetPin('${m.id}')" style="background:#fee2e2;border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:.8rem;color:#dc2626;flex-shrink:0" title="Eliminar">✕</button>
     </div>`).join('');
 }
 
+// Dibuja la casita SVG en un grupo dado las coordenadas y escala
+function _drawHouseInGroup(grp, cx, cy, s){
+  grp.innerHTML='';
+  // Sombra/base circular
+  const shadow=document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+  shadow.setAttribute('cx',cx); shadow.setAttribute('cy',cy+s*1.15);
+  shadow.setAttribute('rx',s*0.85); shadow.setAttribute('ry',s*0.22);
+  shadow.setAttribute('fill','rgba(0,0,0,0.18)');
+  grp.appendChild(shadow);
+
+  // Cuerpo casa (cuadrado con esquinas redondeadas)
+  const body=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  body.setAttribute('x',cx-s*0.72); body.setAttribute('y',cy-s*0.15);
+  body.setAttribute('width',s*1.44); body.setAttribute('height',s*1.1);
+  body.setAttribute('rx',s*0.14);
+  body.setAttribute('fill','#0ea5e9');
+  grp.appendChild(body);
+
+  // Techo (trapecio con polígono)
+  const roof=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  roof.setAttribute('points',`${cx},${cy-s*1.18} ${cx-s*1.05},${cy-s*0.05} ${cx+s*1.05},${cy-s*0.05}`);
+  roof.setAttribute('fill','#0369a1');
+  grp.appendChild(roof);
+
+  // Chimenea
+  const chim=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  chim.setAttribute('x',cx+s*0.3); chim.setAttribute('y',cy-s*1.35);
+  chim.setAttribute('width',s*0.25); chim.setAttribute('height',s*0.38);
+  chim.setAttribute('rx',s*0.05);
+  chim.setAttribute('fill','#0369a1');
+  grp.appendChild(chim);
+
+  // Puerta
+  const door=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  door.setAttribute('x',cx-s*0.23); door.setAttribute('y',cy+s*0.22);
+  door.setAttribute('width',s*0.46); door.setAttribute('height',s*0.73);
+  door.setAttribute('rx',s*0.1);
+  door.setAttribute('fill','#fff'); door.setAttribute('opacity','0.92');
+  grp.appendChild(door);
+
+  // Ventana izquierda
+  const winL=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  winL.setAttribute('x',cx-s*0.64); winL.setAttribute('y',cy+s*0.05);
+  winL.setAttribute('width',s*0.32); winL.setAttribute('height',s*0.28);
+  winL.setAttribute('rx',s*0.06);
+  winL.setAttribute('fill','#bae6fd'); winL.setAttribute('opacity','0.9');
+  grp.appendChild(winL);
+
+  // Ventana derecha
+  const winR=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  winR.setAttribute('x',cx+s*0.32); winR.setAttribute('y',cy+s*0.05);
+  winR.setAttribute('width',s*0.32); winR.setAttribute('height',s*0.28);
+  winR.setAttribute('rx',s*0.06);
+  winR.setAttribute('fill','#bae6fd'); winR.setAttribute('opacity','0.9');
+  grp.appendChild(winR);
+
+  // Etiqueta nombre
+  const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+  lbl.setAttribute('x',cx); lbl.setAttribute('y',cy+s*1.52);
+  lbl.setAttribute('text-anchor','middle');
+  lbl.setAttribute('dominant-baseline','middle');
+  lbl.style.fontSize=(9/scale)+'px';
+  lbl.style.fontWeight='700';
+  lbl.setAttribute('fill','#0369a1');
+  lbl.setAttribute('stroke','#fff');
+  lbl.setAttribute('stroke-width',2.8/scale);
+  lbl.setAttribute('paint-order','stroke');
+  lbl.textContent=grp._meetNombre||'';
+  grp.appendChild(lbl);
+}
+
 function renderMeetPins(){
-  // Use a separate SVG group for meeting pins
   let mg=document.getElementById('meet-pg');
   if(!mg){
     mg=document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -3662,47 +3739,8 @@ function renderMeetPins(){
     grp.setAttribute('id','mpin-'+m.id);
     grp.setAttribute('class','meet-pin'+(editMode?' draggable edit-pin':''));
     grp.dataset.mid=m.id;
-
-    // House shape: body rect + roof triangle
-    const s=14/scale; // size unit, scales with zoom
-    const cx=m.x, cy=m.y;
-    // Roof
-    const roof=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-    roof.setAttribute('points',`${cx},${cy-s*1.1} ${cx-s*0.95},${cy-s*0.1} ${cx+s*0.95},${cy-s*0.1}`);
-    roof.setAttribute('fill','#0284c7');
-    roof.setAttribute('stroke','#fff');
-    roof.setAttribute('stroke-width',1/scale);
-    grp.appendChild(roof);
-    // Body
-    const body=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    body.setAttribute('x',cx-s*0.72);body.setAttribute('y',cy-s*0.1);
-    body.setAttribute('width',s*1.44);body.setAttribute('height',s*1.0);
-    body.setAttribute('rx',s*0.12);
-    body.setAttribute('fill','#0284c7');
-    body.setAttribute('stroke','#fff');
-    body.setAttribute('stroke-width',1/scale);
-    grp.appendChild(body);
-    // Door
-    const door=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    door.setAttribute('x',cx-s*0.22);door.setAttribute('y',cy+s*0.3);
-    door.setAttribute('width',s*0.44);door.setAttribute('height',s*0.6);
-    door.setAttribute('rx',s*0.08);
-    door.setAttribute('fill','#fff');door.setAttribute('opacity','0.85');
-    grp.appendChild(door);
-    // Label
-    const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
-    lbl.setAttribute('x',cx);lbl.setAttribute('y',cy+s*1.5);
-    lbl.setAttribute('text-anchor','middle');
-    lbl.setAttribute('dominant-baseline','middle');
-    lbl.style.fontSize=(9/scale)+'px';
-    lbl.style.fontWeight='600';
-    lbl.setAttribute('fill','#0284c7');
-    lbl.setAttribute('stroke','var(--card)');
-    lbl.setAttribute('stroke-width',2.5/scale);
-    lbl.setAttribute('paint-order','stroke');
-    lbl.textContent=m.nombre;
-    grp.appendChild(lbl);
-
+    grp._meetNombre=m.nombre;
+    _drawHouseInGroup(grp, m.x, m.y, 14/scale);
     if(editMode){
       grp.addEventListener('mousedown',e=>startMeetDrag(e,m.id));
       grp.addEventListener('touchstart',e=>startMeetDrag(e,m.id),{passive:false});
@@ -3733,27 +3771,27 @@ function startMeetDrag(e, id){
   hideTip();
   const svg=document.getElementById('mapSvg');
   const pt=svg.createSVGPoint();
-  const getCoords=(cx,cy)=>{pt.x=cx;pt.y=cy;const p=pt.matrixTransform(svg.getScreenCTM().inverse());return [p.x,p.y];};
-  const [sx,sy]=getCoords(e.clientX||e.touches?.[0].clientX, e.clientY||e.touches?.[0].clientY);
+  const clientXY=(ev)=>{
+    if(ev.touches&&ev.touches.length) return [ev.touches[0].clientX, ev.touches[0].clientY];
+    return [ev.clientX, ev.clientY];
+  };
+  const svgCoords=(cx,cy)=>{pt.x=cx;pt.y=cy;const p=pt.matrixTransform(svg.getScreenCTM().inverse());return [p.x,p.y];};
+  const [ecx,ecy]=clientXY(e);
+  const [sx,sy]=svgCoords(ecx,ecy);
   const offX=m.x-sx, offY=m.y-sy;
   const grp=document.getElementById('mpin-'+id);
   if(grp)grp.style.cursor='grabbing';
 
   const onMove=me=>{
-    const cx=me.clientX||(me.touches?.[0].clientX);
-    const cy=me.clientY||(me.touches?.[0].clientY);
-    if(cx===undefined)return;
-    const [svgX,svgY]=getCoords(cx,cy);
+    const [cx,cy]=clientXY(me);
+    const [svgX,svgY]=svgCoords(cx,cy);
     m.x=Math.round(svgX+offX);
     m.y=Math.round(svgY+offY);
-    // Move all elements in group
-    if(grp) updateMeetPinPosition(grp, m);
+    if(grp){grp._meetNombre=m.nombre; _drawHouseInGroup(grp,m.x,m.y,14/scale);}
   };
   const onUp=()=>{
     if(grp)grp.style.cursor='grab';
     saveMeet();
-    // Update coord display in modal if open
-    renderMeetList();
     document.removeEventListener('mousemove',onMove);
     document.removeEventListener('mouseup',onUp);
     document.removeEventListener('touchmove',onMove);
@@ -3766,16 +3804,7 @@ function startMeetDrag(e, id){
 }
 
 function updateMeetPinPosition(grp, m){
-  const cx=m.x, cy=m.y;
-  const s=14/scale;
-  const roof=grp.querySelector('polygon');
-  const body=grp.querySelectorAll('rect')[0];
-  const door=grp.querySelectorAll('rect')[1];
-  const lbl=grp.querySelector('text');
-  if(roof) roof.setAttribute('points',`${cx},${cy-s*1.1} ${cx-s*0.95},${cy-s*0.1} ${cx+s*0.95},${cy-s*0.1}`);
-  if(body){body.setAttribute('x',cx-s*0.72);body.setAttribute('y',cy-s*0.1);}
-  if(door){door.setAttribute('x',cx-s*0.22);door.setAttribute('y',cy+s*0.3);}
-  if(lbl){lbl.setAttribute('x',cx);lbl.setAttribute('y',cy+s*1.5);}
+  if(grp){grp._meetNombre=m.nombre;_drawHouseInGroup(grp,m.x,m.y,14/scale);}
 }
 
 // ── INIT ──
@@ -3834,25 +3863,25 @@ function updateMeetPinPosition(grp, m){
   </div>
 </div>
 <!-- MODAL LUGARES DE REUNIÓN -->
-<div id="meetModal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);overflow-y:auto;padding:16px" onclick="if(event.target===this)closeMeetModal()">
-  <div style="max-width:480px;margin:0 auto;background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-    <div style="background:linear-gradient(135deg,#0ea5e9,#0284c7);padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+<div id="meetModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);overflow-y:auto;padding:16px" onclick="if(event.target===this)closeMeetModal()">
+  <div id="meetModalInner" style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35)">
+    <div style="background:linear-gradient(135deg,#0ea5e9,#0369a1);padding:18px 20px;display:flex;justify-content:space-between;align-items:center">
       <div style="color:#fff">
         <div style="font-size:1rem;font-weight:700">🏠 Lugares de reunión</div>
-        <div style="font-size:.7rem;opacity:.85;margin-top:2px">Los pines aparecen en el mapa y son arrastrables en modo edición</div>
+        <div style="font-size:.7rem;opacity:.88;margin-top:3px">Los pines aparecen en el mapa · arrastrables en modo edición</div>
       </div>
-      <button onclick="closeMeetModal()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem;color:#fff">✕</button>
+      <button onclick="closeMeetModal()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#fff;line-height:1">✕</button>
     </div>
-    <div style="padding:16px">
+    <div id="meetModalBody" style="padding:16px;background:#f8fafc">
       <!-- Agregar nuevo -->
       <div style="display:flex;gap:8px;margin-bottom:14px">
-        <input id="meetNameInput" placeholder="Nombre del lugar (ej: Salón del Reino)" style="flex:1;padding:8px 10px;border:1.5px solid var(--brd);border-radius:8px;background:var(--bg);color:var(--txt);font-size:.8rem" onkeydown="if(event.key==='Enter')addMeetPin()"/>
-        <button onclick="addMeetPin()" style="background:#0284c7;color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.8rem;white-space:nowrap">➕ Agregar</button>
+        <input id="meetNameInput" placeholder="Nombre del lugar (ej: Salón del Reino)" style="flex:1;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;color:#1e293b;font-size:.82rem;outline:none" onkeydown="if(event.key==='Enter')addMeetPin()"/>
+        <button onclick="addMeetPin()" style="background:#0284c7;color:#fff;border:none;border-radius:9px;padding:9px 14px;cursor:pointer;font-size:.82rem;font-weight:600;white-space:nowrap">➕ Agregar</button>
       </div>
       <!-- Lista -->
       <div id="meetList"></div>
-      <div style="margin-top:12px;font-size:.65rem;color:var(--gray);text-align:center">
-        💡 Activa <strong>✏️ Mover pines</strong> para arrastrar los pines de reunión en el mapa
+      <div style="margin-top:10px;font-size:.65rem;color:#94a3b8;text-align:center;padding:6px">
+        💡 Activa <strong>✏️ Mover pines</strong> para arrastrar las casitas en el mapa
       </div>
     </div>
   </div>
