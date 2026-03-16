@@ -277,7 +277,9 @@ body.dark .dash-act-row{border-bottom-color:#22263a;}
 .sync-dot.ok{background:#22c55e;}
 .sync-dot.err{background:#ef4444;}
 .sync-dot.spin{background:#f59e0b;animation:spin 1s linear infinite;}
+.sync-dot.pending{background:#f59e0b;animation:pulse 1s ease-in-out infinite;}
 @keyframes spin{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
 /* Drive modal */
 .drive-modal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
 .drive-modal.open{display:flex;}
@@ -831,8 +833,10 @@ let PIN_POS = JSON.parse(localStorage.getItem('lm_pins')||'null') || Object.from
 let filt='all', sel=null;
 let editMode=false;
 
-const save=()=>{try{localStorage.setItem('lm_t4',JSON.stringify(DB));}catch{}}
-const savePins=()=>{try{localStorage.setItem('lm_pins',JSON.stringify(PIN_POS));}catch{}}
+const save=()=>{try{localStorage.setItem('lm_t4',JSON.stringify(DB));}catch{} autoSaveDrive();}
+const savePins=()=>{try{localStorage.setItem('lm_pins',JSON.stringify(PIN_POS));}catch{} autoSaveDrive();}
+const saveCamps=()=>{try{localStorage.setItem('lm_camps',JSON.stringify(CAMPS));localStorage.setItem('lm_activeCamp',activeCampId||'');}catch(e){} autoSaveDrive();}; // redefinida abajo
+const saveRural=()=>{try{localStorage.setItem('lm_rural',JSON.stringify(RURAL));}catch(e){} autoSaveDrive();};
 
 const gs=n=>{
   if(!DB[n])return 'disponible';
@@ -1545,10 +1549,6 @@ let RURAL = JSON.parse(localStorage.getItem('lm_rural')||'[]');
 let activeCampId = localStorage.getItem('lm_activeCamp')||null;
 let campTab = 1;
 let reportCampId = null;
-
-const saveCamps=()=>{try{localStorage.setItem('lm_camps',JSON.stringify(CAMPS));localStorage.setItem('lm_activeCamp',activeCampId||'');}catch(e){}};
-
-const saveRural=()=>{try{localStorage.setItem('lm_rural',JSON.stringify(RURAL));}catch(e){}};
 function openCampModal(){
   document.getElementById('campModal').classList.add('open');
   switchCampTab(1);
@@ -2397,7 +2397,7 @@ let gdFileId=null;
 function setSyncDot(state){
   const d=document.getElementById('syncDot');
   d.className='sync-dot'+(state?' '+state:'');
-  const titles={ok:'Conectado y guardado',err:'Error de sincronización',spin:'Sincronizando...','':'Sin conectar'};
+  const titles={ok:'Conectado y guardado',err:'Error de sincronización',spin:'Sincronizando...',pending:'Guardando en 4s...',''  :'Sin conectar'};
   d.title=titles[state]||'';
 }
 function setDriveStatus(msg){document.getElementById('driveStatus').textContent=msg;}
@@ -2437,6 +2437,47 @@ async function driveFindFile(){
   const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)`,{headers:{Authorization:'Bearer '+gdToken}});
   const data=await r.json();
   return data.files&&data.files.length?data.files[0]:null;
+}
+
+// ── AUTOGUARDADO EN DRIVE (debounce 4 segundos) ──
+let _autoSaveTimer=null;
+let _autoSavePending=false;
+
+function autoSaveDrive(){
+  if(!gdToken)return; // Solo si hay sesión activa
+  _autoSavePending=true;
+  clearTimeout(_autoSaveTimer);
+  setSyncDot('pending');
+  _autoSaveTimer=setTimeout(async()=>{
+    if(!_autoSavePending||!gdToken)return;
+    _autoSavePending=false;
+    setSyncDot('spin');
+    try{
+      const content=JSON.stringify(fullBackup(),null,2);
+      const existing=await driveFindFile();
+      let url,method;
+      if(existing){
+        gdFileId=existing.id;
+        url=`https://www.googleapis.com/upload/drive/v3/files/${gdFileId}?uploadType=media`;
+        method='PATCH';
+      }else{
+        const meta={name:GD_FILE_NAME,parents:[GD_FOLDER_ID]};
+        const form=new FormData();
+        form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+        form.append('file',new Blob([content],{type:'application/json'}));
+        const cr=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+gdToken},body:form});
+        const cd=await cr.json();gdFileId=cd.id;
+        setSyncDot('ok');setDriveStatus(`✅ Autoguardado — ${new Date().toLocaleTimeString('es-CL')}`);
+        return;
+      }
+      await fetch(url,{method,headers:{Authorization:'Bearer '+gdToken,'Content-Type':'application/json'},body:content});
+      setSyncDot('ok');
+      setDriveStatus(`✅ Autoguardado — ${new Date().toLocaleTimeString('es-CL')}`);
+    }catch(e){
+      setSyncDot('err');
+      setDriveStatus('⚠️ Autoguardado falló: '+e.message);
+    }
+  },4000);
 }
 
 async function driveSave(){
