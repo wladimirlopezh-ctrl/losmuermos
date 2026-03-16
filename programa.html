@@ -1047,8 +1047,8 @@ async function generarCanvas(){
     if(!isNaN(num))climaDia[num]=badge.textContent.trim();
   });
 
-  // ── Ultra HD: SCALE 3x, ancho fijo 1080, alto dinámico según contenido ──
-  const SCALE=3;
+  // ── HD optimizado: SCALE 2x, ancho 1080, alto dinámico ──
+  const SCALE=2;
   const W=1080;
   const pad=38;
   const cardX=pad,cardY=pad,cardW=W-pad*2;
@@ -1178,14 +1178,14 @@ async function generarCanvas(){
     ctx.fillStyle=C.white;ctx.textAlign='center';ctx.fillText(r.ter,bX,bY+7,bW-8);ctx.restore();
   });
 
-  // Canvas final cuadrado (lado = max(W,H)) centrado
-  const SIDE=Math.max(W,H);
-  const out=document.createElement('canvas');out.width=SIDE*SCALE;out.height=SIDE*SCALE;
+  // Canvas final: rectangular ajustado al contenido (no cuadrado forzado)
+  // Esto evita que WhatsApp recorte la imagen
+  const out=document.createElement('canvas');out.width=W*SCALE;out.height=H*SCALE;
   const octx=out.getContext('2d');octx.scale(SCALE,SCALE);
-  const obg=octx.createLinearGradient(0,0,SIDE,SIDE);
+  const obg=octx.createLinearGradient(0,0,W,H);
   obg.addColorStop(0,C.bgDark);obg.addColorStop(0.45,C.bgMid);obg.addColorStop(1,C.bgDark);
-  octx.fillStyle=obg;octx.fillRect(0,0,SIDE,SIDE);
-  octx.drawImage(cv,Math.round((SIDE-W)/2),Math.round((SIDE-H)/2));
+  octx.fillStyle=obg;octx.fillRect(0,0,W,H);
+  octx.drawImage(cv,0,0);
   return out;
 }
 
