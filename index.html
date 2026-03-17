@@ -14,12 +14,14 @@
   --gd:#1b4332;--gm:#2d6a4f;--gold:#d4a926;
   --green:#22c55e;--amber:#f59e0b;--indigo:#6366f1;--red:#ef4444;--gray:#94a3b8;
   --bdr:#e8edf2;
+  --card:#ffffff;--border:#e8edf2;
 }
 body.dark{
   --bg:#0f1117;--w:#1a1d27;--dark:#e8edf5;
   --gd:#2d6a4f;--gm:#3a8a66;--gold:#d4a926;
   --green:#22c55e;--amber:#f59e0b;--indigo:#818cf8;--red:#f87171;--gray:#64748b;
   --bdr:#2a2f3e;
+  --card:#1a1d27;--border:#2a2f3e;
 }
 body.dark header{background:var(--w);box-shadow:0 1px 4px rgba(0,0,0,.4);}
 body.dark .panel{background:var(--w);}
@@ -489,6 +491,81 @@ body.dark .sp-sect{background:#13161f;}
 .ar-btn.active{background:var(--gd);color:#fff;border-color:var(--gd);}
 body.dark .ar-btn{background:var(--w);color:#94a3b8;}
 
+/* ══════════════════════════════════════
+   RESPONSIVIDAD
+══════════════════════════════════════ */
+
+/* Overlay oscuro para drawers móvil */
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:150;backdrop-filter:blur(2px);}
+.mob-overlay.on{display:block;}
+
+/* Botones flotantes de panel — ocultos en desktop */
+.mob-panel-toggle{
+  display:none;position:fixed;bottom:70px;z-index:200;
+  width:38px;height:38px;border-radius:50%;border:none;
+  font-size:1rem;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);
+  align-items:center;justify-content:center;
+}
+.mob-panel-toggle.L{left:10px;background:var(--gd);color:#fff;}
+.mob-panel-toggle.R{right:10px;background:var(--gd);color:#fff;}
+
+/* ── TABLET (≤1024px) ── */
+@media(max-width:1024px){
+  .panel{width:190px;}
+}
+
+/* ── MÓVIL (≤768px) ── */
+@media(max-width:768px){
+  /* Header: barra de botones deslizable horizontalmente */
+  .hb{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    flex-wrap:nowrap;
+    max-width:calc(100vw - 130px);
+  }
+  .hb::-webkit-scrollbar{display:none;}
+  .hb .btn{flex-shrink:0;}
+
+  /* Paneles: drawers deslizables */
+  .panel.L{
+    position:fixed;left:0;top:50px;bottom:0;z-index:200;
+    width:280px !important;max-width:85vw !important;
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:4px 0 20px rgba(0,0,0,.15);
+  }
+  .panel.R{
+    position:fixed;right:0;top:50px;bottom:0;z-index:200;
+    width:280px !important;max-width:85vw !important;
+    transform:translateX(100%);transition:transform .25s ease;
+    box-shadow:-4px 0 20px rgba(0,0,0,.15);
+  }
+  .panel.L.mob-open{transform:translateX(0);}
+  .panel.R.mob-open{transform:translateX(0);}
+
+  /* Layout ocupa todo el ancho */
+  .layout{height:calc(100vh - 50px);}
+  .layout.edit-mode{height:calc(100vh - 88px);}
+
+  /* Botones flotantes de panel */
+  .mob-panel-toggle{display:flex;}
+
+  /* Resize handles no en móvil */
+  .resize-handle{display:none;}
+
+  /* Edit banner más compacto */
+  .edit-banner{font-size:.68rem;padding:0 10px;}
+}
+
+/* ── MUY PEQUEÑO (≤480px) ── */
+@media(max-width:480px){
+  .hs{display:none;}
+  header{padding:0 10px;}
+  .logo{width:28px;height:28px;font-size:.75rem;}
+  .ht{font-size:.88rem;}
+}
+
 </style>
 </head>
 <body>
@@ -511,11 +588,18 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
       Drive <span class="sync-dot" id="syncDot" title="Sin conectar"></span>
     </button>
     <button class="btn" id="ruralBtn" onclick="openRuralModal()" title="Territorios Rurales">🌿 Rurales</button>
-    <button class="btn" id="meetBtn" onclick="openMeetModal()" title="Lugares de reunión">🏠 Reunión</button>
+    <button class="btn" id="meetBtn" onclick="openMeetModal()" title="Lugares de reunión">🏠 Lugar de reunión</button>
     <button class="btn" id="toolsBtn" onclick="openSyncPanel()" title="Herramientas" style="background:#1e40af;color:#fff;border-color:#1e40af;">🛠 Herramientas</button>
     <input type="file" id="ii" accept=".json" style="display:none" onchange="importData(event)"/>
   </div>
 </header>
+
+<!-- Overlay para drawers -->
+<div class="mob-overlay" id="mobOverlay" onclick="closeMobPanels()"></div>
+
+<!-- Botones flotantes de paneles -->
+<button class="mob-panel-toggle L" id="mobPanelL" onclick="toggleMobPanel('L')" title="Panel izquierdo">☰</button>
+<button class="mob-panel-toggle R" id="mobPanelR" onclick="toggleMobPanel('R')" title="Panel derecho">📋</button>
 
 <div class="edit-banner" id="editBanner">
   <div class="edit-hint">
@@ -730,6 +814,10 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
             <div style="font-size:.58rem;color:var(--gray);margin-top:3px">
               GitHub → Settings → Developer settings → Personal access tokens → New token → marcar solo <strong>gist</strong>
             </div>
+            <div style="margin-top:5px;padding:5px 8px;border-radius:6px;background:#fef9c3;border:1px solid #fde047;display:flex;align-items:center;gap:5px">
+              <span style="font-size:.7rem">🔒</span>
+              <span style="font-size:.58rem;color:#78350f;line-height:1.4">El token se guarda en este navegador. Usa siempre un token con permisos <strong>solo de Gist</strong> para minimizar riesgos.</span>
+            </div>
           </div>
           <div>
             <label style="font-size:.63rem;font-weight:600;color:#475569;display:block;margin-bottom:3px">2. ID del Gist <span style="font-weight:400;color:var(--gray)">(dejar vacío para crear uno nuevo)</span></label>
@@ -907,7 +995,7 @@ function syncPinScale(){
   document.querySelectorAll('.meet-pin').forEach(grp=>{
     const id=grp.dataset.mid;
     const m=MEET_PINS.find(x=>x.id===id);
-    if(m){grp._meetNombre=m.nombre;_drawHouseInGroup(grp,m.x,m.y,14/scale);}
+    if(m){grp._meetNombre=m.nombre;_drawEmojiPin(grp,m.x,m.y,m.emoji||'🏠',m.size||3);}
   });
 }
 
@@ -2583,7 +2671,16 @@ function openGistModal(){
   } else {
     document.getElementById('gistSetupView').style.display = '';
     document.getElementById('gistReadyView').style.display = 'none';
-    if(gistToken) document.getElementById('gistTokenInput').value = gistToken;
+    if(gistToken) {
+      const masked = gistToken.slice(0,4) + '••••••••••••' + gistToken.slice(-4);
+      const inp = document.getElementById('gistTokenInput');
+      inp.value = masked;
+      inp.dataset.masked = '1';
+      inp.addEventListener('focus', function onFocus(){
+        if(inp.dataset.masked==='1'){inp.value='';inp.dataset.masked='0';}
+        inp.removeEventListener('focus',onFocus);
+      });
+    }
     if(gistId)    document.getElementById('gistIdInput').value = gistId;
   }
   document.getElementById('gistModal').classList.add('open');
@@ -2591,7 +2688,8 @@ function openGistModal(){
 function closeGistModal(){ document.getElementById('gistModal').classList.remove('open'); }
 
 async function gistSaveConfig(){
-  const tok = document.getElementById('gistTokenInput').value.trim();
+  const inp = document.getElementById('gistTokenInput');
+  const tok = inp.dataset.masked === '1' ? gistToken : inp.value.trim();
   const id  = document.getElementById('gistIdInput').value.trim();
   if(!tok){ toast('⚠️ Ingresa el token de GitHub'); return; }
   gistToken = tok;
@@ -3608,30 +3706,81 @@ function openMeetModal(){
 function closeMeetModal(){
   document.getElementById('meetModal').style.display='none';
 }
+// ── MEET PINS — emojis y tamaño ──
+const MEET_EMOJIS = ['🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏬','🏭','⛪','🕌','🛕','🏰','🏯','🗼'];
+const MEET_SIZE_MAP = {1:8, 2:11, 3:16, 4:22, 5:30}; // nivel → px base
+let meetSelectedEmoji = '🏠';
+
+function initMeetEmojiGrid(){
+  const grid = document.getElementById('meetEmojiGrid');
+  if(!grid) return;
+  grid.innerHTML = MEET_EMOJIS.map(em =>
+    `<button onclick="selectMeetEmoji('${em}',this)"
+      style="width:36px;height:36px;border-radius:8px;border:2px solid ${em===meetSelectedEmoji?'#0284c7':'#e2e8f0'};
+      background:${em===meetSelectedEmoji?'#e0f2fe':'#fff'};
+      font-size:1.25rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center"
+      title="${em}">${em}</button>`
+  ).join('');
+}
+
+function selectMeetEmoji(em, btn){
+  meetSelectedEmoji = em;
+  // Resetear todos los botones
+  document.querySelectorAll('#meetEmojiGrid button').forEach(b=>{
+    b.style.borderColor='#e2e8f0';b.style.background='#fff';
+  });
+  btn.style.borderColor='#0284c7';btn.style.background='#e0f2fe';
+}
+
+function updateMeetSizeLabel(val){
+  const labels={1:'Muy pequeño',2:'Pequeño',3:'Mediano',4:'Grande',5:'Muy grande'};
+  document.getElementById('meetSizeLbl').textContent=labels[val]||'Mediano';
+}
+
 function addMeetPin(){
   const inp=document.getElementById('meetNameInput');
   const nombre=(inp.value||'').trim();
   if(!nombre){inp.focus();return;}
-  // Default position: center of map
+  const sizeVal=parseInt(document.getElementById('meetSizeInput')?.value||3);
   const id='meet_'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
-  MEET_PINS.push({id, nombre, x:460, y:759});
+  MEET_PINS.push({id, nombre, x:460, y:759, emoji:meetSelectedEmoji, size:sizeVal});
   saveMeet();
+  gistAutoPublish();
   renderMeetPins();
   renderMeetList();
   inp.value='';
   inp.focus();
-  toast('🏠 Lugar "'+nombre+'" agregado al mapa');
+  toast(meetSelectedEmoji+' Lugar "'+nombre+'" agregado al mapa');
 }
+
 function deleteMeetPin(id){
   MEET_PINS=MEET_PINS.filter(m=>m.id!==id);
   saveMeet();
+  gistAutoPublish();
   renderMeetPins();
   renderMeetList();
 }
+
 function renameMeetPin(id, nombre){
   const m=MEET_PINS.find(m=>m.id===id);
   if(m){m.nombre=nombre;saveMeet();renderMeetPins();}
 }
+
+function changeMeetEmoji(id, emoji){
+  const m=MEET_PINS.find(m=>m.id===id);
+  if(m){m.emoji=emoji;saveMeet();gistAutoPublish();renderMeetPins();renderMeetList();}
+}
+
+function changeMeetSize(id, sizeVal){
+  const m=MEET_PINS.find(m=>m.id===id);
+  if(m){
+    m.size=parseInt(sizeVal);
+    saveMeet();
+    const grp=document.getElementById('mpin-'+id);
+    if(grp) _drawEmojiPin(grp, m.x, m.y, m.emoji||'🏠', m.size||3);
+  }
+}
+
 function renderMeetList(){
   const el=document.getElementById('meetList');
   if(!el)return;
@@ -3639,81 +3788,84 @@ function renderMeetList(){
   const cardBg=isDark?'#1a1d27':'#fff';
   const cardBorder=isDark?'#2a2f3e':'#e2e8f0';
   const txtColor=isDark?'#e8edf5':'#1e293b';
+  const sizeLabels={1:'Muy peq.',2:'Pequeño',3:'Mediano',4:'Grande',5:'Muy grande'};
   if(MEET_PINS.length===0){
     el.innerHTML=`<div style="text-align:center;color:#94a3b8;font-size:.75rem;padding:20px 0">Sin lugares agregados aún</div>`;
     return;
   }
-  el.innerHTML=MEET_PINS.map(m=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:${cardBg};border-radius:10px;margin-bottom:7px;border:1.5px solid ${cardBorder};box-shadow:0 1px 4px rgba(0,0,0,.05)">
-      <div style="width:28px;height:28px;background:linear-gradient(135deg,#0ea5e9,#0369a1);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><polygon points="10,2 1,9 3,9 3,18 8,18 8,13 12,13 12,18 17,18 17,9 19,9" fill="white" stroke="white" stroke-width="0.5"/></svg>
+  el.innerHTML=MEET_PINS.map(m=>{
+    const em=m.emoji||'🏠';
+    const sz=m.size||3;
+    // Mini picker de emojis inline
+    const miniPicker=MEET_EMOJIS.map(e=>
+      `<button onclick="changeMeetEmoji('${m.id}','${e}')"
+        style="width:28px;height:28px;border-radius:6px;border:1.5px solid ${e===em?'#0284c7':'#e2e8f0'};
+        background:${e===em?'#e0f2fe':'transparent'};
+        font-size:1rem;cursor:pointer;padding:0;line-height:1">${e}</button>`
+    ).join('');
+    return `
+    <div style="background:${cardBg};border-radius:11px;margin-bottom:9px;border:1.5px solid ${cardBorder};overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+      <!-- Fila principal -->
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 11px">
+        <div style="width:34px;height:34px;background:linear-gradient(135deg,#e0f2fe,#bae6fd);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">${em}</div>
+        <input value="${m.nombre.replace(/"/g,'&quot;')}" style="flex:1;border:none;background:transparent;color:${txtColor};font-size:.82rem;outline:none;font-weight:600"
+          onchange="renameMeetPin('${m.id}',this.value)"
+          onblur="renameMeetPin('${m.id}',this.value)"/>
+        <span style="font-size:.6rem;color:#94a3b8;flex-shrink:0">${sizeLabels[sz]}</span>
+        <button onclick="toggleMeetExpand('${m.id}')" style="background:#f1f5f9;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.7rem;flex-shrink:0" title="Editar">⚙️</button>
+        <button onclick="deleteMeetPin('${m.id}')" style="background:#fee2e2;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.75rem;color:#dc2626;flex-shrink:0" title="Eliminar">✕</button>
       </div>
-      <input value="${m.nombre.replace(/"/g,'&quot;')}" style="flex:1;border:none;background:transparent;color:${txtColor};font-size:.82rem;outline:none;font-weight:500"
-        onchange="renameMeetPin('${m.id}',this.value)"
-        onblur="renameMeetPin('${m.id}',this.value)"/>
-      <button onclick="deleteMeetPin('${m.id}')" style="background:#fee2e2;border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:.8rem;color:#dc2626;flex-shrink:0" title="Eliminar">✕</button>
-    </div>`).join('');
+      <!-- Panel expandible de opciones -->
+      <div id="meet-expand-${m.id}" style="display:none;padding:0 11px 11px;border-top:1px solid ${cardBorder}">
+        <div style="padding-top:9px">
+          <div style="font-size:.62rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">Ícono</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${miniPicker}</div>
+          <div style="font-size:.62rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">Tamaño del pin</div>
+          <input type="range" min="1" max="5" value="${sz}" step="1"
+            style="width:100%;accent-color:#0284c7"
+            oninput="changeMeetSize('${m.id}',this.value)"/>
+          <div style="display:flex;justify-content:space-between;font-size:.56rem;color:#94a3b8;margin-top:1px">
+            <span>Muy peq.</span><span>Pequeño</span><span>Mediano</span><span>Grande</span><span>Muy gde</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-// Dibuja la casita SVG en un grupo dado las coordenadas y escala
-function _drawHouseInGroup(grp, cx, cy, s){
+function toggleMeetExpand(id){
+  const el=document.getElementById('meet-expand-'+id);
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+// Dibuja el pin como emoji SVG
+function _drawEmojiPin(grp, cx, cy, emoji, sizeLevel){
   grp.innerHTML='';
-  // Sombra/base circular
+  const baseSize = MEET_SIZE_MAP[sizeLevel||3] || 16;
+  const s = baseSize / scale;
+
+  // Sombra
   const shadow=document.createElementNS('http://www.w3.org/2000/svg','ellipse');
-  shadow.setAttribute('cx',cx); shadow.setAttribute('cy',cy+s*1.15);
-  shadow.setAttribute('rx',s*0.85); shadow.setAttribute('ry',s*0.22);
-  shadow.setAttribute('fill','rgba(0,0,0,0.18)');
+  shadow.setAttribute('cx',cx); shadow.setAttribute('cy',cy+s*0.55);
+  shadow.setAttribute('rx',s*0.7); shadow.setAttribute('ry',s*0.18);
+  shadow.setAttribute('fill','rgba(0,0,0,0.2)');
   grp.appendChild(shadow);
 
-  // Cuerpo casa (cuadrado con esquinas redondeadas)
-  const body=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  body.setAttribute('x',cx-s*0.72); body.setAttribute('y',cy-s*0.15);
-  body.setAttribute('width',s*1.44); body.setAttribute('height',s*1.1);
-  body.setAttribute('rx',s*0.14);
-  body.setAttribute('fill','#0ea5e9');
-  grp.appendChild(body);
-
-  // Techo (trapecio con polígono)
-  const roof=document.createElementNS('http://www.w3.org/2000/svg','polygon');
-  roof.setAttribute('points',`${cx},${cy-s*1.18} ${cx-s*1.05},${cy-s*0.05} ${cx+s*1.05},${cy-s*0.05}`);
-  roof.setAttribute('fill','#0369a1');
-  grp.appendChild(roof);
-
-  // Chimenea
-  const chim=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  chim.setAttribute('x',cx+s*0.3); chim.setAttribute('y',cy-s*1.35);
-  chim.setAttribute('width',s*0.25); chim.setAttribute('height',s*0.38);
-  chim.setAttribute('rx',s*0.05);
-  chim.setAttribute('fill','#0369a1');
-  grp.appendChild(chim);
-
-  // Puerta
-  const door=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  door.setAttribute('x',cx-s*0.23); door.setAttribute('y',cy+s*0.22);
-  door.setAttribute('width',s*0.46); door.setAttribute('height',s*0.73);
-  door.setAttribute('rx',s*0.1);
-  door.setAttribute('fill','#fff'); door.setAttribute('opacity','0.92');
-  grp.appendChild(door);
-
-  // Ventana izquierda
-  const winL=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  winL.setAttribute('x',cx-s*0.64); winL.setAttribute('y',cy+s*0.05);
-  winL.setAttribute('width',s*0.32); winL.setAttribute('height',s*0.28);
-  winL.setAttribute('rx',s*0.06);
-  winL.setAttribute('fill','#bae6fd'); winL.setAttribute('opacity','0.9');
-  grp.appendChild(winL);
-
-  // Ventana derecha
-  const winR=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  winR.setAttribute('x',cx+s*0.32); winR.setAttribute('y',cy+s*0.05);
-  winR.setAttribute('width',s*0.32); winR.setAttribute('height',s*0.28);
-  winR.setAttribute('rx',s*0.06);
-  winR.setAttribute('fill','#bae6fd'); winR.setAttribute('opacity','0.9');
-  grp.appendChild(winR);
+  // Emoji como texto SVG
+  const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+  txt.setAttribute('x',cx);
+  txt.setAttribute('y',cy);
+  txt.setAttribute('text-anchor','middle');
+  txt.setAttribute('dominant-baseline','middle');
+  txt.style.fontSize=s*1.8+'px';
+  txt.style.userSelect='none';
+  txt.textContent=emoji||'🏠';
+  grp.appendChild(txt);
 
   // Etiqueta nombre
   const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
-  lbl.setAttribute('x',cx); lbl.setAttribute('y',cy+s*1.52);
+  lbl.setAttribute('x',cx); lbl.setAttribute('y',cy+s*1.2);
   lbl.setAttribute('text-anchor','middle');
   lbl.setAttribute('dominant-baseline','middle');
   lbl.style.fontSize=(9/scale)+'px';
@@ -3724,6 +3876,14 @@ function _drawHouseInGroup(grp, cx, cy, s){
   lbl.setAttribute('paint-order','stroke');
   lbl.textContent=grp._meetNombre||'';
   grp.appendChild(lbl);
+}
+
+// Mantener compatibilidad con llamadas existentes a _drawHouseInGroup
+function _drawHouseInGroup(grp, cx, cy, s){
+  const m = MEET_PINS.find(x=>x.id===grp.dataset?.mid);
+  const emoji = m?.emoji || '🏠';
+  const sizeLevel = m?.size || 3;
+  _drawEmojiPin(grp, cx, cy, emoji, sizeLevel);
 }
 
 function renderMeetPins(){
@@ -3740,7 +3900,7 @@ function renderMeetPins(){
     grp.setAttribute('class','meet-pin'+(editMode?' draggable edit-pin':''));
     grp.dataset.mid=m.id;
     grp._meetNombre=m.nombre;
-    _drawHouseInGroup(grp, m.x, m.y, 14/scale);
+    _drawEmojiPin(grp, m.x, m.y, m.emoji||'🏠', m.size||3);
     if(editMode){
       grp.addEventListener('mousedown',e=>startMeetDrag(e,m.id));
       grp.addEventListener('touchstart',e=>startMeetDrag(e,m.id),{passive:false});
@@ -3752,6 +3912,16 @@ function renderMeetPins(){
     mg.appendChild(grp);
   });
 }
+
+function openMeetModal(){
+  document.getElementById('meetModal').style.display='';
+  setTimeout(()=>{
+    initMeetEmojiGrid();
+    updateMeetSizeLabel(document.getElementById('meetSizeInput')?.value||3);
+    renderMeetList();
+  },10);
+}
+function closeMeetModal(){ document.getElementById('meetModal').style.display='none'; }
 
 function showMeetTip(m,e){
   hideTip();
@@ -3787,7 +3957,7 @@ function startMeetDrag(e, id){
     const [svgX,svgY]=svgCoords(cx,cy);
     m.x=Math.round(svgX+offX);
     m.y=Math.round(svgY+offY);
-    if(grp){grp._meetNombre=m.nombre; _drawHouseInGroup(grp,m.x,m.y,14/scale);}
+    if(grp){grp._meetNombre=m.nombre; _drawEmojiPin(grp,m.x,m.y,m.emoji||'🏠',m.size||3);}
   };
   const onUp=()=>{
     if(grp)grp.style.cursor='grab';
@@ -3804,7 +3974,7 @@ function startMeetDrag(e, id){
 }
 
 function updateMeetPinPosition(grp, m){
-  if(grp){grp._meetNombre=m.nombre;_drawHouseInGroup(grp,m.x,m.y,14/scale);}
+  if(grp){grp._meetNombre=m.nombre;_drawEmojiPin(grp,m.x,m.y,m.emoji||'🏠',m.size||3);}
 }
 
 // ── INIT ──
@@ -3827,7 +3997,32 @@ function updateMeetPinPosition(grp, m){
   initPanelResize();
   // Revisar alertas al inicio
   checkAlerts();
+  // Init móvil
+  initMobMenu();
 })();
+
+// ── RESPONSIVE / MÓVIL ──
+function initMobMenu(){} // reservado para uso futuro
+
+function toggleMobPanel(side){
+  const panel = document.getElementById(side==='L'?'panelL':'panelR');
+  const ov = document.getElementById('mobOverlay');
+  if(!panel) return;
+  const isOpen = panel.classList.contains('mob-open');
+  document.getElementById('panelL')?.classList.remove('mob-open');
+  document.getElementById('panelR')?.classList.remove('mob-open');
+  if(!isOpen){
+    panel.classList.add('mob-open');
+    ov.classList.add('on');
+  } else {
+    ov.classList.remove('on');
+  }
+}
+function closeMobPanels(){
+  document.getElementById('panelL')?.classList.remove('mob-open');
+  document.getElementById('panelR')?.classList.remove('mob-open');
+  document.getElementById('mobOverlay')?.classList.remove('on');
+}
 
 </script>
 
@@ -3867,21 +4062,49 @@ function updateMeetPinPosition(grp, m){
   <div id="meetModalInner" style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35)">
     <div style="background:linear-gradient(135deg,#0ea5e9,#0369a1);padding:18px 20px;display:flex;justify-content:space-between;align-items:center">
       <div style="color:#fff">
-        <div style="font-size:1rem;font-weight:700">🏠 Lugares de reunión</div>
-        <div style="font-size:.7rem;opacity:.88;margin-top:3px">Los pines aparecen en el mapa · arrastrables en modo edición</div>
+        <div style="font-size:1rem;font-weight:700">📍 Lugares de reunión</div>
+        <div style="font-size:.7rem;opacity:.88;margin-top:3px">Elige ícono y tamaño · arrastrables en modo edición</div>
       </div>
       <button onclick="closeMeetModal()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#fff;line-height:1">✕</button>
     </div>
     <div id="meetModalBody" style="padding:16px;background:#f8fafc">
       <!-- Agregar nuevo -->
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <input id="meetNameInput" placeholder="Nombre del lugar (ej: Salón del Reino)" style="flex:1;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;color:#1e293b;font-size:.82rem;outline:none" onkeydown="if(event.key==='Enter')addMeetPin()"/>
-        <button onclick="addMeetPin()" style="background:#0284c7;color:#fff;border:none;border-radius:9px;padding:9px 14px;cursor:pointer;font-size:.82rem;font-weight:600;white-space:nowrap">➕ Agregar</button>
+      <div style="background:#fff;border-radius:12px;padding:13px 14px;margin-bottom:14px;border:1.5px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+        <div style="font-size:.62rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">➕ Nuevo lugar</div>
+
+        <!-- Emoji picker -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:.68rem;font-weight:600;color:#475569;margin-bottom:6px">Ícono del pin</div>
+          <div id="meetEmojiGrid" style="display:flex;flex-wrap:wrap;gap:5px">
+            <!-- generado por JS -->
+          </div>
+        </div>
+
+        <!-- Tamaño -->
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:.68rem;font-weight:600;color:#475569">Tamaño del pin</span>
+            <span id="meetSizeLbl" style="font-size:.68rem;font-weight:700;color:#0284c7">Mediano</span>
+          </div>
+          <input type="range" id="meetSizeInput" min="1" max="5" value="3" step="1"
+            style="width:100%;accent-color:#0284c7"
+            oninput="updateMeetSizeLabel(this.value)"/>
+          <div style="display:flex;justify-content:space-between;font-size:.58rem;color:#94a3b8;margin-top:2px">
+            <span>Muy pequeño</span><span>Pequeño</span><span>Mediano</span><span>Grande</span><span>Muy grande</span>
+          </div>
+        </div>
+
+        <!-- Nombre + botón -->
+        <div style="display:flex;gap:8px">
+          <input id="meetNameInput" placeholder="Nombre del lugar (ej: Salón del Reino)" style="flex:1;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:9px;background:#f8fafc;color:#1e293b;font-size:.82rem;outline:none" onkeydown="if(event.key==='Enter')addMeetPin()"/>
+          <button onclick="addMeetPin()" style="background:#0284c7;color:#fff;border:none;border-radius:9px;padding:9px 14px;cursor:pointer;font-size:.82rem;font-weight:600;white-space:nowrap">➕ Agregar</button>
+        </div>
       </div>
+
       <!-- Lista -->
       <div id="meetList"></div>
       <div style="margin-top:10px;font-size:.65rem;color:#94a3b8;text-align:center;padding:6px">
-        💡 Activa <strong>✏️ Mover pines</strong> para arrastrar las casitas en el mapa
+        💡 Activa <strong>✏️ Mover pines</strong> para arrastrar los pines en el mapa
       </div>
     </div>
   </div>
