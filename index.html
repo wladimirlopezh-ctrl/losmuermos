@@ -1539,106 +1539,352 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target===docu
 
 // ── EXCEL EXPORT ──
 function exportExcel(){
-  if(typeof XLSX==='undefined'){toast('❌ SheetJS no cargado');return;}
-  const wb=XLSX.utils.book_new();
-  const today=new Date().toLocaleDateString('es-CL');
-  const now=new Date().toISOString().slice(0,10);
+  toast('📊 Generando Excel...');
+  const build = ()=>{
+    try{
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'Mapa Territorios Los Muermos';
+      wb.created = new Date();
 
-  // 1) Hoja resumen
-  const statsData=[
-    ['RESUMEN DE TERRITORIOS',''],
-    ['Congregación Los Muermos',''],
-    ['Fecha reporte',today],
-    [''],
-    ['Estado','Cantidad','%'],
-  ];
-  const cnt={disponible:0,asignado:0,completado:0,urgente:0};
-  for(let i=1;i<=33;i++)cnt[gs(i)]++;
-  statsData.push(['Total',33,'100%']);
-  statsData.push(['Disponibles',cnt.disponible,(cnt.disponible/33*100).toFixed(1)+'%']);
-  statsData.push(['Asignados',cnt.asignado,(cnt.asignado/33*100).toFixed(1)+'%']);
-  statsData.push(['Completados',cnt.completado,(cnt.completado/33*100).toFixed(1)+'%']);
-  statsData.push(['Sin trabajar +4m',cnt.urgente,(cnt.urgente/33*100).toFixed(1)+'%']);
-  statsData.push(['']);
-  statsData.push(['PROGRESO POR ZONA','','']);
-  Object.entries(ZONES).forEach(([z,ts])=>{
-    const co=ts.filter(n=>gs(n)==='completado').length;
-    statsData.push([z,co+'/'+ts.length,(co/ts.length*100).toFixed(0)+'%']);
-  });
-  const wsRes=XLSX.utils.aoa_to_sheet(statsData);
-  wsRes['!cols']=[{wch:28},{wch:12},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,wsRes,'📊 Resumen');
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const anio = today.getFullYear();
+      const fmtD = s => s ? s.split('-').reverse().join('-') : '—';
 
-  // 2) Hoja detalle por territorio
-  const detHead=['N°','Manzanas','Estado','Encargado','Modalidad','Fecha Asig.','Fecha Dev.','Días asignado','Observaciones'];
-  const detRows=[detHead];
-  for(let i=1;i<=33;i++){
-    const d=DB[i]||{};
-    const st=gs(i);
-    let dias='';
-    if(d.fechaAsig){const ms=Date.now()-new Date(d.fechaAsig+'T12:00');dias=Math.round(ms/86400000);}
-    detRows.push([
-      i,
-      MZ[i].join(', '),
-      SL[st],
-      d.encargado||'',
-      d.modalidad||'',
-      d.fechaAsig||'',
-      d.fechaDev||'',
-      dias,
-      d.obs||''
-    ]);
-  }
-  const wsDet=XLSX.utils.aoa_to_sheet(detRows);
-  wsDet['!cols']=[{wch:5},{wch:30},{wch:16},{wch:20},{wch:16},{wch:14},{wch:14},{wch:14},{wch:30}];
-  XLSX.utils.book_append_sheet(wb,wsDet,'📋 Detalle Territorios');
+      // ── Paleta ──
+      const VERDE_OSC = '1B4332';
+      const VERDE_MED = '2D6A4F';
+      const VERDE_CLAR = 'B7E4C7';
+      const VERDE_XCL = 'D8F3DC';
+      const GOLD = 'D4A926';
+      const GRAY_H = 'F1F5F9';
+      const GRAY_B = 'E2E8F0';
+      const GRAY_T = '64748B';
+      const ROJO = 'EF4444';
+      const AMBER = 'F59E0B';
+      const INDIGO = '6366F1';
+      const WHITE = 'FFFFFF';
 
-  // 3) Hoja actividad reciente
-  const acts=[];
-  for(let i=1;i<=33;i++){
-    const d=DB[i];
-    if(!d||(!(d.fechaAsig||d.fechaDev)))continue;
-    const dt=d.fechaDev||d.fechaAsig;
-    acts.push({n:i,enc:d.encargado||'—',st:gs(i),dt,_d:new Date(dt+'T12:00'),tipo:d.fechaDev?'Devolución':'Asignación'});
-  }
-  acts.sort((a,b)=>b._d-a._d);
-  const actHead=['Territorio','Encargado','Tipo','Estado','Fecha'];
-  const actRows=[actHead,...acts.map(a=>[`Territorio ${a.n}`,a.enc,a.tipo,SL[a.st],a.dt])];
-  const wsAct=XLSX.utils.aoa_to_sheet(actRows);
-  wsAct['!cols']=[{wch:14},{wch:22},{wch:14},{wch:16},{wch:14}];
-  XLSX.utils.book_append_sheet(wb,wsAct,'📅 Actividad Reciente');
+      // ── Helper estilos ──
+      const hdrFont = (sz=11,bold=true,color=WHITE) => ({name:'Calibri',size:sz,bold,color:{argb:'FF'+color}});
+      const bodyFont = (sz=10,bold=false,color='1E293B') => ({name:'Calibri',size:sz,bold,color:{argb:'FF'+color}});
+      const fill = (argb) => ({type:'pattern',pattern:'solid',fgColor:{argb:'FF'+argb}});
+      const border = (style='thin',color='CBD5E1') => ({style,color:{argb:'FF'+color}});
+      const allBorder = (s='thin',c='CBD5E1') => ({top:border(s,c),bottom:border(s,c),left:border(s,c),right:border(s,c)});
+      const align = (h='left',v='middle',wrap=false) => ({horizontal:h,vertical:v,wrapText:wrap});
 
-  // 4) Hoja heatmap meses trabajados
-  const mos=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const years=[2024,2025,2026];
-  // Header: Territorio + año-mes
-  const hmHead=['Territorio'];
-  years.forEach(y=>mos.forEach((m,i)=>hmHead.push(`${m} ${y}`)));
-  const hmRows=[hmHead];
-  for(let n=1;n<=33;n++){
-    const d=DB[n]||{};
-    const mw=d.monthsWorked||{};
-    const row=[`T${n}`];
-    years.forEach(y=>mos.forEach((_,i)=>{
-      const k=`${y}-${String(i+1).padStart(2,'0')}`;
-      row.push(mw[k]?'✓':'');
-    }));
-    hmRows.push(row);
-  }
-  // Fila totales
-  const totRow=['TOTAL (territorios trabajados)'];
-  years.forEach(y=>mos.forEach((_,i)=>{
-    const k=`${y}-${String(i+1).padStart(2,'0')}`;
-    let c=0;for(let n=1;n<=33;n++)if(DB[n]?.monthsWorked?.[k])c++;
-    totRow.push(c||'');
-  }));
-  hmRows.push(totRow);
-  const wsHm=XLSX.utils.aoa_to_sheet(hmRows);
-  wsHm['!cols']=[{wch:30},...Array(36).fill({wch:9})];
-  XLSX.utils.book_append_sheet(wb,wsHm,'🗓 Meses Trabajados');
+      // ── Aplicar estilo a rango ──
+      const styleRange = (ws,r1,c1,r2,c2,style) => {
+        for(let r=r1;r<=r2;r++) for(let c=c1;c<=c2;c++){
+          const cell = ws.getCell(r,c);
+          Object.assign(cell,style);
+        }
+      };
 
-  XLSX.writeFile(wb,`territorios_${now}.xlsx`);
-  toast('📊 Excel exportado correctamente');
+      // ══════════════════════════════════════
+      // HOJA 1 — RESUMEN EJECUTIVO
+      // ══════════════════════════════════════
+      const ws1 = wb.addWorksheet('Resumen', {views:[{showGridLines:false}]});
+      ws1.columns = [
+        {width:28},{width:16},{width:16},{width:16},{width:16},{width:16}
+      ];
+
+      // Banner principal
+      ws1.mergeCells('A1:F1');
+      const title = ws1.getCell('A1');
+      title.value = 'REGISTRO DE TERRITORIOS — CONGREGACIÓN LOS MUERMOS';
+      title.font = hdrFont(14,true,WHITE);
+      title.fill = fill(VERDE_OSC);
+      title.alignment = align('center','middle');
+      ws1.getRow(1).height = 36;
+
+      ws1.mergeCells('A2:F2');
+      const sub = ws1.getCell('A2');
+      sub.value = `Año ${anio}  ·  Reporte generado el ${todayStr}`;
+      sub.font = {name:'Calibri',size:10,color:{argb:'FF'+GOLD},italic:true};
+      sub.fill = fill(VERDE_MED);
+      sub.alignment = align('center','middle');
+      ws1.getRow(2).height = 22;
+
+      ws1.getRow(3).height = 10; // espacio
+
+      // KPIs
+      const cnt={disponible:0,asignado:0,completado:0,urgente:0};
+      for(let i=1;i<=33;i++) cnt[gs(i)]=(cnt[gs(i)]||0)+1;
+
+      // Sub-header KPIs
+      ws1.mergeCells('A4:F4');
+      const kpiHdr = ws1.getCell('A4');
+      kpiHdr.value = 'ESTADO ACTUAL DE TERRITORIOS';
+      kpiHdr.font = hdrFont(9,true,GRAY_T);
+      kpiHdr.fill = fill(GRAY_H);
+      kpiHdr.alignment = align('left','middle');
+      ws1.getRow(4).height = 18;
+
+      const kpiDef = [
+        {label:'Total territorios',   val:33,          color:VERDE_OSC, pct:'100%'},
+        {label:'Disponibles',         val:cnt.disponible, color:'15803D', pct:(cnt.disponible/33*100).toFixed(1)+'%'},
+        {label:'Asignados',           val:cnt.asignado,   color:'B45309', pct:(cnt.asignado/33*100).toFixed(1)+'%'},
+        {label:'Completados',         val:cnt.completado, color:'4338CA', pct:(cnt.completado/33*100).toFixed(1)+'%'},
+        {label:'Urgentes (+4 meses)', val:cnt.urgente,    color:'B91C1C', pct:(cnt.urgente/33*100).toFixed(1)+'%'},
+      ];
+      // Encabezados columna
+      ['Estado','Cantidad','% del total',''].forEach((h,c)=>{
+        const cell = ws1.getCell(5,c+1);
+        cell.value = h;
+        cell.font = hdrFont(9,true,WHITE);
+        cell.fill = fill(VERDE_MED);
+        cell.alignment = align('center');
+        cell.border = allBorder('thin','2D6A4F');
+      });
+      ws1.getRow(5).height = 20;
+
+      kpiDef.forEach((k,idx)=>{
+        const r = 6+idx;
+        const bg = idx%2===0 ? WHITE : VERDE_XCL;
+        [[1,k.label],[2,k.val],[3,k.pct]].forEach(([c,v])=>{
+          const cell = ws1.getCell(r,c);
+          cell.value = v;
+          cell.font = c===1 ? bodyFont(10,false,k.color) : bodyFont(10,true,k.color);
+          cell.fill = fill(bg);
+          cell.alignment = c===1 ? align('left') : align('center');
+          cell.border = allBorder('hair','CBD5E1');
+        });
+        ws1.getRow(r).height = 18;
+      });
+
+      ws1.getRow(11).height = 10;
+
+      // Zonas
+      ws1.mergeCells('A12:F12');
+      const zHdr = ws1.getCell('A12');
+      zHdr.value = 'COBERTURA POR ZONA';
+      zHdr.font = hdrFont(9,true,GRAY_T);
+      zHdr.fill = fill(GRAY_H);
+      zHdr.alignment = align('left','middle');
+      ws1.getRow(12).height = 18;
+
+      ['Zona','Territorios','Trabajados','% Cobertura'].forEach((h,c)=>{
+        const cell = ws1.getCell(13,c+1);
+        cell.value = h;
+        cell.font = hdrFont(9,true,WHITE);
+        cell.fill = fill(VERDE_MED);
+        cell.alignment = align('center');
+        cell.border = allBorder();
+      });
+      ws1.getRow(13).height = 20;
+
+      let zr=14;
+      Object.entries(ZONES).forEach(([z,ts],idx)=>{
+        const trab=ts.filter(n=>{const mw=DB[n]?.monthsWorked||{};return Object.keys(mw).some(k=>k.startsWith(String(anio)));}).length;
+        const pct=(trab/ts.length*100).toFixed(0)+'%';
+        const bg=idx%2===0?WHITE:VERDE_XCL;
+        [[1,z],[2,ts.length],[3,trab],[4,pct]].forEach(([c,v])=>{
+          const cell=ws1.getCell(zr,c);
+          cell.value=v;
+          cell.font=bodyFont(10);
+          cell.fill=fill(bg);
+          cell.alignment=c===1?align('left'):align('center');
+          cell.border=allBorder('hair');
+        });
+        ws1.getRow(zr).height=18;
+        zr++;
+      });
+
+      // ══════════════════════════════════════
+      // HOJA 2 — DETALLE TERRITORIOS
+      // ══════════════════════════════════════
+      const ws2 = wb.addWorksheet('Detalle Territorios', {views:[{showGridLines:false}]});
+      ws2.columns=[
+        {width:6},{width:28},{width:18},{width:22},{width:18},{width:14},{width:14},{width:14},{width:32}
+      ];
+
+      // Banner
+      ws2.mergeCells('A1:I1');
+      const t2=ws2.getCell('A1');
+      t2.value='DETALLE DE TERRITORIOS — '+anio;
+      t2.font=hdrFont(13,true,WHITE);
+      t2.fill=fill(VERDE_OSC);
+      t2.alignment=align('center','middle');
+      ws2.getRow(1).height=32;
+
+      // Cabecera
+      const det2Hdr=['N°','Manzanas','Estado','Encargado','Modalidad','Fecha Asig.','Fecha Dev.','Días asig.','Observaciones'];
+      det2Hdr.forEach((h,c)=>{
+        const cell=ws2.getCell(2,c+1);
+        cell.value=h;
+        cell.font=hdrFont(10,true,WHITE);
+        cell.fill=fill(VERDE_MED);
+        cell.alignment=align('center','middle');
+        cell.border=allBorder('thin','166534');
+      });
+      ws2.getRow(2).height=22;
+
+      const stColors={
+        disponible:{bg:'DCFCE7',fg:'15803D'},
+        asignado:  {bg:'FEF9C3',fg:'92400E'},
+        completado:{bg:'EDE9FE',fg:'4338CA'},
+        urgente:   {bg:'FEE2E2',fg:'B91C1C'}
+      };
+
+      for(let i=1;i<=33;i++){
+        const d=DB[i]||{};
+        const st=gs(i);
+        const sc=stColors[st]||{bg:WHITE,fg:'1E293B'};
+        let dias='';
+        if(d.fechaAsig){dias=Math.round((Date.now()-new Date(d.fechaAsig+'T12:00'))/86400000);}
+        const row=[i,MZ[i].join(', '),SL[st],d.encargado||'',d.modalidad||'',fmtD(d.fechaAsig),fmtD(d.fechaDev),dias||'',d.obs||''];
+        const r=i+2;
+        row.forEach((v,c)=>{
+          const cell=ws2.getCell(r,c+1);
+          cell.value=v;
+          if(c===2){
+            cell.font=bodyFont(10,true,sc.fg);
+            cell.fill=fill(sc.bg);
+          } else {
+            cell.font=bodyFont(10,false,c===7&&dias&&dias>120?'B91C1C':'1E293B');
+            cell.fill=fill(i%2===0?GRAY_H:WHITE);
+          }
+          cell.alignment=c===0||c===7?align('center'):align('left');
+          cell.border=allBorder('hair');
+        });
+        ws2.getRow(r).height=18;
+      }
+
+      // ══════════════════════════════════════
+      // HOJA 3 — PUBLICADORES
+      // ══════════════════════════════════════
+      const ws3 = wb.addWorksheet('Publicadores', {views:[{showGridLines:false}]});
+      ws3.columns=[{width:24},{width:12},{width:12},{width:14},{width:14},{width:20}];
+
+      ws3.mergeCells('A1:F1');
+      const t3=ws3.getCell('A1');
+      t3.value='HISTORIAL POR PUBLICADOR — '+anio;
+      t3.font=hdrFont(13,true,WHITE);
+      t3.fill=fill(VERDE_OSC);
+      t3.alignment=align('center','middle');
+      ws3.getRow(1).height=32;
+
+      ['Publicador','Activos','Completados','Días prom.','Días mín.','Territorios completados'].forEach((h,c)=>{
+        const cell=ws3.getCell(2,c+1);
+        cell.value=h; cell.font=hdrFont(10,true,WHITE);
+        cell.fill=fill(VERDE_MED); cell.alignment=align('center','middle');
+        cell.border=allBorder('thin','166534');
+      });
+      ws3.getRow(2).height=22;
+
+      // Construir datos publicadores
+      const pubMap={};
+      const ensure=n=>{if(!pubMap[n])pubMap[n]={activos:[],historial:[]};};
+      for(let i=1;i<=33;i++){
+        const d=DB[i]||{};
+        (d.historial||[]).forEach(h=>{
+          const enc=h.encAnterior||h.enc||'';
+          if(!enc||enc==='—')return;
+          const yr=h.fecha?new Date(h.fecha+'T12:00').getFullYear():0;
+          if(yr!==anio)return;
+          ensure(enc);
+          const dias=h.fechaAsigAnterior&&h.fecha
+            ?Math.round((new Date(h.fecha+'T12:00')-new Date(h.fechaAsigAnterior+'T12:00'))/86400000):null;
+          pubMap[enc].historial.push({ter:i,dias});
+        });
+        const st=gs(i);
+        if((st==='asignado'||st==='urgente')&&d.encargado){
+          ensure(d.encargado);
+          pubMap[d.encargado].activos.push(i);
+        }
+      }
+
+      const pubs=Object.entries(pubMap).map(([nombre,v])=>{
+        const dias=v.historial.map(h=>h.dias).filter(d=>d>0&&d!==null);
+        const prom=dias.length?Math.round(dias.reduce((a,b)=>a+b,0)/dias.length):null;
+        const min=dias.length?Math.min(...dias):null;
+        const ters=[...new Set(v.historial.map(h=>h.ter))].sort((a,b)=>a-b).map(t=>'T'+t).join(', ');
+        return{nombre,activos:v.activos.length,comp:v.historial.length,prom,min,ters};
+      }).sort((a,b)=>b.comp-a.comp);
+
+      pubs.forEach((p,idx)=>{
+        const r=idx+3;
+        const bg=idx%2===0?WHITE:VERDE_XCL;
+        const sobrecargado=p.activos>=3;
+        [p.nombre,p.activos,p.comp,p.prom||'—',p.min||'—',p.ters].forEach((v,c)=>{
+          const cell=ws3.getCell(r,c+1);
+          cell.value=v;
+          cell.font=bodyFont(10,c===0,
+            c===1&&sobrecargado?'B91C1C':c===3&&p.prom&&p.prom<=30?'15803D':'1E293B');
+          cell.fill=fill(bg);
+          cell.alignment=c===0||c===5?align('left'):align('center');
+          cell.border=allBorder('hair');
+        });
+        ws3.getRow(r).height=18;
+      });
+
+      // ══════════════════════════════════════
+      // HOJA 4 — ACTIVIDAD RECIENTE
+      // ══════════════════════════════════════
+      const ws4=wb.addWorksheet('Actividad Reciente',{views:[{showGridLines:false}]});
+      ws4.columns=[{width:14},{width:22},{width:16},{width:16},{width:14},{width:30}];
+
+      ws4.mergeCells('A1:F1');
+      const t4=ws4.getCell('A1');
+      t4.value='ACTIVIDAD RECIENTE';
+      t4.font=hdrFont(13,true,WHITE);
+      t4.fill=fill(VERDE_OSC);
+      t4.alignment=align('center','middle');
+      ws4.getRow(1).height=32;
+
+      ['Territorio','Encargado','Tipo','Estado','Fecha','Observación'].forEach((h,c)=>{
+        const cell=ws4.getCell(2,c+1);
+        cell.value=h; cell.font=hdrFont(10,true,WHITE);
+        cell.fill=fill(VERDE_MED); cell.alignment=align('center','middle');
+        cell.border=allBorder('thin','166534');
+      });
+      ws4.getRow(2).height=22;
+
+      const acts=[];
+      for(let i=1;i<=33;i++){
+        const d=DB[i]||{};
+        (d.historial||[]).forEach(h=>{
+          if(h.fecha) acts.push({n:i,enc:h.enc||h.encAnterior||'—',tipo:'Completado',st:'completado',fecha:h.fecha,obs:h.obs||''});
+        });
+        if(d.fechaAsig) acts.push({n:i,enc:d.encargado||'—',tipo:'Asignación',st:gs(i),fecha:d.fechaAsig,obs:d.obs||''});
+      }
+      acts.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+
+      acts.forEach((a,idx)=>{
+        const r=idx+3;
+        const sc=stColors[a.st]||{bg:WHITE,fg:'1E293B'};
+        const bg=idx%2===0?WHITE:GRAY_H;
+        [`T.${a.n}`,a.enc,a.tipo,SL[a.st],fmtD(a.fecha),a.obs].forEach((v,c)=>{
+          const cell=ws4.getCell(r,c+1);
+          cell.value=v;
+          if(c===3){cell.font=bodyFont(10,true,sc.fg);cell.fill=fill(sc.bg);}
+          else{cell.font=bodyFont(10);cell.fill=fill(bg);}
+          cell.alignment=c===0||c===5?align('left'):align('center');
+          cell.border=allBorder('hair');
+        });
+        ws4.getRow(r).height=18;
+      });
+
+      // ── Descargar ──
+      wb.xlsx.writeBuffer().then(buf=>{
+        const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url; a.download=`territorios_${anio}_${today.toISOString().slice(0,10)}.xlsx`; a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),5000);
+        toast('📊 Excel exportado con formato profesional');
+      });
+    }catch(e){console.error(e);toast('❌ Error Excel: '+e.message);}
+  };
+
+  // Cargar ExcelJS dinámicamente
+  if(window.ExcelJS){ build(); return; }
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+  s.onload=build;
+  s.onerror=()=>toast('❌ No se pudo cargar ExcelJS');
+  document.head.appendChild(s);
 }
 
 // ── CAMPAÑAS ──
@@ -2137,8 +2383,8 @@ function renderInfResumen(){
   const campActiva = CAMPS.find(c=>c.id===activeCampId);
   let campHtml='';
   if(campActiva){
-    const ini=new Date(campActiva.fechaIni+'T00:00');
-    const fin=new Date(campActiva.fechaFin+'T23:59');
+    const ini=new Date(campActiva.inicio+'T00:00');
+    const fin=new Date(campActiva.fin+'T23:59');
     const totalDias=Math.round((fin-ini)/86400000)+1;
     const diasTransc=Math.max(0,Math.round((now-ini)/86400000));
     const diasRest=Math.max(0,Math.round((fin-now)/86400000));
@@ -2186,7 +2432,7 @@ function renderInfResumen(){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div>
           <div style="font-size:.88rem;font-weight:600;color:#fff">🏕 ${campActiva.nombre}</div>
-          <div style="font-size:.6rem;color:rgba(255,255,255,.35);margin-top:2px">${fmtD(campActiva.fechaIni)} → ${fmtD(campActiva.fechaFin)} · ${totalDias} días</div>
+          <div style="font-size:.6rem;color:rgba(255,255,255,.35);margin-top:2px">${fmtD(campActiva.inicio)} → ${fmtD(campActiva.fin)} · ${totalDias} días</div>
         </div>
         <div class="db-camp-badge">⬤ Activa</div>
       </div>
@@ -2197,14 +2443,14 @@ function renderInfResumen(){
         <div class="db-cdown"><div class="db-cdown-n" style="color:#a5b4fc">${cnt.disponible}</div><div class="db-cdown-l">Sin asignar</div></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:.58rem;color:rgba(255,255,255,.25);margin-bottom:3px">
-        <span>${fmtD(campActiva.fechaIni)}</span>
+        <span>${fmtD(campActiva.inicio)}</span>
         <span style="color:#4ade80;font-weight:700">${pctTiempo}% del tiempo transcurrido</span>
-        <span>${fmtD(campActiva.fechaFin)}</span>
+        <span>${fmtD(campActiva.fin)}</span>
       </div>
       <div class="db-camp-bar"><div class="db-camp-fill" style="width:${pctTiempo}%"></div></div>
       <div class="db-camp-cols">
         <div>
-          <div class="db-camp-col-lbl"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80"></div>Completados desde ${fmtD(campActiva.fechaIni)} (${compCamp.length})</div>
+          <div class="db-camp-col-lbl"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80"></div>Completados desde ${fmtD(campActiva.inicio)} (${compCamp.length})</div>
           <div style="display:grid;grid-template-columns:24px 1fr 54px;gap:4px;padding:0 5px 4px;border-bottom:0.5px solid rgba(255,255,255,.06);margin-bottom:2px">
             <div style="font-size:.52rem;color:rgba(255,255,255,.2)">N°</div>
             <div style="font-size:.52rem;color:rgba(255,255,255,.2)">Encargado</div>
@@ -2216,7 +2462,7 @@ function renderInfResumen(){
             :'<div style="font-size:.65rem;color:rgba(255,255,255,.25);padding:8px 0;text-align:center">Sin completados en este período</div>'}
         </div>
         <div>
-          <div class="db-camp-col-lbl"><div style="width:6px;height:6px;border-radius:50%;background:#fbbf24"></div>Pendientes · vence ${fmtD(campActiva.fechaFin)} (${pendCamp.length})</div>
+          <div class="db-camp-col-lbl"><div style="width:6px;height:6px;border-radius:50%;background:#fbbf24"></div>Pendientes · vence ${fmtD(campActiva.fin)} (${pendCamp.length})</div>
           <div style="display:grid;grid-template-columns:24px 1fr 54px;gap:4px;padding:0 5px 4px;border-bottom:0.5px solid rgba(255,255,255,.06);margin-bottom:2px">
             <div style="font-size:.52rem;color:rgba(255,255,255,.2)">N°</div>
             <div style="font-size:.52rem;color:rgba(255,255,255,.2)">Encargado</div>
@@ -3386,24 +3632,42 @@ function renderRuralList(){
 // Formatea fecha YYYY-MM-DD → DD-MM-YY
 function _fmtDoc(d){ if(!d)return''; const p=d.split('-'); return p[2]+'-'+p[1]+'-'+p[0].slice(-2); }
 
-// Extrae hasta 4 slots de asignación por territorio
+// Extrae hasta 4 slots de asignación por territorio — SOLO AÑO ACTUAL
 function _getSlotsDoc(i){
   const d = DB[i]||{};
+  const anio = new Date().getFullYear();
   const slots = [];
-  // Historial de asignaciones completadas
-  (d.historial||[]).forEach(h=>{
-    const enc = h.encAnterior || h.enc || '';
-    if(enc || h.fechaAsigAnterior){
-      slots.push({enc, fechaAsig:_fmtDoc(h.fechaAsigAnterior||''), fechaComp:_fmtDoc(h.fecha||'')});
-    }
+
+  // Historial cronológico filtrado por año actual
+  const hist = (d.historial||[]).filter(h=>{
+    const ref = h.fechaAsigAnterior || h.fecha || '';
+    if(!ref) return false;
+    return new Date(ref+'T12:00').getFullYear() === anio;
   });
-  // Asignación actual activa
-  if(d.encargado || d.fechaAsig){
-    slots.push({enc:d.encargado||'', fechaAsig:_fmtDoc(d.fechaAsig||''), fechaComp:_fmtDoc(d.fechaDev||'')});
+
+  hist.forEach(h=>{
+    const enc = h.encAnterior || h.enc || '';
+    const fechaAsig = h.fechaAsigAnterior || '';
+    const fechaComp = h.fecha || '';
+    slots.push({enc, fechaAsig:_fmtDoc(fechaAsig), fechaComp:_fmtDoc(fechaComp)});
+  });
+
+  // Asignación activa actual — incluir si es de este año
+  if((d.encargado || d.fechaAsig) && d.fechaAsig){
+    const asigAnio = new Date(d.fechaAsig+'T12:00').getFullYear();
+    if(asigAnio === anio){
+      slots.push({
+        enc: d.encargado||'',
+        fechaAsig: _fmtDoc(d.fechaAsig||''),
+        fechaComp: _fmtDoc(d.fechaDev||'')
+      });
+    }
   }
-  // Última fecha completada
+
+  // Última fecha completada (más reciente)
   const comps = slots.filter(s=>s.fechaComp).map(s=>s.fechaComp);
   const ultimaFecha = comps.length ? comps[comps.length-1] : '';
+
   // Rellenar hasta 4 slots vacíos
   while(slots.length<4) slots.push({enc:'',fechaAsig:'',fechaComp:''});
   return {slots:slots.slice(0,4), ultimaFecha};
@@ -3415,84 +3679,92 @@ function generarWord(){
   const build = ()=>{
     try{
       const {Document,Packer,Paragraph,Table,TableRow,TableCell,
-             TextRun,WidthType,BorderStyle,VerticalAlign,AlignmentType} = window.docx;
+             TextRun,WidthType,BorderStyle,VerticalAlign,AlignmentType,
+             TableLayoutType} = window.docx;
 
-      const BORDER = {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'};
-      const allBorders = {top:BORDER,bottom:BORDER,left:BORDER,right:BORDER};
+      const anio = new Date().getFullYear();
+      const BORDER = {style:BorderStyle.SINGLE, size:4, color:'999999'};
+      const B = {top:BORDER,bottom:BORDER,left:BORDER,right:BORDER};
 
-      const mkCell = (text, opts={}) => new TableCell({
+      // Helper celda
+      const C = (text, opts={}) => new TableCell({
         children:[new Paragraph({
-          alignment: opts.align||AlignmentType.CENTER,
+          alignment: opts.center!==false ? AlignmentType.CENTER : AlignmentType.LEFT,
+          spacing:{before:40,after:40},
           children:[new TextRun({
-            text:String(text||''), bold:!!opts.bold,
-            size:opts.size||16, font:'Calibri',
+            text:String(text||''),
+            bold:!!opts.bold,
+            size:opts.size||18,
+            font:'Calibri',
             color:opts.color||'000000'
           })]
         })],
         verticalAlign: VerticalAlign.CENTER,
         verticalMerge: opts.vMerge||undefined,
-        columnSpan: opts.colSpan||undefined,
-        shading: opts.bg ? {fill:opts.bg} : undefined,
-        borders: allBorders,
-        margins:{top:50,bottom:50,left:80,right:80},
-        width: opts.w ? {size:opts.w, type:WidthType.DXA} : undefined
+        columnSpan: opts.span||undefined,
+        rowSpan: opts.rowSpan||undefined,
+        shading: opts.bg ? {fill:opts.bg,type:'solid'} : undefined,
+        borders: B,
+        margins:{top:60,bottom:60,left:100,right:100},
+        width: opts.w ? {size:opts.w,type:WidthType.DXA} : undefined
       });
 
-      const contCell = () => new TableCell({
+      // Celda continuación de merge vertical
+      const CV = () => new TableCell({
         children:[new Paragraph({children:[]})],
-        verticalMerge:'continue',
-        borders:allBorders,
-        margins:{top:50,bottom:50,left:80,right:80}
+        verticalMerge:'continue', borders:B,
+        margins:{top:60,bottom:60,left:100,right:100}
       });
 
       const rows = [];
 
-      // ── Cabecera fila 1 ──
+      // ── Fila 1: cabecera superior ──
+      // N° | Última fecha | [Asignado a] (span 8 cols)
       rows.push(new TableRow({tableHeader:true, children:[
-        mkCell('Núm. de terr.',  {bold:true,size:14,bg:'CCCCCC',vMerge:'restart',w:560}),
-        mkCell('Última fecha en que se completó*',{bold:true,size:13,bg:'CCCCCC',vMerge:'restart',w:1400}),
-        mkCell('Asignado a',     {bold:true,size:16,bg:'CCCCCC',colSpan:8})
+        C('Núm. de terr.',  {bold:true,size:16,bg:'D0D0D0',vMerge:'restart',w:700}),
+        C('Última fecha en que se completó*',{bold:true,size:14,bg:'D0D0D0',vMerge:'restart',w:1800}),
+        C('Asignado a',     {bold:true,size:16,bg:'D0D0D0',span:8})
       ]}));
 
-      // ── Cabecera fila 2 ──
+      // ── Fila 2: sub-cabecera fechas ──
       rows.push(new TableRow({tableHeader:true, children:[
-        contCell(), contCell(),
-        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
-        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'}),
-        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
-        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'}),
-        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
-        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'}),
-        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
-        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'})
+        CV(), CV(),
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'E8E8E8'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'E8E8E8'}),
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'E8E8E8'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'E8E8E8'}),
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'E8E8E8'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'E8E8E8'}),
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'E8E8E8'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'E8E8E8'})
       ]}));
 
-      // ── Filas de datos ──
+      // ── Filas de datos (33 territorios) ──
       for(let i=1;i<=33;i++){
         const {slots,ultimaFecha} = _getSlotsDoc(i);
-        const bg = i%2===0 ? 'F7F7F7' : 'FFFFFF';
+        const bg = i%2===0 ? 'F5F5F5' : 'FFFFFF';
 
-        // Fila A — número, última fecha, nombres de encargados
+        // Fila A: N° | última fecha | nombre encargado (span 2 cada uno) x 4
         rows.push(new TableRow({children:[
-          mkCell(i,       {bold:true,size:18,vMerge:'restart',bg}),
-          mkCell(ultimaFecha, {size:15,vMerge:'restart',bg}),
-          mkCell(slots[0].enc,{size:14,colSpan:2,bg}),
-          mkCell(slots[1].enc,{size:14,colSpan:2,bg}),
-          mkCell(slots[2].enc,{size:14,colSpan:2,bg}),
-          mkCell(slots[3].enc,{size:14,colSpan:2,bg})
+          C(i,           {bold:true,size:20,vMerge:'restart',bg,w:700}),
+          C(ultimaFecha, {size:16,vMerge:'restart',bg,w:1800}),
+          C(slots[0].enc,{size:15,span:2,bg}),
+          C(slots[1].enc,{size:15,span:2,bg}),
+          C(slots[2].enc,{size:15,span:2,bg}),
+          C(slots[3].enc,{size:15,span:2,bg})
         ]}));
 
-        // Fila B — fechas
+        // Fila B: fechas asignó/completó x 4
         rows.push(new TableRow({children:[
-          contCell(), contCell(),
-          mkCell(slots[0].fechaAsig,{size:14,bg}),
-          mkCell(slots[0].fechaComp,{size:14,bg}),
-          mkCell(slots[1].fechaAsig,{size:14,bg}),
-          mkCell(slots[1].fechaComp,{size:14,bg}),
-          mkCell(slots[2].fechaAsig,{size:14,bg}),
-          mkCell(slots[2].fechaComp,{size:14,bg}),
-          mkCell(slots[3].fechaAsig,{size:14,bg}),
-          mkCell(slots[3].fechaComp,{size:14,bg})
+          CV(), CV(),
+          C(slots[0].fechaAsig, {size:15,bg}),
+          C(slots[0].fechaComp, {size:15,bg}),
+          C(slots[1].fechaAsig, {size:15,bg}),
+          C(slots[1].fechaComp, {size:15,bg}),
+          C(slots[2].fechaAsig, {size:15,bg}),
+          C(slots[2].fechaComp, {size:15,bg}),
+          C(slots[3].fechaAsig, {size:15,bg}),
+          C(slots[3].fechaComp, {size:15,bg})
         ]}));
       }
 
@@ -3500,27 +3772,55 @@ function generarWord(){
 
       const doc = new Document({sections:[{
         properties:{page:{
-          size:{width:16838,height:11906}, // A4 horizontal
-          margin:{top:720,bottom:720,left:720,right:720}
+          size:{width:19840,height:12240}, // A4 apaisado (oficio ancho)
+          margin:{top:720,bottom:720,left:900,right:900}
         }},
         children:[
-          new Paragraph({alignment:AlignmentType.CENTER, spacing:{after:100},
-            children:[new TextRun({text:'REGISTRO DE ASIGNACIÓN DE TERRITORIO',bold:true,size:28,font:'Calibri',color:'1B4332'})]}),
-          new Paragraph({alignment:AlignmentType.CENTER, spacing:{after:300},
-            children:[new TextRun({text:'Congregación Los Muermos  ·  Año de servicio 2026  ·  Generado el '+hoy,size:18,font:'Calibri',color:'666666'})]}),
-          new Table({rows, width:{size:100,type:WidthType.PERCENTAGE},
-            columnWidths:[560,1400,1560,1560,1560,1560,1560,1560,1560,1560]})
+          // Título
+          new Paragraph({
+            alignment:AlignmentType.CENTER,
+            spacing:{after:60},
+            children:[new TextRun({
+              text:'REGISTRO DE ASIGNACIÓN DE TERRITORIO',
+              bold:true,size:26,font:'Calibri',color:'1B4332'
+            })]
+          }),
+          // Año de servicio
+          new Paragraph({
+            alignment:AlignmentType.CENTER,
+            spacing:{after:240},
+            children:[new TextRun({
+              text:`Año de servicio: ${anio}  ·  Congregación Los Muermos  ·  Generado el ${hoy}`,
+              size:18,font:'Calibri',color:'666666'
+            })]
+          }),
+          // Tabla principal
+          new Table({
+            rows,
+            width:{size:100,type:WidthType.PERCENTAGE},
+            columnWidths:[700,1800,1480,1480,1480,1480,1480,1480,1480,1480]
+          }),
+          // Nota al pie
+          new Paragraph({
+            spacing:{before:200},
+            children:[new TextRun({
+              text:'* Cuando comience una nueva página, anote en esta columna la última fecha en que los territorios se completaron.',
+              size:16,font:'Calibri',color:'666666',italics:true
+            })]
+          })
         ]
       }]});
 
       Packer.toBlob(doc).then(blob=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');
-        a.href=url; a.download='registro_territorios_'+hoy.replace(/\//g,'-')+'.docx'; a.click();
+        a.href=url;
+        a.download='registro_territorios_'+anio+'_'+hoy.replace(/\//g,'-')+'.docx';
+        a.click();
         setTimeout(()=>URL.revokeObjectURL(url),5000);
-        toast('✅ Word generado y descargado');
+        toast('✅ Word generado correctamente');
       });
-    }catch(e){console.error(e);toast('❌ Error al generar Word: '+e.message);}
+    }catch(e){console.error(e);toast('❌ Error: '+e.message);}
   };
 
   if(window.docx){ build(); return; }
