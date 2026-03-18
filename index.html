@@ -491,6 +491,19 @@ body.dark .sp-sect{background:#13161f;}
 .ar-btn.active{background:var(--gd);color:#fff;border-color:var(--gd);}
 body.dark .ar-btn{background:var(--w);color:#94a3b8;}
 
+/* ── PUBLICADORES ── */
+.pub-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:0.5px solid var(--bdr);}
+.pub-row:last-child{border:none;}
+.pub-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;color:#fff;}
+.pub-info{flex:1;min-width:0;}
+.pub-name{font-size:.75rem;font-weight:600;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pub-sub{font-size:.62rem;color:var(--gray);margin-top:1px;}
+.pub-badge{font-size:.6rem;padding:2px 6px;border-radius:8px;font-weight:600;flex-shrink:0;}
+.pub-bar-wrap{width:100%;height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;margin-top:3px;}
+.pub-bar-fill{height:100%;border-radius:2px;}
+.pub-suggest{background:rgba(27,67,50,.08);border:1px dashed rgba(27,67,50,.3);border-radius:8px;padding:7px 9px;margin-bottom:6px;font-size:.65rem;color:var(--gd);line-height:1.4;}
+body.dark .pub-suggest{background:rgba(45,106,79,.12);border-color:rgba(45,106,79,.3);}
+
 /* ══════════════════════════════════════
    RESPONSIVIDAD
 ══════════════════════════════════════ */
@@ -669,6 +682,7 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
       </div>
     </div>
     <div class="pb"><div class="pt">🗺 Cobertura por zona</div><div id="zonaGrid"></div></div>
+    <div class="pb"><div class="pt">👥 Publicadores</div><div id="pubPanel"></div></div>
   </div>
 </div>
 
@@ -786,7 +800,7 @@ body.dark .ar-btn{background:var(--w);color:#94a3b8;}
 
 
 <!-- DASHBOARD FULL SCREEN -->
-<div id="dashOverlay" style="display:none;position:fixed;inset:0;z-index:800;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+<div id="dashOverlay" style="display:none;position:fixed;inset:0;z-index:800;background:#0a0e14;overflow-y:auto;-webkit-overflow-scrolling:touch;">
   <div id="dashContent"></div>
 </div>
 
@@ -926,7 +940,7 @@ const saveRural=()=>{try{localStorage.setItem('lm_rural',JSON.stringify(RURAL));
 const gs=n=>{
   if(!DB[n])return 'disponible';
   const d=DB[n];
-  if(d.estado==='asignado'&&d.fechaAsig&&(Date.now()-new Date(d.fechaAsig))/2592e6>12)return 'urgente';
+  if(d.estado==='asignado'&&d.fechaAsig&&(Date.now()-new Date(d.fechaAsig))/2592e6>4)return 'urgente';
   return d.estado||'disponible';
 };
 
@@ -1259,7 +1273,7 @@ function toggleM(n,k){
 }
 
 // ── UPDATES ──
-function updateAll(){updateStats();updateProg();updateUrgent();updateActivity();updateHeatmap();updateZones();}
+function updateAll(){updateStats();updateProg();updateUrgent();updateActivity();updateHeatmap();updateZones();renderPubPanel();}
 
 function updateStats(){
   const c={'disponible':0,'asignado':0,'completado':0,'urgente':0};
@@ -1520,7 +1534,7 @@ function importData(e){
   r.onload=ev=>{try{applyBackup(JSON.parse(ev.target.result));toast('✅ Datos importados');}catch{toast('❌ Error al importar');}}
   r.readAsText(e.target.files[0]);e.target.value='';
 }
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2500);}
+function toast(msg, dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),dur);}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeM();});
 
 // ── EXCEL EXPORT ──
@@ -1544,7 +1558,7 @@ function exportExcel(){
   statsData.push(['Disponibles',cnt.disponible,(cnt.disponible/33*100).toFixed(1)+'%']);
   statsData.push(['Asignados',cnt.asignado,(cnt.asignado/33*100).toFixed(1)+'%']);
   statsData.push(['Completados',cnt.completado,(cnt.completado/33*100).toFixed(1)+'%']);
-  statsData.push(['Sin trabajar +12m',cnt.urgente,(cnt.urgente/33*100).toFixed(1)+'%']);
+  statsData.push(['Sin trabajar +4m',cnt.urgente,(cnt.urgente/33*100).toFixed(1)+'%']);
   statsData.push(['']);
   statsData.push(['PROGRESO POR ZONA','','']);
   Object.entries(ZONES).forEach(([z,ts])=>{
@@ -1949,329 +1963,386 @@ function toggleDash(){
 function renderDashboard(){
   const el = document.getElementById('dashContent');
   const tab = infTab==='resumen' ? renderInfResumen()
+    : infTab==='semana' ? renderInfSemana()
     : infTab==='campana' ? renderInfCampana()
     : infTab==='sinasignar' ? renderInfSinAsignar()
     : infTab==='calor' ? renderInfCalor()
     : infTab==='mensual' ? renderInfMensual()
     : infTab==='historico' ? renderInfHistorico()
+    : infTab==='publicadores' ? renderInfPublicadores()
+    : infTab==='velocidad' ? renderInfVelocidad()
     : renderInfResumen();
-  el.innerHTML = renderInfHeader() + tab;
+  el.innerHTML = renderInfHeader() + tab + '</div>';
 }
 
 function renderInfHeader(){
-  const now = new Date();
+  const go = tab => `infTab='${tab}';renderDashboard();document.getElementById('dashOverlay').scrollTop=0`;
   return `
   <style>
-    .db-wrap{max-width:900px;margin:0 auto;padding:14px 16px 32px;}
-    .db-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;gap:10px;flex-wrap:wrap;}
-    .db-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:900;}
-    .db-sub{font-size:.65rem;color:var(--gray);margin-top:2px;}
-    .db-back{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1.5px solid var(--bdr);background:var(--w);cursor:pointer;font-size:.75rem;font-weight:600;color:#475569;}
-    .db-back:hover{border-color:var(--gd);color:var(--gd);}
-    body.dark .db-back{background:var(--w);color:#94a3b8;}
-    .inf-tabs{display:flex;gap:2px;background:#f1f5f9;border-radius:10px;padding:3px;margin:14px 0 16px;}
-    body.dark .inf-tabs{background:#1e2130;}
-    .inf-tab{flex:1;padding:8px 10px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-size:.72rem;font-weight:600;color:var(--gray);font-family:'DM Sans',sans-serif;transition:all .15s;text-align:center;}
-    .inf-tab.active{background:var(--w);color:var(--dark);box-shadow:0 1px 4px rgba(0,0,0,.1);}
-    body.dark .inf-tab.active{background:#22263a;color:#e2e8f0;}
+    .db-wrap{max-width:960px;margin:0 auto;padding:20px 20px 40px;font-family:'DM Sans',sans-serif;}
+    .inf-tabs{display:flex;align-items:center;gap:0;background:#0d1219;border-bottom:0.5px solid rgba(255,255,255,.07);padding:0 20px;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:10;}
+    .inf-tabs::-webkit-scrollbar{display:none;}
+    .db-back{padding:8px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-size:.72rem;font-weight:600;cursor:pointer;margin-right:10px;white-space:nowrap;flex-shrink:0;font-family:'DM Sans',sans-serif;}
+    .db-back:hover{background:rgba(255,255,255,.08);color:#fff;}
+    .inf-tab{padding:12px 14px;font-size:.68rem;font-weight:600;color:rgba(255,255,255,.3);cursor:pointer;white-space:nowrap;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.3px;font-family:'DM Sans',sans-serif;}
+    .inf-tab:hover{color:rgba(255,255,255,.6);}
+    .inf-tab.active{color:#fff;border-bottom-color:#4ade80;}
+    .sec-lbl{font-size:.58rem;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;margin-top:16px;}
+    .db-headline{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+    .db-bigcard{background:#111827;border-radius:14px;border:0.5px solid rgba(255,255,255,.07);padding:16px;}
+    .db-bigcard-title{font-size:.65rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+    .db-mini-row{display:flex;gap:6px;margin-bottom:6px;}
+    .db-mini{flex:1;background:rgba(255,255,255,.04);border-radius:8px;padding:7px 8px;border:0.5px solid rgba(255,255,255,.06);text-align:center;}
+    .db-mini-n{font-size:1.1rem;font-weight:600;line-height:1;}
+    .db-mini-l{font-size:.52rem;color:rgba(255,255,255,.3);margin-top:2px;text-transform:uppercase;letter-spacing:.3px;}
+    .db-ring-wrap{position:relative;width:90px;height:90px;flex-shrink:0;}
+    .db-ring-wrap svg{transform:rotate(-90deg);}
+    .db-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .db-ring-n{font-size:1.4rem;font-weight:600;line-height:1;color:#fff;}
+    .db-ring-l{font-size:.52rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+    .db-sparkline{display:flex;align-items:flex-end;gap:2px;height:38px;}
+    .db-spark{flex:1;border-radius:2px 2px 0 0;min-height:2px;}
+    .db-camp{background:#111827;border-radius:14px;border:0.5px solid rgba(74,222,128,.2);padding:16px;margin-bottom:14px;}
+    .db-camp-badge{font-size:.6rem;padding:3px 9px;border-radius:20px;background:rgba(74,222,128,.12);color:#4ade80;border:0.5px solid rgba(74,222,128,.25);font-weight:600;}
+    .db-camp-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin:7px 0 3px;}
+    .db-camp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#166534,#4ade80);}
+    .db-countdown{display:flex;gap:8px;margin:10px 0;}
+    .db-cdown{flex:1;background:rgba(255,255,255,.04);border-radius:10px;padding:8px 6px;text-align:center;border:0.5px solid rgba(255,255,255,.06);}
+    .db-cdown-n{font-size:1.3rem;font-weight:600;line-height:1;}
+    .db-cdown-l{font-size:.5rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+    .db-camp-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+    .db-camp-col-lbl{font-size:.56rem;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+    .db-ter-fila{display:grid;grid-template-columns:24px 1fr 54px;gap:4px;padding:4px 5px;border-radius:6px;margin-bottom:2px;align-items:center;cursor:pointer;}
+    .db-ter-fila:hover{background:rgba(255,255,255,.04);}
+    .db-ter-num{font-size:.72rem;font-weight:700;text-align:center;}
+    .db-ter-enc{font-size:.62rem;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .db-ter-fecha{font-size:.6rem;text-align:right;}
+    .db-twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .db-tl{display:flex;flex-direction:column;}
+    .db-tl-item{display:flex;gap:9px;}
+    .db-tl-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+    .db-tl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+    .db-tl-conn{width:1px;flex:1;background:rgba(255,255,255,.06);min-height:12px;margin:3px 0;}
+    .db-tl-body{flex:1;min-width:0;padding-bottom:10px;}
+    .db-tl-title{font-size:.68rem;font-weight:600;color:rgba(255,255,255,.72);}
+    .db-tl-sub{font-size:.58rem;color:rgba(255,255,255,.3);margin-top:1px;}
+    .db-tl-badge{font-size:.54rem;padding:2px 6px;border-radius:5px;display:inline-block;margin-top:3px;}
+    .db-menos{background:rgba(255,255,255,.03);border:0.5px solid rgba(255,255,255,.07);border-radius:9px;padding:8px 11px;margin-bottom:5px;display:flex;align-items:center;gap:9px;cursor:pointer;}
+    .db-menos:hover{background:rgba(255,255,255,.06);}
+    .db-menos-n{font-size:1.05rem;font-weight:700;min-width:24px;text-align:center;}
+    .db-menos-info{flex:1;min-width:0;}
+    .db-menos-title{font-size:.67rem;font-weight:600;color:rgba(255,255,255,.7);}
+    .db-menos-sub{font-size:.57rem;color:rgba(255,255,255,.3);margin-top:1px;}
+    .db-menos-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-top:3px;}
+    .db-menos-fill{height:100%;border-radius:2px;}
+    .db-menos-badge{font-size:.57rem;padding:2px 7px;border-radius:7px;font-weight:600;flex-shrink:0;}
+    .db-hbar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+    .db-hbar-lbl{font-size:.62rem;color:rgba(255,255,255,.4);width:74px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .db-hbar-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+    .db-hbar-fill{height:100%;border-radius:3px;}
+    .db-hbar-val{font-size:.62rem;min-width:20px;text-align:right;flex-shrink:0;}
+    .dbc{background:#111827;border-radius:12px;padding:14px 16px;border:0.5px solid rgba(255,255,255,.08);}
+    .dbc-t{font-size:.58rem;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.1px;text-transform:uppercase;margin-bottom:10px;}
+    .dbn{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:900;line-height:1;color:#fff;}
+    .dbl{font-size:.62rem;color:rgba(255,255,255,.35);margin-top:3px;}
+    .db-ter-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.08);margin-bottom:5px;cursor:pointer;background:rgba(255,255,255,.02);}
+    .db-ter-row:hover{background:rgba(255,255,255,.05);}
+    .db-prog-bar{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:4px;}
+    .db-prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#1b4332,#2d6a4f);}
+    .db-zbar{height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;flex:1;}
+    .db-zfill{height:100%;border-radius:4px;}
+    .db-ring{position:relative;width:72px;height:72px;flex-shrink:0;}
+    .ic-enc-bar{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:3px;}
+    .ic-enc-fill{height:100%;border-radius:3px;background:#818cf8;}
+    .ic-enc-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(255,255,255,.06);font-size:.7rem;}
+    .ic-enc-row:last-child{border:none;}
     .db-grid{display:grid;gap:12px;}
     .db-row4{grid-template-columns:repeat(4,1fr);}
     .db-row2{grid-template-columns:1fr 1fr;}
     .db-row3{grid-template-columns:1fr 1fr 1fr;}
-    @media(max-width:640px){
-      .db-wrap{padding:10px 12px 24px;}
-      .db-title{font-size:1.1rem;}
-      .db-row4{grid-template-columns:repeat(2,1fr);}
-      .db-row2{grid-template-columns:1fr 1fr;}
-      .db-row3{grid-template-columns:1fr 1fr;}
-    }
-    .dbc{background:var(--w);border-radius:12px;padding:14px 16px;border:1.5px solid var(--bdr);}
-    body.dark .dbc{background:var(--w);}
-    .dbc-t{font-size:.58rem;font-weight:700;color:var(--gray);letter-spacing:1.1px;text-transform:uppercase;margin-bottom:10px;}
-    .dbn{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:900;line-height:1;}
-    .dbl{font-size:.62rem;color:var(--gray);margin-top:3px;}
     .db-ter-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;}
-    @media(max-width:640px){.db-ter-grid{grid-template-columns:repeat(7,1fr);gap:3px;}}
-    @media(max-width:360px){.db-ter-grid{grid-template-columns:repeat(6,1fr);}}
-    .db-ter-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:transform .1s;}
+    .db-ter-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;cursor:pointer;border:0.5px solid transparent;transition:transform .1s;}
     .db-ter-cell:active{transform:scale(.92);}
-    .db-ter-cell.disponible{background:rgba(34,197,94,.15);color:#15803d;border-color:rgba(34,197,94,.35);}
-    .db-ter-cell.asignado{background:rgba(245,158,11,.15);color:#92400e;border-color:rgba(245,158,11,.35);}
-    .db-ter-cell.completado{background:rgba(99,102,241,.15);color:#3730a3;border-color:rgba(99,102,241,.35);}
-    .db-ter-cell.urgente{background:rgba(239,68,68,.15);color:#991b1b;border-color:rgba(239,68,68,.35);}
-    body.dark .db-ter-cell.disponible{background:rgba(34,197,94,.12);color:#4ade80;}
-    body.dark .db-ter-cell.asignado{background:rgba(245,158,11,.12);color:#fbbf24;}
-    body.dark .db-ter-cell.completado{background:rgba(129,140,248,.12);color:#818cf8;}
-    body.dark .db-ter-cell.urgente{background:rgba(248,113,113,.12);color:#f87171;}
-    .db-spark{display:flex;align-items:flex-end;gap:3px;height:44px;}
-    .db-spark-bar{flex:1;border-radius:2px 2px 0 0;min-width:8px;transition:height .4s;}
-    .db-spark-lbl{font-size:.5rem;color:var(--gray);text-align:center;margin-top:2px;}
-    .db-zbar{height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden;flex:1;}
-    body.dark .db-zbar{background:#22263a;}
-    .db-zfill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1);}
-    .db-chip{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:.63rem;font-weight:700;cursor:pointer;border:1.5px solid;}
-    .db-chip-red{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:#dc2626;}
-    .db-mz-chip{padding:2px 5px;border-radius:3px;font-size:.58rem;font-weight:700;background:#fef3c7;color:#d97706;border:1px solid #fde68a;}
-    .db-ter-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .12s;border:1.5px solid var(--bdr);}
-    .db-ter-row:hover,.db-ter-row:active{background:#f8fafc;}
-    body.dark .db-ter-row:hover{background:#1e2130;}
-    .db-urgente-badge{font-size:.54rem;font-weight:700;color:#dc2626;padding:2px 5px;background:rgba(239,68,68,.1);border-radius:3px;border:1px solid rgba(239,68,68,.2);}
-    .db-prog-bar{height:10px;border-radius:5px;background:#f1f5f9;overflow:hidden;margin:4px 0 2px;}
-    body.dark .db-prog-bar{background:#22263a;}
-    .db-prog-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--gd),var(--gm));transition:width .6s;}
-    .db-ring{position:relative;width:72px;height:72px;flex-shrink:0;}
-    .db-ring svg{transform:rotate(-90deg);}
-    .db-ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:.95rem;font-weight:900;}
-    /* informe campaña */
-    .ic-camp-card{border-radius:10px;padding:12px 14px;border:1.5px solid var(--bdr);cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;align-items:center;gap:12px;}
-    .ic-camp-card:hover{border-color:var(--gd);box-shadow:0 2px 10px rgba(34,197,94,.12);}
-    .ic-camp-card.active-camp-card{border-color:rgba(34,197,94,.5);background:linear-gradient(135deg,rgba(27,67,50,.03),rgba(45,106,79,.05));}
-    .ic-badge{font-size:.58rem;padding:2px 6px;border-radius:4px;font-weight:700;}
-    .ic-badge.en-curso{background:rgba(34,197,94,.12);color:#15803d;border:1px solid rgba(34,197,94,.25);}
-    .ic-badge.finalizada{background:rgba(99,102,241,.1);color:#4f46e5;border:1px solid rgba(99,102,241,.2);}
-    .ic-badge.proxima{background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.2);}
-    .ic-ter-chip{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-size:.65rem;font-weight:700;border:1.5px solid;cursor:pointer;transition:transform .1s;}
-    .ic-ter-chip:active{transform:scale(.9);}
-    .ic-ter-chip.worked{background:rgba(34,197,94,.12);color:#15803d;border-color:rgba(34,197,94,.3);}
-    .ic-ter-chip.nowork{background:rgba(239,68,68,.08);color:#dc2626;border-color:rgba(239,68,68,.2);}
-    .ic-enc-bar{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
-    body.dark .ic-enc-bar{background:#22263a;}
-    .ic-enc-fill{height:100%;border-radius:3px;background:var(--indigo);}
-    .ic-enc-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc;font-size:.7rem;}
-    .ic-enc-row:last-child{border:none;}
-    body.dark .ic-enc-row{border-bottom-color:#22263a;}
+    .db-ter-cell.disponible{background:rgba(34,197,94,.12);color:#4ade80;border-color:rgba(34,197,94,.2);}
+    .db-ter-cell.asignado{background:rgba(251,191,36,.12);color:#fbbf24;border-color:rgba(251,191,36,.2);}
+    .db-ter-cell.completado{background:rgba(129,140,248,.12);color:#a5b4fc;border-color:rgba(129,140,248,.2);}
+    .db-ter-cell.urgente{background:rgba(248,113,113,.15);color:#f87171;border-color:rgba(248,113,113,.3);}
+    .hist-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;margin-bottom:5px;background:rgba(255,255,255,.03);border:0.5px solid rgba(255,255,255,.06);}
+    .hist-rank{width:24px;height:24px;border-radius:6px;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .hist-ter-num{width:34px;height:34px;border-radius:8px;background:rgba(27,67,50,.6);color:#4ade80;font-size:.9rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .hist-info{flex:1;min-width:0;}
+    .hist-ter-name{font-size:.78rem;font-weight:700;color:rgba(255,255,255,.8);}
+    .hist-ter-sub{font-size:.65rem;color:rgba(255,255,255,.35);margin-top:1px;}
+    .hist-bar-wrap{width:90px;flex-shrink:0;}
+    .hist-bar-bg{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:3px;}
+    .hist-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+    .hist-dot.completado{background:#a5b4fc;}
+    .hist-dot.asignado{background:#fbbf24;}
+    .prog-wrap{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+    .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#1b4332,#2d6a4f);}
+    .act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+    @media(max-width:640px){.db-headline{grid-template-columns:1fr;}.db-camp-cols{grid-template-columns:1fr;}.db-twocol{grid-template-columns:1fr;}.db-row4{grid-template-columns:repeat(2,1fr);}.db-row2{grid-template-columns:1fr;}.db-row3{grid-template-columns:1fr 1fr;}.db-ter-grid{grid-template-columns:repeat(7,1fr);gap:3px;}}
   </style>
-  <div class="db-wrap">
-    <div class="db-header">
-      <div>
-        <div class="db-title">📋 Informe</div>
-        <div class="db-sub">${now.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
-      </div>
-      <button class="db-back" onclick="toggleDash()">🗺 Volver al mapa</button>
-    </div>
-    <div class="inf-tabs">
-      <button class="inf-tab ${infTab==='resumen'?'active':''}" onclick="infTab='resumen';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📊 Resumen</button>
-      <button class="inf-tab ${infTab==='campana'?'active':''}" onclick="infTab='campana';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">🏕 Campaña</button>
-      <button class="inf-tab ${infTab==='sinasignar'?'active':''}" onclick="infTab='sinasignar';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📋 Sin asignar</button>
-      <button class="inf-tab ${infTab==='calor'?'active':''}" onclick="infTab='calor';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">🌡️ Calor</button>
-      <button class="inf-tab ${infTab==='mensual'?'active':''}" onclick="infTab='mensual';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📅 Mensual</button>
-      <button class="inf-tab ${infTab==='historico'?'active':''}" onclick="infTab='historico';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">📆 Histórico</button>
-    </div>`;
+  <div class="inf-tabs">
+    <button class="db-back" onclick="toggleDash()">← Mapa</button>
+    <button class="inf-tab ${infTab==='resumen'?'active':''}"    onclick="${go('resumen')}">📊 Resumen</button>
+    <button class="inf-tab ${infTab==='semana'?'active':''}"     onclick="${go('semana')}">📅 Esta semana</button>
+    <button class="inf-tab ${infTab==='campana'?'active':''}"    onclick="${go('campana')}">🏕 Campaña</button>
+    <button class="inf-tab ${infTab==='sinasignar'?'active':''}" onclick="${go('sinasignar')}">📋 Sin asignar</button>
+    <button class="inf-tab ${infTab==='calor'?'active':''}"      onclick="${go('calor')}">🌡️ Calor</button>
+    <button class="inf-tab ${infTab==='mensual'?'active':''}"    onclick="${go('mensual')}">📅 Mensual</button>
+    <button class="inf-tab ${infTab==='historico'?'active':''}"  onclick="${go('historico')}">📆 Histórico</button>
+    <button class="inf-tab ${infTab==='publicadores'?'active':''}" onclick="${go('publicadores')}">👥 Publicadores</button>
+    <button class="inf-tab ${infTab==='velocidad'?'active':''}"  onclick="${go('velocidad')}">🚀 Velocidad</button>
+  </div>
+  <div class="db-wrap">`;
 }
 
 function renderInfResumen(){
   const now = new Date();
-  const mesActual = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const anioActual = now.getFullYear();
+  const fmtD = s => s ? s.split('-').reverse().join('-') : '—';
 
+  // ── KPIs generales ──
   const cnt={disponible:0,asignado:0,completado:0,urgente:0};
-  for(let i=1;i<=33;i++) cnt[gs(i)]++;
+  for(let i=1;i<=33;i++) cnt[gs(i)]=(cnt[gs(i)]||0)+1;
+  const total=33;
+  const cubiertos=cnt.asignado+cnt.completado+cnt.urgente;
+  const pctCob=Math.round(cubiertos/total*100);
+  const dashArr=226, dashOff=Math.round(dashArr*(1-pctCob/100));
 
-  let mesCount=0, anioCount=0;
+  // ── Velocidad ──
+  const mesActual=now.getMonth();
+  const compPorMes=Array(12).fill(0);
   for(let n=1;n<=33;n++){
-    const mw=DB[n]?.monthsWorked||{};
-    if(mw[mesActual]) mesCount++;
-    for(let m=1;m<=12;m++){
-      const k=`${anioActual}-${String(m).padStart(2,'0')}`;
-      if(mw[k]){anioCount++;break;}
-    }
+    (DB[n]?.historial||[]).forEach(h=>{
+      if(!h.fecha)return;
+      const d=new Date(h.fecha+'T12:00');
+      if(d.getFullYear()===anioActual) compPorMes[d.getMonth()]++;
+    });
   }
+  const totalCompAnio=compPorMes.slice(0,mesActual+1).reduce((a,b)=>a+b,0);
+  const promMensual=totalCompAnio/Math.max(mesActual+1,1);
+  const proyFin=Math.min(Math.round(totalCompAnio+promMensual*(11-mesActual)),33);
+  const maxMes=Math.max(...compPorMes,1);
+  const sparkBars=compPorMes.map((c,i)=>{
+    const h=Math.max(Math.round(c/maxMes*36),c?3:1);
+    const esAct=i===mesActual, esFut=i>mesActual;
+    const bg=esAct?'#4ade80':esFut?'rgba(74,222,128,.1)':'rgba(74,222,128,.35)';
+    const bdr=esFut?'border:1px dashed rgba(74,222,128,.25);':'';
+    return`<div class="db-spark" style="height:${h}px;background:${bg};${bdr}"></div>`;
+  }).join('');
 
-  let mzPendTotal=0, terConPend=[];
-  for(let n=1;n<=33;n++){
-    const p=DB[n]?.mzPendientes||[];
-    if(p.length){mzPendTotal+=p.length;terConPend.push({n,mz:p});}
-  }
+  // ── Campaña activa ──
+  const campActiva = CAMPS.find(c=>c.id===activeCampId);
+  let campHtml='';
+  if(campActiva){
+    const ini=new Date(campActiva.fechaIni+'T00:00');
+    const fin=new Date(campActiva.fechaFin+'T23:59');
+    const totalDias=Math.round((fin-ini)/86400000)+1;
+    const diasTransc=Math.max(0,Math.round((now-ini)/86400000));
+    const diasRest=Math.max(0,Math.round((fin-now)/86400000));
+    const pctTiempo=Math.min(Math.round(diasTransc/totalDias*100),100);
 
-  // Usar getAlertData para territorios sin predicar +60 dias y no informados
-  const {sinPredicar:sinTrabArr, noInformados:noInfArr} = getAlertData();
-
-  const zonaData=Object.entries(ZONES).map(([nombre,ters])=>{
-    const trab=ters.filter(n=>{const mw=DB[n]?.monthsWorked||{};return Object.keys(mw).some(k=>k.startsWith(String(anioActual)));}).length;
-    return {nombre,total:ters.length,trab};
-  });
-  const zonaCols=['#22c55e','#3b82f6','#f59e0b','#8b5cf6','#ec4899'];
-
-  const semanas=[];
-  for(let i=5;i>=0;i--){
-    const d=new Date(now);d.setDate(d.getDate()-i*7);
-    const ini=new Date(d);ini.setDate(ini.getDate()-6);
-    let c=0;
+    // Territorios completados dentro del rango de campaña
+    const compCamp=[], pendCamp=[];
     for(let n=1;n<=33;n++){
-      (DB[n]?.historial||[]).forEach(h=>{const hd=new Date(h.fecha+'T12:00');if(hd>=ini&&hd<=d)c++;});
+      const d=DB[n]||{};
+      const histComp=(d.historial||[]).filter(h=>{
+        if(!h.fecha)return false;
+        const hd=new Date(h.fecha+'T12:00');
+        return hd>=ini&&hd<=now;
+      });
+      if(histComp.length>0){
+        const ultimo=histComp[histComp.length-1];
+        compCamp.push({n, enc:ultimo.enc||ultimo.encAnterior||'—', fecha:ultimo.fecha});
+      } else {
+        const st=gs(n);
+        if(st==='asignado'||st==='urgente'){
+          const diasAsig=d.fechaAsig?Math.round((now-new Date(d.fechaAsig+'T12:00'))/86400000):null;
+          pendCamp.push({n, enc:d.encargado||'—', dias:diasAsig});
+        }
+      }
     }
-    const dias=['D','L','M','X','J','V','S'];
-    semanas.push({lbl:dias[d.getDay()]+' '+d.getDate(),c});
+    compCamp.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    pendCamp.sort((a,b)=>(b.dias||0)-(a.dias||0));
+
+    const rowComp = t=>`
+      <div class="db-ter-fila" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+        <div class="db-ter-num" style="color:#4ade80">${t.n}</div>
+        <div class="db-ter-enc">${t.enc}</div>
+        <div class="db-ter-fecha" style="color:rgba(255,255,255,.3)">${fmtD(t.fecha).slice(0,5)}</div>
+      </div>`;
+    const rowPend = t=>`
+      <div class="db-ter-fila" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+        <div class="db-ter-num" style="color:#fbbf24">${t.n}</div>
+        <div class="db-ter-enc">${t.enc}</div>
+        <div class="db-ter-fecha" style="color:#fbbf24;font-weight:700">${diasRest}d</div>
+      </div>`;
+
+    campHtml=`
+    <div class="sec-lbl" style="margin-top:14px">Campaña en curso</div>
+    <div class="db-camp">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-size:.88rem;font-weight:600;color:#fff">🏕 ${campActiva.nombre}</div>
+          <div style="font-size:.6rem;color:rgba(255,255,255,.35);margin-top:2px">${fmtD(campActiva.fechaIni)} → ${fmtD(campActiva.fechaFin)} · ${totalDias} días</div>
+        </div>
+        <div class="db-camp-badge">⬤ Activa</div>
+      </div>
+      <div class="db-countdown">
+        <div class="db-cdown"><div class="db-cdown-n" style="color:#f87171">${diasRest}</div><div class="db-cdown-l">Días restantes</div></div>
+        <div class="db-cdown"><div class="db-cdown-n" style="color:#4ade80">${compCamp.length}</div><div class="db-cdown-l">Completados</div></div>
+        <div class="db-cdown"><div class="db-cdown-n" style="color:#fbbf24">${pendCamp.length}</div><div class="db-cdown-l">Pendientes</div></div>
+        <div class="db-cdown"><div class="db-cdown-n" style="color:#a5b4fc">${cnt.disponible}</div><div class="db-cdown-l">Sin asignar</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.58rem;color:rgba(255,255,255,.25);margin-bottom:3px">
+        <span>${fmtD(campActiva.fechaIni)}</span>
+        <span style="color:#4ade80;font-weight:700">${pctTiempo}% del tiempo transcurrido</span>
+        <span>${fmtD(campActiva.fechaFin)}</span>
+      </div>
+      <div class="db-camp-bar"><div class="db-camp-fill" style="width:${pctTiempo}%"></div></div>
+      <div class="db-camp-cols">
+        <div>
+          <div class="db-camp-col-lbl"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80"></div>Completados desde ${fmtD(campActiva.fechaIni)} (${compCamp.length})</div>
+          <div style="display:grid;grid-template-columns:24px 1fr 54px;gap:4px;padding:0 5px 4px;border-bottom:0.5px solid rgba(255,255,255,.06);margin-bottom:2px">
+            <div style="font-size:.52rem;color:rgba(255,255,255,.2)">N°</div>
+            <div style="font-size:.52rem;color:rgba(255,255,255,.2)">Encargado</div>
+            <div style="font-size:.52rem;color:rgba(255,255,255,.2);text-align:right">Fecha</div>
+          </div>
+          ${compCamp.length?compCamp.slice(0,10).map(rowComp).join('')+''+
+            (compCamp.length>10?`<div style="font-size:.58rem;color:rgba(255,255,255,.2);text-align:center;padding:5px 0">+ ${compCamp.length-10} más</div>`:
+            '')
+            :'<div style="font-size:.65rem;color:rgba(255,255,255,.25);padding:8px 0;text-align:center">Sin completados en este período</div>'}
+        </div>
+        <div>
+          <div class="db-camp-col-lbl"><div style="width:6px;height:6px;border-radius:50%;background:#fbbf24"></div>Pendientes · vence ${fmtD(campActiva.fechaFin)} (${pendCamp.length})</div>
+          <div style="display:grid;grid-template-columns:24px 1fr 54px;gap:4px;padding:0 5px 4px;border-bottom:0.5px solid rgba(255,255,255,.06);margin-bottom:2px">
+            <div style="font-size:.52rem;color:rgba(255,255,255,.2)">N°</div>
+            <div style="font-size:.52rem;color:rgba(255,255,255,.2)">Encargado</div>
+            <div style="font-size:.52rem;color:rgba(255,255,255,.2);text-align:right">Faltan</div>
+          </div>
+          ${pendCamp.length?pendCamp.map(rowPend).join('')
+            :'<div style="font-size:.65rem;color:rgba(255,255,255,.25);padding:8px 0;text-align:center">Sin territorios pendientes ✓</div>'}
+        </div>
+      </div>
+    </div>`;
   }
-  const maxSem=Math.max(...semanas.map(s=>s.c),1);
 
-  // Campaña activa (resumen rápido)
-  const camp=activeCampId?CAMPS.find(c=>c.id===activeCampId):null;
-  const campPctData=camp?campPct(camp):null;
+  // ── Timeline actividad reciente ──
+  const acts=[];
+  for(let i=1;i<=33;i++){
+    const d=DB[i]||{};
+    (d.historial||[]).forEach(h=>{
+      if(h.fecha) acts.push({n:i,enc:h.enc||h.encAnterior||'—',fecha:h.fecha,tipo:'completado'});
+    });
+    if(d.fechaAsig) acts.push({n:i,enc:d.encargado||'—',fecha:d.fechaAsig,tipo:gs(i)==='urgente'?'urgente':'asignado'});
+  }
+  acts.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const recientes=acts.slice(0,6);
+  const tlColor={completado:'#a5b4fc',asignado:'#fbbf24',urgente:'#f87171'};
+  const tlBg={completado:'rgba(129,140,248,.15)',asignado:'rgba(251,191,36,.12)',urgente:'rgba(248,113,113,.12)'};
+  const tlLbl={completado:'Completado',asignado:'Asignado',urgente:'⚠ Urgente'};
+  const tlLines=recientes.map((a,i)=>`
+    <div class="db-tl-item">
+      <div class="db-tl-line">
+        <div class="db-tl-dot" style="background:${tlColor[a.tipo]}"></div>
+        ${i<recientes.length-1?'<div class="db-tl-conn"></div>':''}
+      </div>
+      <div class="db-tl-body">
+        <div class="db-tl-title">T.${a.n} · ${a.tipo==='completado'?'completado':a.tipo==='urgente'?'urgente':'asignado'}</div>
+        <div class="db-tl-sub">${a.enc} · ${fmtD(a.fecha)}</div>
+        <div class="db-tl-badge" style="background:${tlBg[a.tipo]};color:${tlColor[a.tipo]}">${tlLbl[a.tipo]}</div>
+      </div>
+    </div>`).join('');
 
-  return `
-    ${camp?`
-    <div class="dbc" style="margin-bottom:12px;border-color:rgba(34,197,94,.35);background:linear-gradient(135deg,rgba(27,67,50,.03),rgba(45,106,79,.06))">
-      <div class="dbc-t">🏕 Campaña activa</div>
-      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <div style="flex:1;min-width:180px">
-          <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:2px">${camp.nombre}</div>
-          <div style="font-size:.63rem;color:var(--gray);margin-bottom:8px">📅 ${fmtDate(camp.inicio)} → ${fmtDate(camp.fin)}</div>
-          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--gray);margin-bottom:3px">
-            <span>${campPctData.worked} de 33 territorios</span><span style="font-weight:700;color:var(--gd)">${campPctData.pct}%</span>
-          </div>
-          <div class="db-prog-bar"><div class="db-prog-fill" style="width:${campPctData.pct}%"></div></div>
+  // ── Territorios menos trabajados ──
+  const trabajos={};
+  for(let n=1;n<=33;n++){
+    const hist=DB[n]?.historial||[];
+    const compAnio=hist.filter(h=>h.fecha&&new Date(h.fecha+'T12:00').getFullYear()===anioActual);
+    const ultimaComp=compAnio.length?compAnio[compAnio.length-1].fecha:null;
+    const diasUltima=ultimaComp?Math.round((now-new Date(ultimaComp+'T12:00'))/86400000):null;
+    trabajos[n]={n,veces:compAnio.length,diasUltima,ultimaComp};
+  }
+  const menosTrabajados=Object.values(trabajos).sort((a,b)=>{
+    if(a.veces!==b.veces) return a.veces-b.veces;
+    return (b.diasUltima||9999)-(a.diasUltima||9999);
+  }).slice(0,5);
+  const maxVeces=Math.max(...Object.values(trabajos).map(t=>t.veces),1);
+  const menosHtml=menosTrabajados.map(t=>{
+    const col=t.veces===0?'#f87171':t.veces===1?'#fb923c':'#fbbf24';
+    const subTxt=t.ultimaComp?`Último: hace ${t.diasUltima}d`:'Nunca trabajado este año';
+    return`<div class="db-menos" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+      <div class="db-menos-n" style="color:${col}">${t.n}</div>
+      <div class="db-menos-info">
+        <div class="db-menos-title">Territorio ${t.n}</div>
+        <div class="db-menos-sub">${subTxt}</div>
+        <div class="db-menos-bar"><div class="db-menos-fill" style="width:${Math.round(t.veces/maxVeces*100)}%;background:${col}"></div></div>
+      </div>
+      <div class="db-menos-badge" style="background:${col}22;color:${col}">${t.veces} ${t.veces===1?'vez':'veces'}</div>
+    </div>`;
+  }).join('');
+
+  return`
+    <div class="db-headline">
+      <!-- Anillo cobertura -->
+      <div class="db-bigcard" style="display:flex;align-items:center;gap:16px">
+        <div class="db-ring-wrap">
+          <svg width="90" height="90" viewBox="0 0 90 90">
+            <circle cx="45" cy="45" r="36" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="8"/>
+            <circle cx="45" cy="45" r="36" fill="none" stroke="#4ade80" stroke-width="8"
+              stroke-dasharray="${dashArr}" stroke-dashoffset="${dashOff}" stroke-linecap="round"/>
+          </svg>
+          <div class="db-ring-center"><div class="db-ring-n">${pctCob}%</div><div class="db-ring-l">Cobertura</div></div>
         </div>
-        <div style="text-align:center">
-          <div class="db-ring">
-            <svg width="72" height="72" viewBox="0 0 72 72">
-              <circle cx="36" cy="36" r="28" fill="none" stroke="#f1f5f9" stroke-width="8"/>
-              <circle cx="36" cy="36" r="28" fill="none" stroke="var(--gd)" stroke-width="8"
-                stroke-dasharray="${Math.round(campPctData.pct/100*175.9)} 175.9" stroke-linecap="round"/>
-            </svg>
-            <div class="db-ring-pct" style="color:var(--gd)">${campPctData.pct}%</div>
+        <div style="flex:1;min-width:0">
+          <div class="db-bigcard-title">Estado general · ${anioActual}</div>
+          <div class="db-mini-row">
+            <div class="db-mini"><div class="db-mini-n" style="color:#4ade80">${cnt.disponible}</div><div class="db-mini-l">Disponibles</div></div>
+            <div class="db-mini"><div class="db-mini-n" style="color:#fbbf24">${cnt.asignado}</div><div class="db-mini-l">Asignados</div></div>
+          </div>
+          <div class="db-mini-row">
+            <div class="db-mini"><div class="db-mini-n" style="color:#a5b4fc">${cnt.completado}</div><div class="db-mini-l">Completados</div></div>
+            <div class="db-mini"><div class="db-mini-n" style="color:#f87171">${cnt.urgente}</div><div class="db-mini-l">Urgentes</div></div>
           </div>
         </div>
       </div>
-      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(34,197,94,.2);display:flex;justify-content:flex-end">
-        <button class="btn" style="font-size:.66rem" onclick="infTab='campana';infCampId='${camp.id}';renderDashboard();document.getElementById('dashOverlay').scrollTop=0">
-          📋 Ver informe completo →
-        </button>
-      </div>
-    </div>`:`
-    <div class="dbc" style="margin-bottom:12px;border-style:dashed;text-align:center;padding:18px">
-      <div style="font-size:.78rem;font-weight:600;color:var(--gray);margin-bottom:10px">Sin campaña activa</div>
-      <button class="btn pri" onclick="toggleDash();setTimeout(openCampModal,120)" style="font-size:.7rem">🏕 Activar campaña</button>
-    </div>`}
-
-    <div class="db-grid db-row4" style="margin-bottom:12px">
-      <div class="dbc" style="text-align:center;border-color:rgba(34,197,94,.3)">
-        <div class="dbn" style="color:#15803d">${cnt.disponible}</div><div class="dbl">Disponibles</div>
-      </div>
-      <div class="dbc" style="text-align:center;border-color:rgba(245,158,11,.3)">
-        <div class="dbn" style="color:#d97706">${cnt.asignado}</div><div class="dbl">Asignados</div>
-      </div>
-      <div class="dbc" style="text-align:center;border-color:rgba(99,102,241,.3)">
-        <div class="dbn" style="color:#4f46e5">${cnt.completado}</div><div class="dbl">Completados</div>
-      </div>
-      <div class="dbc" style="text-align:center;border-color:rgba(239,68,68,.3)">
-        <div class="dbn" style="color:#dc2626">${cnt.urgente}</div><div class="dbl">+12 meses</div>
-      </div>
-    </div>
-
-    <div class="db-grid db-row2" style="margin-bottom:12px">
-      <div class="dbc">
-        <div class="dbc-t">📅 Actividad</div>
-        <div style="display:flex;gap:16px;margin-bottom:12px">
-          <div style="flex:1;text-align:center">
-            <div class="dbn" style="color:var(--gd);font-size:2.2rem">${mesCount}</div>
-            <div class="dbl">este mes</div>
+      <!-- Velocidad + sparkline -->
+      <div class="db-bigcard" style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="db-bigcard-title">Velocidad del año</div>
+            <div style="font-size:1.8rem;font-weight:600;color:#4ade80;line-height:1">${promMensual.toFixed(1)}</div>
+            <div style="font-size:.6rem;color:rgba(255,255,255,.3);margin-top:2px">completados / mes</div>
           </div>
-          <div style="width:1px;background:var(--bdr)"></div>
-          <div style="flex:1;text-align:center">
-            <div class="dbn" style="color:var(--indigo);font-size:2.2rem">${anioCount}</div>
-            <div class="dbl">este año</div>
+          <div style="text-align:right">
+            <div style="font-size:.6rem;color:rgba(255,255,255,.3);margin-bottom:4px">Proyección dic.</div>
+            <div style="font-size:1.1rem;font-weight:600;color:${proyFin>=33?'#4ade80':'#fbbf24'}">${proyFin}/33 ${proyFin>=33?'✓':'⚠'}</div>
           </div>
         </div>
-        <div style="font-size:.56rem;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Completados — últ. 6 semanas</div>
-        <div class="db-spark">
-          ${semanas.map(s=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center">
-            <div class="db-spark-bar" style="height:${s.c?Math.max(5,Math.round(s.c/maxSem*36)):3}px;background:${s.c?'var(--gd)':'#e2e8f0'}"></div>
-            <div class="db-spark-lbl">${s.c||'·'}</div>
-          </div>`).join('')}
+        <div style="width:100%">
+          <div class="db-sparkline">${sparkBars}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span style="font-size:.52rem;color:rgba(255,255,255,.2)">Ene</span>
+            <span style="font-size:.52rem;color:#4ade80">Ahora</span>
+            <span style="font-size:.52rem;color:rgba(255,255,255,.15)">Dic</span>
+          </div>
         </div>
       </div>
-      <div class="dbc" style="${mzPendTotal?'border-color:rgba(245,158,11,.35);background:rgba(254,243,199,.1)':''}">
-        <div class="dbc-t">⚠️ Manzanas pendientes</div>
-        ${mzPendTotal===0
-          ?'<div style="margin-top:8px"><div style="font-size:1.6rem;margin-bottom:4px">✅</div><div style="font-size:.75rem;color:#15803d;font-weight:600">Sin pendientes</div></div>'
-          :`<div style="display:flex;align-items:baseline;gap:5px;margin-bottom:8px">
-              <span class="dbn" style="color:#d97706;font-size:2.2rem">${mzPendTotal}</span>
-              <span style="font-size:.65rem;color:var(--gray)">en ${terConPend.length} terr.</span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;max-height:110px;overflow-y:auto">
-              ${terConPend.map(t=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(245,158,11,.12)">
-                <span style="font-size:.68rem;font-weight:700;color:var(--gd);cursor:pointer;min-width:24px" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">T${t.n}</span>
-                <div style="display:flex;flex-wrap:wrap;gap:2px">${t.mz.map(m=>`<span class="db-mz-chip">${m}</span>`).join('')}</div>
-              </div>`).join('')}
-            </div>`}
+    </div>
+    ${campHtml}
+    <div class="db-twocol" style="margin-top:${campActiva?'0':'4px'}">
+      <div>
+        <div class="sec-lbl">Actividad reciente</div>
+        <div class="db-tl">${tlLines}</div>
       </div>
-    </div>
-
-    <div class="dbc" style="margin-bottom:12px">
-      <div class="dbc-t">🗺 Progreso por zona — ${anioActual}</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${zonaData.map((z,i)=>{
-          const pct=Math.round(z.trab/z.total*100);
-          return `<div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-              <div style="font-size:.7rem;font-weight:600;color:var(--dark)">${z.nombre}</div>
-              <div style="font-size:.63rem;color:var(--gray);font-weight:700">${z.trab}/${z.total} <span style="color:${zonaCols[i%zonaCols.length]};font-weight:900">${pct}%</span></div>
-            </div>
-            <div class="db-zbar"><div class="db-zfill" style="width:${pct}%;background:${zonaCols[i%zonaCols.length]}"></div></div>
-          </div>`;
-        }).join('')}
+      <div>
+        <div class="sec-lbl">Territorios menos trabajados · ${anioActual}</div>
+        ${menosHtml}
       </div>
-    </div>
-
-    <div class="dbc" style="margin-bottom:12px;${sinTrabArr.length>0?'border-color:rgba(234,88,12,.35);':''}">
-      <div class="dbc-t">⏱ Sin predicar — más de 2 meses</div>
-      ${sinTrabArr.length===0
-        ?'<div style="font-size:.75rem;color:#15803d;font-weight:600;padding:4px 0">✅ Todos los territorios tienen actividad reciente</div>'
-        :`<div style="display:flex;flex-direction:column;gap:5px">
-          ${sinTrabArr.slice(0,10).map(t=>`
-            <div class="db-ter-row" style="border-color:rgba(234,88,12,.2);background:rgba(234,88,12,.03)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
-              <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:#c2410c;min-width:26px;text-align:center">${t.n}</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:.65rem;font-weight:600;color:var(--dark)">Territorio ${t.n}</div>
-                <div style="font-size:.58rem;color:var(--gray)">👤 ${t.enc}</div>
-              </div>
-              <span style="font-size:.56rem;font-weight:700;color:#c2410c;background:rgba(234,88,12,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${t.dias!=null?t.dias+'d':'—'}</span>
-            </div>`).join('')}
-          </div>
-          ${sinTrabArr.length>10?`<div style="font-size:.62rem;color:var(--gray);text-align:center;padding:8px 0">y ${sinTrabArr.length-10} más…</div>`:''}`}
-    </div>
-
-    <div class="dbc" style="margin-bottom:12px;${`noInfArr.length>0?'border-color:rgba(168,85,247,.35);':''`}">
-      <div class="dbc-t">📋 Sin informe — encargados que no han devuelto</div>
-      ${noInfArr.length===0
-        ?'<div style="font-size:.75rem;color:#15803d;font-weight:600;padding:4px 0">✅ Todos los encargados han informado su territorio</div>'
-        :`<div style="display:flex;flex-direction:column;gap:5px">
-          ${noInfArr.slice(0,10).map(t=>`
-            <div class="db-ter-row" style="border-color:rgba(168,85,247,.2);background:rgba(168,85,247,.03)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
-              <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:#7c3aed;min-width:26px;text-align:center">${t.n}</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:.65rem;font-weight:600;color:var(--dark)">Territorio ${t.n}</div>
-                <div style="font-size:.58rem;color:var(--gray)">👤 ${t.enc}</div>
-                <div style="font-size:.56rem;color:var(--gray)">📅 Asignado: ${t.fecha}</div>
-              </div>
-              <span style="font-size:.56rem;font-weight:700;color:#7c3aed;background:rgba(168,85,247,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${t.dias!=null?t.dias+'d':'—'}</span>
-            </div>`).join('')}
-          </div>
-          ${noInfArr.length>10?`<div style="font-size:.62rem;color:var(--gray);text-align:center;padding:8px 0">y ${noInfArr.length-10} más…</div>`:''}`}
-    </div>
-
-    <div class="dbc">
-      <div class="dbc-t">🗂 Estado de todos los territorios</div>
-      <div class="db-ter-grid" style="margin-bottom:10px">
-        ${Array.from({length:33},(_,i)=>i+1).map(n=>{
-          const st=gs(n);
-          return `<div class="db-ter-cell ${st}" onclick="toggleDash();setTimeout(()=>selectT(${n}),120)" title="T${n} — ${SL[st]}">${n}</div>`;
-        }).join('')}
-      </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(34,197,94,.5)"></div>Disponible</div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(245,158,11,.5)"></div>Asignado</div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(99,102,241,.5)"></div>Completado</div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(239,68,68,.5)"></div>+12 meses</div>
-      </div>
-    </div>
-
-    ${renderInfRurales()}
-
-  </div>`;
+    </div>`;
 }
-
 function renderInfCampana(){
   // Sin campañas
   if(!CAMPS.length) return `
@@ -2911,7 +2982,10 @@ function renderSyncTabJson(){
       <button onclick="exportData();closeSyncPanel()" class="btn" style="flex:1;font-size:.7rem;padding:7px">💾 JSON</button>
       <button onclick="exportExcel();closeSyncPanel()" class="btn xl" style="flex:1;font-size:.7rem;padding:7px">📊 Excel</button>
     </div>
-    <button onclick="descargarWord();closeSyncPanel()" class="btn" style="width:100%;font-size:.7rem;padding:7px">📝 Word</button>
+    <div style="display:flex;gap:6px">
+      <button onclick="generarWord();closeSyncPanel()" class="btn" style="flex:1;font-size:.7rem;padding:7px">📝 Word</button>
+      <button onclick="generarPDF();closeSyncPanel()" class="btn" style="flex:1;font-size:.7rem;padding:7px;background:#fee2e2;color:#dc2626;border-color:#fca5a5">📄 PDF</button>
+    </div>
   </div>
   <div class="sp-sect">
     <div class="sp-sect-title">➕ Asignar territorio</div>
@@ -2950,10 +3024,11 @@ function renderSyncTabFiltros(){
 
 // ── TAB ALERTAS ──
 function getAlertData(){
-  const urgentes=[], sinPredicar=[], noInformados=[], advertencias=[];
+  const urgentes=[], sinPredicar=[], noInformados=[], advertencias=[], proximos=[];
   const HOY = Date.now();
   const UMBRAL_2M = 60*24*3600*1000;
-  const UMBRAL_6M = 180*24*3600*1000;
+  const UMBRAL_6M = 120*24*3600*1000;
+  const UMBRAL_3M = 90*24*3600*1000;   // 3 meses — próximo a vencer
   // Parsea fechas DD-MM-YYYY o YYYY-MM-DD
   const parseF=s=>{
     if(!s||s==='—')return NaN;
@@ -2997,18 +3072,20 @@ function getAlertData(){
       const dias=!isNaN(tAsig)?Math.round((HOY-tAsig)/86400000):null;
       noInformados.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'—'});
     }
-    // Advertencia +6 meses asignado
+    // Advertencia +4 meses asignado
     if(st==='asignado'){
       const tAsig=parseF(d.fechaAsig);
       const dias=!isNaN(tAsig)?Math.round((HOY-tAsig)/86400000):0;
-      if(dias>=180) advertencias.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'—'});
+      if(dias>=120) advertencias.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'—'});
+      // Próximo a vencer: entre 60 y 89 días (1 mes antes del límite de 4 meses)
+      else if(dias>=60&&dias<90) proximos.push({n,enc:d.encargado||'—',dias,fecha:d.fechaAsig||'—',diasRestantes:90-dias});
     }
   }
-  return {urgentes, sinPredicar, noInformados, advertencias};
+  return {urgentes, sinPredicar, noInformados, advertencias, proximos};
 }
 
 function renderSyncTabAlertas(){
-  const {urgentes, sinPredicar, noInformados, advertencias} = getAlertData();
+  const {urgentes, sinPredicar, noInformados, advertencias, proximos} = getAlertData();
   const terRow=(t,color,badge)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(${color},.06);border-radius:7px;border:1px solid rgba(${color},.2);margin-bottom:5px;cursor:pointer" onclick="closeSyncPanel();selectT(${t.n})">
       <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:900;color:rgb(${color});min-width:26px;text-align:center">${t.n}</div>
@@ -3021,14 +3098,21 @@ function renderSyncTabAlertas(){
     </div>`;
 
   return `
+  ${proximos.length>0?`
+  <div class="sp-sect" style="border-color:rgba(14,165,233,.4)">
+    <div class="sp-sect-title" style="color:#0284c7">⏰ Próximos a vencer — menos de 30 días (${proximos.length})</div>
+    <div style="font-size:.64rem;color:var(--gray);margin-bottom:8px">Llevan entre 2 y 3 meses asignados. Contacta al encargado.</div>
+    ${proximos.sort((a,b)=>a.diasRestantes-b.diasRestantes).map(t=>terRow({...t},'14,165,233',t.diasRestantes+'d restantes')).join('')}
+  </div>`:''}
+
   ${urgentes.length>0?`
   <div class="sp-sect" style="border-color:rgba(239,68,68,.4)">
-    <div class="sp-sect-title" style="color:#dc2626">🚨 Urgentes — +12 meses (${urgentes.length})</div>
+    <div class="sp-sect-title" style="color:#dc2626">🚨 Urgentes — +4 meses (${urgentes.length})</div>
     ${urgentes.map(u=>terRow({...u,fecha:u.fecha},'239,68,68','URGENTE')).join('')}
   </div>`:`
   <div class="sp-sect" style="border-color:rgba(34,197,94,.3)">
-    <div class="sp-sect-title" style="color:#15803d">✅ Sin urgencias (+12m)</div>
-    <div style="font-size:.72rem;color:var(--gray)">Ningún territorio lleva más de 12 meses asignado.</div>
+    <div class="sp-sect-title" style="color:#15803d">✅ Sin urgencias (+4m)</div>
+    <div style="font-size:.72rem;color:var(--gray)">Ningún territorio lleva más de 4 meses asignado.</div>
   </div>`}
 
   ${noInformados.length>0?`
@@ -3055,7 +3139,7 @@ function renderSyncTabAlertas(){
 
   ${advertencias.length>0?`
   <div class="sp-sect" style="border-color:rgba(245,158,11,.35)">
-    <div class="sp-sect-title" style="color:#d97706">⚠️ Atención — +6 meses asignado (${advertencias.length})</div>
+    <div class="sp-sect-title" style="color:#d97706">⚠️ Atención — +3 meses asignado (${advertencias.length})</div>
     ${advertencias.map(a=>terRow({...a,fecha:a.fecha||'—'},'245,158,11',a.dias+'d asignado')).join('')}
   </div>`:''}`;
 }
@@ -3297,14 +3381,288 @@ function renderRuralList(){
 }
 
 
-function descargarWord(){
-  const url = 'https://github.com/wladimirlopezh-ctrl/losmuermos/raw/main/registro_2026.docx';
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'registro_2026.docx';
-  a.target = '_blank';
-  a.click();
-  toast('📄 Descargando registro Word...');
+// ── GENERACIÓN DINÁMICA DE DOCUMENTOS ──
+
+// Formatea fecha YYYY-MM-DD → DD-MM-YY
+function _fmtDoc(d){ if(!d)return''; const p=d.split('-'); return p[2]+'-'+p[1]+'-'+p[0].slice(-2); }
+
+// Extrae hasta 4 slots de asignación por territorio
+function _getSlotsDoc(i){
+  const d = DB[i]||{};
+  const slots = [];
+  // Historial de asignaciones completadas
+  (d.historial||[]).forEach(h=>{
+    const enc = h.encAnterior || h.enc || '';
+    if(enc || h.fechaAsigAnterior){
+      slots.push({enc, fechaAsig:_fmtDoc(h.fechaAsigAnterior||''), fechaComp:_fmtDoc(h.fecha||'')});
+    }
+  });
+  // Asignación actual activa
+  if(d.encargado || d.fechaAsig){
+    slots.push({enc:d.encargado||'', fechaAsig:_fmtDoc(d.fechaAsig||''), fechaComp:_fmtDoc(d.fechaDev||'')});
+  }
+  // Última fecha completada
+  const comps = slots.filter(s=>s.fechaComp).map(s=>s.fechaComp);
+  const ultimaFecha = comps.length ? comps[comps.length-1] : '';
+  // Rellenar hasta 4 slots vacíos
+  while(slots.length<4) slots.push({enc:'',fechaAsig:'',fechaComp:''});
+  return {slots:slots.slice(0,4), ultimaFecha};
+}
+
+// ── GENERAR WORD ──
+function generarWord(){
+  toast('📝 Generando Word...');
+  const build = ()=>{
+    try{
+      const {Document,Packer,Paragraph,Table,TableRow,TableCell,
+             TextRun,WidthType,BorderStyle,VerticalAlign,AlignmentType} = window.docx;
+
+      const BORDER = {style:BorderStyle.SINGLE, size:4, color:'AAAAAA'};
+      const allBorders = {top:BORDER,bottom:BORDER,left:BORDER,right:BORDER};
+
+      const mkCell = (text, opts={}) => new TableCell({
+        children:[new Paragraph({
+          alignment: opts.align||AlignmentType.CENTER,
+          children:[new TextRun({
+            text:String(text||''), bold:!!opts.bold,
+            size:opts.size||16, font:'Calibri',
+            color:opts.color||'000000'
+          })]
+        })],
+        verticalAlign: VerticalAlign.CENTER,
+        verticalMerge: opts.vMerge||undefined,
+        columnSpan: opts.colSpan||undefined,
+        shading: opts.bg ? {fill:opts.bg} : undefined,
+        borders: allBorders,
+        margins:{top:50,bottom:50,left:80,right:80},
+        width: opts.w ? {size:opts.w, type:WidthType.DXA} : undefined
+      });
+
+      const contCell = () => new TableCell({
+        children:[new Paragraph({children:[]})],
+        verticalMerge:'continue',
+        borders:allBorders,
+        margins:{top:50,bottom:50,left:80,right:80}
+      });
+
+      const rows = [];
+
+      // ── Cabecera fila 1 ──
+      rows.push(new TableRow({tableHeader:true, children:[
+        mkCell('Núm. de terr.',  {bold:true,size:14,bg:'CCCCCC',vMerge:'restart',w:560}),
+        mkCell('Última fecha en que se completó*',{bold:true,size:13,bg:'CCCCCC',vMerge:'restart',w:1400}),
+        mkCell('Asignado a',     {bold:true,size:16,bg:'CCCCCC',colSpan:8})
+      ]}));
+
+      // ── Cabecera fila 2 ──
+      rows.push(new TableRow({tableHeader:true, children:[
+        contCell(), contCell(),
+        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
+        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'}),
+        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
+        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'}),
+        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
+        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'}),
+        mkCell('Fecha en que\nse asignó', {bold:true,size:12,bg:'DDDDDD'}),
+        mkCell('Fecha en que\nse completó',{bold:true,size:12,bg:'DDDDDD'})
+      ]}));
+
+      // ── Filas de datos ──
+      for(let i=1;i<=33;i++){
+        const {slots,ultimaFecha} = _getSlotsDoc(i);
+        const bg = i%2===0 ? 'F7F7F7' : 'FFFFFF';
+
+        // Fila A — número, última fecha, nombres de encargados
+        rows.push(new TableRow({children:[
+          mkCell(i,       {bold:true,size:18,vMerge:'restart',bg}),
+          mkCell(ultimaFecha, {size:15,vMerge:'restart',bg}),
+          mkCell(slots[0].enc,{size:14,colSpan:2,bg}),
+          mkCell(slots[1].enc,{size:14,colSpan:2,bg}),
+          mkCell(slots[2].enc,{size:14,colSpan:2,bg}),
+          mkCell(slots[3].enc,{size:14,colSpan:2,bg})
+        ]}));
+
+        // Fila B — fechas
+        rows.push(new TableRow({children:[
+          contCell(), contCell(),
+          mkCell(slots[0].fechaAsig,{size:14,bg}),
+          mkCell(slots[0].fechaComp,{size:14,bg}),
+          mkCell(slots[1].fechaAsig,{size:14,bg}),
+          mkCell(slots[1].fechaComp,{size:14,bg}),
+          mkCell(slots[2].fechaAsig,{size:14,bg}),
+          mkCell(slots[2].fechaComp,{size:14,bg}),
+          mkCell(slots[3].fechaAsig,{size:14,bg}),
+          mkCell(slots[3].fechaComp,{size:14,bg})
+        ]}));
+      }
+
+      const hoy = new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+      const doc = new Document({sections:[{
+        properties:{page:{
+          size:{width:16838,height:11906}, // A4 horizontal
+          margin:{top:720,bottom:720,left:720,right:720}
+        }},
+        children:[
+          new Paragraph({alignment:AlignmentType.CENTER, spacing:{after:100},
+            children:[new TextRun({text:'REGISTRO DE ASIGNACIÓN DE TERRITORIO',bold:true,size:28,font:'Calibri',color:'1B4332'})]}),
+          new Paragraph({alignment:AlignmentType.CENTER, spacing:{after:300},
+            children:[new TextRun({text:'Congregación Los Muermos  ·  Año de servicio 2026  ·  Generado el '+hoy,size:18,font:'Calibri',color:'666666'})]}),
+          new Table({rows, width:{size:100,type:WidthType.PERCENTAGE},
+            columnWidths:[560,1400,1560,1560,1560,1560,1560,1560,1560,1560]})
+        ]
+      }]});
+
+      Packer.toBlob(doc).then(blob=>{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url; a.download='registro_territorios_'+hoy.replace(/\//g,'-')+'.docx'; a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),5000);
+        toast('✅ Word generado y descargado');
+      });
+    }catch(e){console.error(e);toast('❌ Error al generar Word: '+e.message);}
+  };
+
+  if(window.docx){ build(); return; }
+  const s=document.createElement('script');
+  s.src='https://unpkg.com/docx@8.5.0/build/index.umd.js';
+  s.onload=build; s.onerror=()=>toast('❌ No se pudo cargar la librería Word');
+  document.head.appendChild(s);
+}
+
+// ── GENERAR PDF ──
+function generarPDF(){
+  toast('📄 Generando PDF...');
+  const build = ()=>{
+    try{
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+      const hoy = new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const W=297, mg=8, col=W-mg*2;
+
+      // ── Encabezado ──
+      doc.setFillColor(27,67,50);
+      doc.rect(0,0,W,22,'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(14);doc.setFont('helvetica','bold');
+      doc.text('REGISTRO DE ASIGNACIÓN DE TERRITORIO',W/2,10,{align:'center'});
+      doc.setFontSize(8);doc.setFont('helvetica','normal');
+      doc.text('Congregación Los Muermos  ·  Año 2026  ·  '+hoy,W/2,17,{align:'center'});
+
+      // ── Cabecera de tabla ──
+      let y=26;
+      const colW = [9,18,55,55,55,55]; // N°, última fecha, 4 slots
+      const slotSubW = [27,28]; // asignó, completó dentro de cada slot
+
+      // Sub-cabecera slots
+      const drawHeader=()=>{
+        doc.setFillColor(200,200,200);
+        doc.rect(mg,y,col,7,'F');
+        doc.setFillColor(220,220,220);
+
+        let x=mg;
+        // N°
+        doc.setDrawColor(150,150,150);
+        doc.rect(x,y,colW[0],14,'S');
+        doc.setTextColor(0);doc.setFontSize(7);doc.setFont('helvetica','bold');
+        doc.text('N°',x+colW[0]/2,y+9,{align:'center'});
+        x+=colW[0];
+        // Última fecha
+        doc.rect(x,y,colW[1],14,'S');
+        doc.text('Última\ncompletada',x+colW[1]/2,y+5,{align:'center'});
+        x+=colW[1];
+        // 4 slots
+        for(let s=0;s<4;s++){
+          const sw=colW[2+s];
+          doc.setFillColor(200,200,200);
+          doc.rect(x,y,sw,7,'FS');
+          doc.setTextColor(0);doc.setFontSize(7);doc.setFont('helvetica','bold');
+          doc.text('Asignado a',x+sw/2,y+5,{align:'center'});
+          // sub cols
+          doc.setFillColor(220,220,220);
+          doc.rect(x,y+7,sw/2,7,'FS');
+          doc.rect(x+sw/2,y+7,sw/2,7,'FS');
+          doc.setFontSize(6);
+          doc.text('Fecha asignó',x+sw/4,y+12,{align:'center'});
+          doc.text('Fecha completó',x+sw*3/4,y+12,{align:'center'});
+          x+=sw;
+        }
+        y+=14;
+      };
+
+      drawHeader();
+
+      // ── Filas de datos ──
+      for(let i=1;i<=33;i++){
+        if(y>190){ doc.addPage(); y=10; drawHeader(); }
+        const {slots,ultimaFecha} = _getSlotsDoc(i);
+        const rowH=9;
+        const bg = i%2===0 ? [245,245,245] : [255,255,255];
+
+        doc.setFillColor(...bg);
+        doc.rect(mg,y,col,rowH,'F');
+        doc.setDrawColor(180,180,180);
+        doc.setTextColor(30,30,30);
+
+        let x=mg;
+        // N°
+        doc.rect(x,y,colW[0],rowH,'S');
+        doc.setFontSize(8);doc.setFont('helvetica','bold');
+        doc.text(String(i),x+colW[0]/2,y+6,{align:'center'});
+        x+=colW[0];
+
+        // Última fecha
+        doc.rect(x,y,colW[1],rowH,'S');
+        doc.setFontSize(7);doc.setFont('helvetica','normal');
+        doc.text(ultimaFecha,x+colW[1]/2,y+6,{align:'center'});
+        x+=colW[1];
+
+        // 4 slots
+        for(let s=0;s<4;s++){
+          const sw=colW[2+s];
+          const sl=slots[s];
+          // nombre encargado (centrado en todo el slot)
+          doc.rect(x,y,sw,rowH,'S');
+          doc.setFontSize(7);doc.setFont('helvetica','bold');
+          const encTxt = doc.splitTextToSize(sl.enc||'',sw-2);
+          doc.text(encTxt[0]||'',x+sw/2,y+3.5,{align:'center'});
+          // fechas
+          doc.setFont('helvetica','normal');doc.setFontSize(6.5);
+          doc.text(sl.fechaAsig||'',x+sw/4,y+7.5,{align:'center'});
+          doc.text(sl.fechaComp||'',x+sw*3/4,y+7.5,{align:'center'});
+          // línea divisoria interna
+          doc.setDrawColor(200,200,200);
+          doc.line(x+sw/2,y+5,x+sw/2,y+rowH);
+          doc.line(x,y+5,x+sw,y+5);
+          doc.setDrawColor(180,180,180);
+          x+=sw;
+        }
+        y+=rowH;
+      }
+
+      // Nota al pie
+      doc.setFontSize(7);doc.setTextColor(130,130,130);
+      doc.text('* Cuando comience una nueva página, anote en esta columna la última fecha en que los territorios se completaron.',mg,y+5);
+
+      // Numeración de páginas
+      const pages=doc.getNumberOfPages();
+      for(let p=1;p<=pages;p++){
+        doc.setPage(p);
+        doc.setFontSize(7);doc.setTextColor(180,180,180);
+        doc.text('Congregación Los Muermos · '+hoy,mg,205);
+        doc.text('Pág. '+p+' / '+pages,W-mg,205,{align:'right'});
+      }
+
+      doc.save('registro_territorios_'+hoy.replace(/\//g,'-')+'.pdf');
+      toast('✅ PDF generado y descargado');
+    }catch(e){console.error(e);toast('❌ Error al generar PDF: '+e.message);}
+  };
+
+  if(window.jspdf){ build(); return; }
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  s.onload=build; s.onerror=()=>toast('❌ No se pudo cargar la librería PDF');
+  document.head.appendChild(s);
 }
 
 // ── PANELES REDIMENSIONABLES ──
@@ -3395,7 +3753,7 @@ function renderInfSinAsignar(){
   const stColors={disponible:'#15803d',asignado:'#d97706',completado:'#4f46e5',urgente:'#dc2626'};
   const stLabel={disponible:'🟢 Disponible',asignado:'🟡 Asignado',completado:'✅ Completado',urgente:'🔴 Urgente'};
   const filas=sinAsignar.map(t=>{
-    const urgente=t.dias!==null&&t.dias>180;
+    const urgente=t.dias!==null&&t.dias>120;
     return`<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;border:1.5px solid ${urgente?'rgba(239,68,68,.3)':'var(--bdr)'};margin-bottom:6px;background:${urgente?'rgba(239,68,68,.03)':'var(--w)'};cursor:pointer" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
       <div style="width:34px;height:34px;border-radius:8px;background:${urgente?'rgba(239,68,68,.15)':'rgba(27,67,50,.08)'};color:${urgente?'#dc2626':'var(--gd)'};font-size:.88rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${t.n}</div>
       <div style="flex:1;min-width:0">
@@ -3462,6 +3820,356 @@ function renderInfCalor(){
       <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:#dc2626">${t.dias||'?'}<span style="font-size:.55rem;font-weight:400">d</span></div>
     </div>`).join('')}
   </div>`;
+}
+
+// ── INFORME: VELOCIDAD DE COBERTURA ──
+function renderInfVelocidad(){
+  const now = new Date();
+  const anio = now.getFullYear();
+  const mesActual = now.getMonth(); // 0-based
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Completados por mes en el año actual
+  const compPorMes = Array(12).fill(0);
+  for(let n=1;n<=33;n++){
+    (DB[n]?.historial||[]).forEach(h=>{
+      if(!h.fecha) return;
+      const d = new Date(h.fecha+'T12:00');
+      if(d.getFullYear()===anio) compPorMes[d.getMonth()]++;
+    });
+  }
+
+  // Meses transcurridos con actividad (para calcular promedio real)
+  const mesesConActividad = compPorMes.slice(0, mesActual+1).filter(c=>c>0).length || 1;
+  const totalCompAnio = compPorMes.slice(0, mesActual+1).reduce((a,b)=>a+b,0);
+  const promMensual = totalCompAnio / Math.max(mesActual+1, 1);
+  const promMensualReal = totalCompAnio / mesesConActividad;
+
+  // Territorios sin trabajar este año (nunca han tenido una devolución en el año)
+  let sinTrabajar = 0, trabajadosAnio = 0;
+  for(let n=1;n<=33;n++){
+    const hist = DB[n]?.historial||[];
+    const trabajadoEsteAnio = hist.some(h=>h.fecha&&new Date(h.fecha+'T12:00').getFullYear()===anio);
+    if(trabajadoEsteAnio) trabajadosAnio++;
+    else sinTrabajar++;
+  }
+
+  // Meses restantes del año
+  const mesesRestantes = 11 - mesActual; // diciembre = 11
+  const diasRestantesAnio = Math.round((new Date(anio,11,31)-now)/86400000);
+
+  // Proyección: al ritmo actual, ¿cuántos más se completarán?
+  const proyectados = Math.round(promMensual * mesesRestantes);
+  const totalProyectado = trabajadosAnio + proyectados;
+  const cubriraAnio = totalProyectado >= 33;
+
+  // ¿Cuándo se completará el territorio 33?
+  let mesesParaTerminar = null;
+  if(promMensual > 0) mesesParaTerminar = Math.ceil(sinTrabajar / promMensual);
+
+  // Estado general
+  const pctCubierto = Math.round(trabajadosAnio/33*100);
+  const pctProyectado = Math.min(Math.round(totalProyectado/33*100),100);
+
+  // Color y mensaje según velocidad
+  const velocidadMsg = promMensual>=4
+    ? {emoji:'🚀', txt:'Excelente ritmo', color:'var(--green)'}
+    : promMensual>=2
+    ? {emoji:'✅', txt:'Ritmo adecuado', color:'var(--gd)'}
+    : promMensual>=1
+    ? {emoji:'⚠️', txt:'Ritmo lento', color:'var(--amber)'}
+    : {emoji:'🔴', txt:'Ritmo muy bajo', color:'var(--red)'};
+
+  // Proyección fin de año
+  const proyFin = cubriraAnio
+    ? {txt:'✅ Al ritmo actual se cubrirán todos los territorios antes de fin de año.', color:'var(--green)'}
+    : {txt:`⚠️ Al ritmo actual faltarían ${Math.max(0,33-totalProyectado)} territorios sin cubrir a fin de año.`, color:'var(--amber)'};
+
+  // Barras por mes
+  const maxMes = Math.max(...compPorMes, 1);
+  const barrasMes = meses.map((lbl,i)=>{
+    const c = compPorMes[i];
+    const h = Math.round(c/maxMes*80);
+    const esPasado = i<mesActual;
+    const esActual = i===mesActual;
+    const esFuturo = i>mesActual;
+    const proy = esFuturo ? Math.round(promMensual) : null;
+    const hProy = proy ? Math.round(proy/maxMes*80) : 0;
+    return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div style="font-size:.58rem;color:${esActual?'var(--gd)':'var(--gray)'};font-weight:${esActual?700:400}">${c||''}</div>
+      <div style="width:100%;display:flex;align-items:flex-end;gap:1px;height:80px;justify-content:center">
+        <div style="width:10px;border-radius:3px 3px 0 0;background:${esActual?'var(--gd)':esPasado?'rgba(34,197,94,.55)':'var(--bdr)'};height:${c?Math.max(h,3):2}px;min-height:1px"></div>
+        ${esFuturo&&proy?`<div style="width:6px;border-radius:3px 3px 0 0;background:rgba(34,197,94,.2);border:1px dashed rgba(34,197,94,.4);height:${Math.max(hProy,2)}px;min-height:2px" title="Proyectado: ${proy}"></div>`:''}
+      </div>
+      <div style="font-size:.5rem;color:${esActual?'var(--gd)':'var(--gray)'};font-weight:${esActual?700:400}">${lbl}</div>
+    </div>`;
+  }).join('');
+
+  // Necesario por mes para terminar el año
+  const necesarioPorMes = mesesRestantes>0 ? Math.ceil(sinTrabajar/mesesRestantes) : '—';
+
+  return`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--dark);margin-bottom:2px">🚀 Velocidad de cobertura</div>
+      <div style="font-size:.65rem;color:var(--gray)">${anio} · ${mesesRestantes} meses restantes del año</div>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div style="background:var(--w);border-radius:10px;padding:12px;border:1.5px solid var(--bdr);text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--gd)">${trabajadosAnio}</div>
+        <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Trabajados ${anio}</div>
+        <div style="height:4px;background:var(--bdr);border-radius:2px;overflow:hidden;margin-top:6px">
+          <div style="height:100%;border-radius:2px;background:var(--gd);width:${pctCubierto}%"></div>
+        </div>
+        <div style="font-size:.6rem;color:var(--gd);margin-top:3px">${pctCubierto}% de 33</div>
+      </div>
+      <div style="background:var(--w);border-radius:10px;padding:12px;border:1.5px solid var(--bdr);text-align:center">
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:4px">${velocidadMsg.emoji}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:${velocidadMsg.color};line-height:1">${promMensual.toFixed(1)}</div>
+        <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Comp./mes (prom.)</div>
+        <div style="font-size:.62rem;color:${velocidadMsg.color};font-weight:600;margin-top:4px">${velocidadMsg.txt}</div>
+      </div>
+      <div style="background:var(--w);border-radius:10px;padding:12px;border:1.5px solid ${cubriraAnio?'rgba(34,197,94,.3)':'rgba(245,158,11,.3)'};text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:${cubriraAnio?'var(--green)':'var(--amber)'}">
+          ${mesesParaTerminar!==null&&mesesParaTerminar<=12?mesesParaTerminar+'m':'—'}
+        </div>
+        <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Para cubrir todo</div>
+        <div style="font-size:.62rem;color:var(--gray);margin-top:4px">Necesitas ${necesarioPorMes}/mes para terminar el año</div>
+      </div>
+    </div>
+
+    <!-- Proyección fin de año -->
+    <div class="dbc" style="margin-bottom:12px;border-color:${cubriraAnio?'rgba(34,197,94,.3)':'rgba(245,158,11,.35)'}">
+      <div class="dbc-t">Proyección fin de año</div>
+      <div style="font-size:.75rem;color:var(--dark);padding:6px 0;font-weight:500">${proyFin.txt}</div>
+      <div style="margin-top:8px">
+        <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--gray);margin-bottom:4px">
+          <span>Trabajados a hoy</span><span>${trabajadosAnio}/33</span>
+        </div>
+        <div style="height:8px;background:var(--bdr);border-radius:4px;overflow:hidden;margin-bottom:8px">
+          <div style="height:100%;border-radius:4px;background:var(--gd);width:${pctCubierto}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--gray);margin-bottom:4px">
+          <span>Proyectado a diciembre</span><span>${Math.min(totalProyectado,33)}/33</span>
+        </div>
+        <div style="height:8px;background:var(--bdr);border-radius:4px;overflow:hidden;position:relative">
+          <div style="height:100%;border-radius:4px;background:var(--gd);width:${pctCubierto}%"></div>
+          <div style="position:absolute;top:0;left:${pctCubierto}%;height:100%;border-radius:0 4px 4px 0;background:rgba(34,197,94,.3);border:1px dashed rgba(34,197,94,.5);width:${Math.min(pctProyectado-pctCubierto,100-pctCubierto)}%"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:var(--gd)"></div>Trabajados</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(34,197,94,.3);border:1px dashed rgba(34,197,94,.5)"></div>Proyectados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico por mes -->
+    <div class="dbc" style="margin-bottom:12px">
+      <div class="dbc-t">Completados por mes — ${anio}</div>
+      <div style="display:flex;align-items:flex-end;gap:2px;padding:10px 0;overflow-x:auto">${barrasMes}</div>
+      <div style="display:flex;gap:14px;margin-top:4px;padding-top:8px;border-top:1px solid var(--bdr)">
+        <div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(34,197,94,.55)"></div>Completados</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:var(--gray)"><div style="width:9px;height:9px;border-radius:2px;background:rgba(34,197,94,.2);border:1px dashed rgba(34,197,94,.4)"></div>Proyectado</div>
+      </div>
+    </div>
+
+    <!-- Top publicadores por velocidad -->
+    <div class="dbc">
+      <div class="dbc-t">⚡ Publicadores más rápidos — promedio días por territorio</div>
+      ${(()=>{
+        const speeds=[];
+        Object.entries(DB).forEach(([n,d])=>{
+          (d.historial||[]).forEach(h=>{
+            const enc=h.encAnterior||h.enc||'';
+            if(!enc||enc==='—'||!h.fecha||!h.fechaAsigAnterior)return;
+            const dias=Math.round((new Date(h.fecha+'T12:00')-new Date(h.fechaAsigAnterior+'T12:00'))/86400000);
+            if(dias>0&&dias<=120){
+              if(!speeds[enc])speeds[enc]={enc,total:0,count:0};
+              speeds[enc].total+=dias;speeds[enc].count++;
+            }
+          });
+        });
+        const arr=Object.values(speeds).filter(s=>s.count>=1).map(s=>({...s,prom:Math.round(s.total/s.count)})).sort((a,b)=>a.prom-b.prom).slice(0,6);
+        if(!arr.length)return'<div style="font-size:.72rem;color:var(--gray)">Sin datos suficientes de tiempos.</div>';
+        const maxP=Math.max(...arr.map(s=>s.prom),1);
+        return arr.map((s,i)=>{
+          const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          const col=s.prom<=30?'var(--green)':s.prom<=60?'var(--gd)':s.prom<=90?'var(--amber)':'var(--red)';
+          return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--bdr)">
+            <div style="width:20px;text-align:center;font-size:.8rem">${medal||`<span style="font-size:.6rem;color:var(--gray);font-weight:700">${i+1}</span>`}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.72rem;font-weight:700;color:var(--dark)">${s.enc}</div>
+              <div style="height:4px;background:var(--bdr);border-radius:2px;overflow:hidden;margin-top:3px">
+                <div style="height:100%;border-radius:2px;background:${col};width:${Math.round(s.prom/maxP*100)}%"></div>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:.8rem;font-weight:700;color:${col}">${s.prom}d</div>
+              <div style="font-size:.55rem;color:var(--gray)">${s.count} ter.</div>
+            </div>
+          </div>`;
+        }).join('');
+      })()}
+    </div>`;
+}
+
+// ── INFORME: RESUMEN SEMANAL ──
+function renderInfSemana(){
+  const now = new Date();
+  const hoy = now.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Rango de la semana actual (lunes a hoy)
+  const diaSemana = now.getDay()===0 ? 6 : now.getDay()-1; // 0=lun
+  const lunes = new Date(now); lunes.setDate(now.getDate()-diaSemana); lunes.setHours(0,0,0,0);
+  const fmtD = s => s ? new Date(s+'T12:00').toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}) : '—';
+  const enRango = fecha => { if(!fecha) return false; const d=new Date(fecha+'T12:00'); return d>=lunes && d<=now; };
+
+  // Recopilar eventos de la semana
+  const asignados=[], completados=[], vencenProx=[];
+
+  for(let i=1;i<=33;i++){
+    const d=DB[i]||{};
+    const st=gs(i);
+
+    // Asignados esta semana
+    if(d.fechaAsig && enRango(d.fechaAsig)){
+      asignados.push({n:i, enc:d.encargado||'—', fecha:d.fechaAsig, manzana:d.manzana||'Todas'});
+    }
+
+    // Completados esta semana (historial)
+    (d.historial||[]).forEach(h=>{
+      if(h.fecha && enRango(h.fecha)){
+        completados.push({n:i, enc:h.enc||h.encAnterior||'—', fecha:h.fecha, obs:h.obs||''});
+      }
+    });
+  }
+
+  // Próximos a vencer esta semana y siguiente
+  const {proximos, urgentes} = getAlertData();
+  const vence7 = proximos.filter(p=>p.diasRestantes<=7);
+  const vence14 = proximos.filter(p=>p.diasRestantes>7&&p.diasRestantes<=14);
+
+  // Días de la semana con actividad
+  const diasNombre=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const actPorDia = diasNombre.map((lbl,i)=>{
+    const dia=new Date(lunes); dia.setDate(lunes.getDate()+i);
+    const key=dia.toISOString().slice(0,10);
+    let c=0;
+    for(let n=1;n<=33;n++){
+      if((DB[n]?.historial||[]).some(h=>h.fecha===key)) c++;
+      if(DB[n]?.fechaAsig===key) c++;
+    }
+    return{lbl, c, esHoy:dia.toDateString()===now.toDateString(), esFuturo:dia>now};
+  });
+  const maxAct=Math.max(...actPorDia.map(d=>d.c),1);
+
+  // KPIs semana
+  const kpis=`
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid var(--bdr);text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--gd)">${asignados.length}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">Asignados</div>
+    </div>
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid var(--bdr);text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--indigo)">${completados.length}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">Completados</div>
+    </div>
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid ${vence7.length?'rgba(239,68,68,.4)':'var(--bdr)'};text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:${vence7.length?'var(--red)':'var(--gray)'}">${vence7.length}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">Vencen esta semana</div>
+    </div>
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid ${urgentes.length?'rgba(239,68,68,.35)':'var(--bdr)'};text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:${urgentes.length?'var(--red)':'var(--gray)'}">${urgentes.length}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">Urgentes</div>
+    </div>
+  </div>`;
+
+  // Minibar de actividad por día
+  const minibar=`
+  <div class="dbc" style="margin-bottom:12px">
+    <div class="dbc-t">Actividad esta semana</div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:60px;margin:10px 0 6px">
+      ${actPorDia.map(d=>{
+        const h=Math.round(d.c/maxAct*50);
+        const col=d.esHoy?'var(--gd)':d.esFuturo?'var(--bdr)':'rgba(34,197,94,.4)';
+        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <div style="font-size:.6rem;font-weight:600;color:${d.esHoy?'var(--gd)':'var(--gray)'}">${d.c||''}</div>
+          <div style="width:100%;border-radius:3px 3px 0 0;background:${col};height:${d.c?Math.max(h,4):2}px;min-height:2px"></div>
+          <div style="font-size:.58rem;color:${d.esHoy?'var(--gd)':'var(--gray)'};font-weight:${d.esHoy?700:400}">${d.lbl}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // Asignados esta semana
+  const secAsignados=`
+  <div class="dbc" style="margin-bottom:12px;${asignados.length?'border-color:rgba(245,158,11,.35)':''}">
+    <div class="dbc-t">📥 Asignados esta semana (${asignados.length})</div>
+    ${asignados.length===0
+      ?'<div style="font-size:.72rem;color:var(--gray);padding:4px 0">Sin asignaciones esta semana</div>'
+      :asignados.map(t=>`
+        <div class="db-ter-row" style="border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#d97706;min-width:26px;text-align:center">${t.n}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.68rem;font-weight:700;color:var(--dark)">Territorio ${t.n} · ${t.manzana}</div>
+            <div style="font-size:.6rem;color:var(--gray)">👤 ${t.enc} · 📅 ${fmtD(t.fecha)}</div>
+          </div>
+        </div>`).join('')}
+  </div>`;
+
+  // Completados esta semana
+  const secCompletados=`
+  <div class="dbc" style="margin-bottom:12px;${completados.length?'border-color:rgba(99,102,241,.35)':''}">
+    <div class="dbc-t">✅ Completados esta semana (${completados.length})</div>
+    ${completados.length===0
+      ?'<div style="font-size:.72rem;color:var(--gray);padding:4px 0">Sin territorios completados esta semana</div>'
+      :completados.map(t=>`
+        <div class="db-ter-row" style="border-color:rgba(99,102,241,.25);background:rgba(99,102,241,.04)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#4f46e5;min-width:26px;text-align:center">${t.n}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.68rem;font-weight:700;color:var(--dark)">Territorio ${t.n}</div>
+            <div style="font-size:.6rem;color:var(--gray)">👤 ${t.enc} · 📅 ${fmtD(t.fecha)}${t.obs?' · '+t.obs:''}</div>
+          </div>
+        </div>`).join('')}
+  </div>`;
+
+  // Vencimientos próximos
+  const secVencen=`
+  <div class="dbc" style="margin-bottom:12px;${vence7.length?'border-color:rgba(239,68,68,.35)':vence14.length?'border-color:rgba(251,191,36,.35)':''}">
+    <div class="dbc-t">⏰ Vencimientos próximos</div>
+    ${vence7.length===0&&vence14.length===0
+      ?'<div style="font-size:.72rem;color:#15803d;font-weight:600;padding:4px 0">✅ Ningún territorio vence en los próximos 14 días</div>'
+      :`${vence7.map(t=>`
+        <div class="db-ter-row" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#dc2626;min-width:26px;text-align:center">${t.n}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.68rem;font-weight:700;color:var(--dark)">Territorio ${t.n}</div>
+            <div style="font-size:.6rem;color:var(--gray)">👤 ${t.enc} · ${t.dias} días asignado</div>
+          </div>
+          <span style="font-size:.58rem;font-weight:700;color:#dc2626;background:rgba(239,68,68,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">Vence en ${t.diasRestantes}d</span>
+        </div>`).join('')}
+      ${vence14.map(t=>`
+        <div class="db-ter-row" style="border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.04)" onclick="toggleDash();setTimeout(()=>selectT(${t.n}),120)">
+          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:#d97706;min-width:26px;text-align:center">${t.n}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.68rem;font-weight:700;color:var(--dark)">Territorio ${t.n}</div>
+            <div style="font-size:.6rem;color:var(--gray)">👤 ${t.enc} · ${t.dias} días asignado</div>
+          </div>
+          <span style="font-size:.58rem;font-weight:700;color:#d97706;background:rgba(251,191,36,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">Vence en ${t.diasRestantes}d</span>
+        </div>`).join('')}`}
+  </div>`;
+
+  return`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--dark);margin-bottom:2px">📅 Resumen semanal</div>
+      <div style="font-size:.65rem;color:var(--gray)">${hoy}</div>
+    </div>
+    ${kpis}
+    ${minibar}
+    ${secAsignados}
+    ${secCompletados}
+    ${secVencen}`;
 }
 
 function renderInfMensual(){
@@ -3689,6 +4397,172 @@ function renderInfHistorico(){
     ${graficos}
     ${rankEnc}
     ${renderInfRurales()}`;
+}
+
+// ── HISTORIAL POR PUBLICADOR ──
+function renderInfPublicadores(){
+  const fmtD = s=>s?s.split('-').reverse().join('-'):'—';
+  const avatarColors=['#1b4332','#2d6a4f','#6366f1','#0369a1','#b45309','#9333ea','#0f766e','#be185d','#b91c1c','#0369a1'];
+  const colorOf = n=>avatarColors[Math.abs([...n].reduce((a,c)=>a+c.charCodeAt(0),0))%avatarColors.length];
+  const iniciales = n=>n.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+
+  // Construir mapa completo por publicador
+  const pubMap = {};
+  const ensure = nombre=>{ if(!pubMap[nombre])pubMap[nombre]={activos:[],historial:[]}; };
+
+  for(let i=1;i<=33;i++){
+    const d=DB[i]||{};
+    // Historial de cada territorio
+    (d.historial||[]).forEach(h=>{
+      const enc=h.encAnterior||h.enc||'';
+      if(!enc||enc==='—')return;
+      ensure(enc);
+      const fechaAsig=h.fechaAsigAnterior||'';
+      const fechaComp=h.fecha||'';
+      const dias=fechaAsig&&fechaComp
+        ?Math.round((new Date(fechaComp+'T12:00')-new Date(fechaAsig+'T12:00'))/86400000)
+        :null;
+      pubMap[enc].historial.push({ter:i,fechaAsig,fechaComp,dias,estado:h.estado||'completado'});
+    });
+    // Asignación activa
+    const st=gs(i);
+    if((st==='asignado'||st==='urgente')&&d.encargado){
+      ensure(d.encargado);
+      const diasActivo=d.fechaAsig
+        ?Math.round((Date.now()-new Date(d.fechaAsig+'T12:00'))/86400000)
+        :null;
+      pubMap[d.encargado].activos.push({ter:i,fechaAsig:d.fechaAsig||'',diasActivo,urgente:st==='urgente'});
+    }
+  }
+
+  if(!Object.keys(pubMap).length){
+    return`<div style="text-align:center;padding:40px;color:var(--gray);font-size:.82rem">Sin datos de publicadores registrados todavía.</div>`;
+  }
+
+  // Ordenar por total de trabajados desc
+  const pubs = Object.entries(pubMap).map(([nombre,v])=>{
+    const completados=v.historial.filter(h=>h.estado==='completado'||!h.estado);
+    const diasArr=completados.map(h=>h.dias).filter(d=>d!==null&&d>0);
+    const promDias=diasArr.length?Math.round(diasArr.reduce((a,b)=>a+b,0)/diasArr.length):null;
+    const minDias=diasArr.length?Math.min(...diasArr):null;
+    const maxDias=diasArr.length?Math.max(...diasArr):null;
+    return{nombre,activos:v.activos,historial:v.historial,completados,promDias,minDias,maxDias,
+      total:v.activos.length+v.historial.length};
+  }).sort((a,b)=>b.total-a.total);
+
+  const avgTotal=pubs.reduce((s,p)=>s+p.total,0)/pubs.length;
+
+  // KPIs globales
+  const totalPubs=pubs.length;
+  const totalCompletados=pubs.reduce((s,p)=>s+p.completados.length,0);
+  const masActivo=pubs[0]?.nombre||'—';
+  const todosProms=pubs.filter(p=>p.promDias).map(p=>p.promDias);
+  const promGlobal=todosProms.length?Math.round(todosProms.reduce((a,b)=>a+b,0)/todosProms.length):null;
+
+  const kpis=`
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid var(--bdr);text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--gd)">${totalPubs}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Publicadores</div>
+    </div>
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid var(--bdr);text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--indigo)">${totalCompletados}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Completados</div>
+    </div>
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid var(--bdr);text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--amber)">${promGlobal?promGlobal+'d':'—'}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Prom. días/ter.</div>
+    </div>
+    <div style="background:var(--w);border-radius:10px;padding:10px 12px;border:1.5px solid var(--bdr);text-align:center;overflow:hidden">
+      <div style="font-size:.8rem;font-weight:700;color:var(--gd);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${masActivo}</div>
+      <div style="font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">Más activo</div>
+    </div>
+  </div>`;
+
+  // Tarjetas por publicador
+  const cards=pubs.map(p=>{
+    const color=colorOf(p.nombre);
+    const carga=p.activos.length>=3?{c:'var(--red)',l:'Sobrecargado'}
+      :p.activos.length>0&&p.total>avgTotal+1?{c:'var(--amber)',l:'Carga alta'}
+      :p.activos.length>0?{c:'var(--green)',l:'Equilibrado'}
+      :{c:'var(--gray)',l:'Sin activos'};
+
+    // Activos
+    const activosHtml=p.activos.length?p.activos.map(a=>`
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 7px;border-radius:7px;background:${a.urgente?'rgba(239,68,68,.08)':'rgba(245,158,11,.07)'};border:0.5px solid ${a.urgente?'rgba(239,68,68,.2)':'rgba(245,158,11,.2)'};margin-bottom:3px">
+        <span style="font-size:.7rem;font-weight:700;color:${a.urgente?'var(--red)':'var(--amber)'};min-width:22px">T.${a.ter}</span>
+        <span style="font-size:.65rem;color:var(--gray);flex:1">Desde ${fmtD(a.fechaAsig)}</span>
+        <span style="font-size:.65rem;font-weight:600;color:${a.urgente?'var(--red)':'var(--amber)'};">${a.diasActivo!==null?a.diasActivo+'d':''} ${a.urgente?'⚠':''}</span>
+      </div>`).join('')
+    :`<div style="font-size:.65rem;color:var(--gray);padding:4px 0">Sin territorios activos actualmente</div>`;
+
+    // Historial completados (últimos 6)
+    const ultimos=[...p.completados].sort((a,b)=>(b.fechaComp||'').localeCompare(a.fechaComp||'')).slice(0,6);
+    const histHtml=ultimos.length?ultimos.map(h=>`
+      <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:0.5px solid var(--bdr)">
+        <span style="font-size:.68rem;font-weight:700;color:var(--indigo);min-width:26px">T.${h.ter}</span>
+        <span style="font-size:.62rem;color:var(--gray);flex:1">${fmtD(h.fechaAsig)} → ${fmtD(h.fechaComp)}</span>
+        <span style="font-size:.62rem;font-weight:600;color:${h.dias&&h.dias<=60?'var(--green)':h.dias&&h.dias<=120?'var(--amber)':'var(--red)'}">${h.dias!==null?h.dias+'d':'—'}</span>
+      </div>`).join('')
+    :`<div style="font-size:.65rem;color:var(--gray);padding:4px 0">Sin completados registrados</div>`;
+
+    // Mini stats
+    const statsHtml=`
+    <div style="display:flex;gap:8px;margin:8px 0 10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:70px;background:var(--bg);border-radius:7px;padding:6px 8px;text-align:center">
+        <div style="font-size:.9rem;font-weight:700;color:var(--indigo)">${p.completados.length}</div>
+        <div style="font-size:.55rem;color:var(--gray)">Completados</div>
+      </div>
+      <div style="flex:1;min-width:70px;background:var(--bg);border-radius:7px;padding:6px 8px;text-align:center">
+        <div style="font-size:.9rem;font-weight:700;color:var(--amber)">${p.activos.length}</div>
+        <div style="font-size:.55rem;color:var(--gray)">Activos</div>
+      </div>
+      <div style="flex:1;min-width:70px;background:var(--bg);border-radius:7px;padding:6px 8px;text-align:center">
+        <div style="font-size:.9rem;font-weight:700;color:var(--gd)">${p.promDias!==null?p.promDias+'d':'—'}</div>
+        <div style="font-size:.55rem;color:var(--gray)">Prom. días</div>
+      </div>
+      <div style="flex:1;min-width:70px;background:var(--bg);border-radius:7px;padding:6px 8px;text-align:center">
+        <div style="font-size:.9rem;font-weight:700;color:var(--green)">${p.minDias!==null?p.minDias+'d':'—'}</div>
+        <div style="font-size:.55rem;color:var(--gray)">Mín. días</div>
+      </div>
+    </div>`;
+
+    return`
+    <div style="background:var(--w);border-radius:12px;border:1.5px solid var(--bdr);overflow:hidden;margin-bottom:10px">
+      <!-- Cabecera -->
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr)">
+        <div style="width:36px;height:36px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:.72rem;font-weight:700;flex-shrink:0">${iniciales(p.nombre)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.85rem;font-weight:700;color:var(--dark)">${p.nombre}</div>
+          <div style="font-size:.62rem;color:var(--gray)">${p.total} territorio${p.total!==1?'s':''} trabajados en total</div>
+        </div>
+        <div style="font-size:.62rem;padding:3px 8px;border-radius:10px;font-weight:600;background:${carga.c}22;color:${carga.c};border:0.5px solid ${carga.c}44;flex-shrink:0">${carga.l}</div>
+      </div>
+      <!-- Stats -->
+      <div style="padding:0 14px">${statsHtml}</div>
+      <!-- Activos -->
+      <div style="padding:0 14px 10px">
+        <div style="font-size:.6rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Territorios activos</div>
+        ${activosHtml}
+      </div>
+      <!-- Historial -->
+      <div style="padding:0 14px 12px;border-top:1px solid var(--bdr);padding-top:10px">
+        <div style="font-size:.6rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Últimos completados <span style="font-weight:400;color:var(--gray)">(días asig→comp)</span></div>
+        ${histHtml}
+        ${p.completados.length>6?`<div style="font-size:.62rem;color:var(--gray);margin-top:4px;text-align:right">+${p.completados.length-6} más</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return`
+    <div style="margin-bottom:12px">
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--dark);margin-bottom:2px">👥 Historial por publicador</div>
+      <div style="font-size:.65rem;color:var(--gray)">Actividad, carga y tiempos por cada hermano</div>
+    </div>
+    ${kpis}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${cards}
+    </div>`;
 }
 
 // ── LUGARES DE REUNIÓN ──
@@ -3997,11 +4871,124 @@ function updateMeetPinPosition(grp, m){
   initPanelResize();
   // Revisar alertas al inicio
   checkAlerts();
+  // Toast de vencimientos próximos al abrir
+  setTimeout(()=>{
+    const {proximos, urgentes} = getAlertData();
+    if(proximos.length){
+      const txt = proximos.length===1
+        ? `⏰ T.${proximos[0].n} vence en ${proximos[0].diasRestantes} días (${proximos[0].enc})`
+        : `⏰ ${proximos.length} territorios vencen en menos de 30 días`;
+      toast(txt, 7000);
+    }
+    if(urgentes.length){
+      setTimeout(()=>toast(`🔴 ${urgentes.length} territorio${urgentes.length>1?'s':''} urgente${urgentes.length>1?'s':''} — más de 4 meses asignado${urgentes.length>1?'s':''}`, 7000), 2000);
+    }
+  }, 1500);
   // Init móvil
   initMobMenu();
 })();
 
-// ── RESPONSIVE / MÓVIL ──
+// ── PUBLICADORES — rotación y equidad ──
+function renderPubPanel(){
+  const el = document.getElementById('pubPanel');
+  if(!el) return;
+
+  // Construir mapa de publicadores desde historial + activos
+  const pubMap = {}; // {nombre: {activos:[], completados:[], diasTotal:0}}
+  const anioActual = new Date().getFullYear();
+
+  const addPub = (nombre, tipo, terNum, dias)=>{
+    if(!nombre||nombre==='—') return;
+    if(!pubMap[nombre]) pubMap[nombre]={activos:[],completados:[],diasTotal:0};
+    if(tipo==='activo') pubMap[nombre].activos.push(terNum);
+    else { pubMap[nombre].completados.push(terNum); pubMap[nombre].diasTotal+=dias||0; }
+  };
+
+  for(let i=1;i<=33;i++){
+    const d=DB[i]||{};
+    // Historial (completados del año en curso)
+    (d.historial||[]).forEach(h=>{
+      if(!h.fecha) return;
+      const anio = new Date(h.fecha+'T12:00').getFullYear();
+      if(anio !== anioActual) return;
+      const enc = h.encAnterior||h.enc||'';
+      if(!enc) return;
+      const dias = h.fechaAsigAnterior
+        ? Math.round((new Date(h.fecha+'T12:00')-new Date(h.fechaAsigAnterior+'T12:00'))/86400000)
+        : null;
+      addPub(enc,'completado',i,dias);
+    });
+    // Asignación activa
+    const st=gs(i);
+    if((st==='asignado'||st==='urgente') && d.encargado){
+      addPub(d.encargado,'activo',i,null);
+    }
+  }
+
+  const pubs = Object.entries(pubMap).map(([nombre,v])=>({
+    nombre,
+    activos: v.activos,
+    completados: v.completados,
+    total: v.activos.length + v.completados.length,
+    promDias: v.completados.length ? Math.round(v.diasTotal/v.completados.length) : null
+  })).sort((a,b)=>b.total-a.total);
+
+  if(!pubs.length){
+    el.innerHTML='<div style="font-size:.7rem;color:var(--gray);padding:4px 0">Sin datos de publicadores aún</div>';
+    return;
+  }
+
+  // Calcular promedio de carga para el semáforo
+  const maxTotal = Math.max(...pubs.map(p=>p.total), 1);
+  const avgTotal = pubs.reduce((s,p)=>s+p.total,0) / pubs.length;
+
+  // Sugerencia: publicador con menos activos actualmente
+  const sinActivos = pubs.filter(p=>p.activos.length===0).sort((a,b)=>b.completados.length-a.completados.length);
+  const sugerido = sinActivos[0]?.nombre || pubs[pubs.length-1]?.nombre;
+
+  // Colores avatar
+  const avatarColors=['#1b4332','#2d6a4f','#6366f1','#0369a1','#b45309','#9333ea','#0f766e','#be185d'];
+  const colorOf = nombre => avatarColors[nombre.charCodeAt(0)%avatarColors.length];
+  const iniciales = n => n.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+
+  // Semáforo
+  const semaforo = p =>{
+    if(p.activos.length===0) return {color:'var(--gray)',label:'Sin activos'};
+    if(p.activos.length>=3)  return {color:'var(--red)',label:'Sobrecargado'};
+    if(p.total>avgTotal+1)   return {color:'var(--amber)',label:'Carga alta'};
+    return {color:'var(--green)',label:'Equilibrado'};
+  };
+
+  let html = '';
+
+  // Sugerencia
+  if(sugerido){
+    html += `<div class="pub-suggest">💡 Sugerencia para próxima asignación: <strong>${sugerido}</strong><br>
+    <span style="opacity:.8">${sinActivos[0]?.completados.length||0} completado(s) este año · sin territorios activos</span></div>`;
+  }
+
+  // Lista
+  html += pubs.map(p=>{
+    const sem = semaforo(p);
+    const pct = Math.round(p.total/maxTotal*100);
+    const barColor = p.activos.length>=3 ? 'var(--red)' : p.activos.length>0 ? 'var(--amber)' : 'var(--green)';
+    const promTxt = p.promDias ? `~${p.promDias}d/ter.` : '';
+    const activosTxt = p.activos.length ? `${p.activos.length} activo${p.activos.length>1?'s':''} · ` : '';
+    return `<div class="pub-row">
+      <div class="pub-avatar" style="background:${colorOf(p.nombre)}">${iniciales(p.nombre)}</div>
+      <div class="pub-info">
+        <div class="pub-name">${p.nombre}</div>
+        <div class="pub-sub">${activosTxt}${p.completados.length} completado${p.completados.length!==1?'s':''} ${promTxt}</div>
+        <div class="pub-bar-wrap"><div class="pub-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>
+      <div class="pub-badge" style="background:${sem.color}22;color:${sem.color};border:0.5px solid ${sem.color}44">${sem.label}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = html;
+}
+
+
 function initMobMenu(){} // reservado para uso futuro
 
 function toggleMobPanel(side){
