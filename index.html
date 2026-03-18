@@ -3679,214 +3679,132 @@ function generarWord(){
   toast('📝 Generando Word...');
   const build = ()=>{
     try{
-      const D = window.docx;
-      const {
-        Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun,
-        WidthType, BorderStyle, VerticalAlign, AlignmentType,
-        VerticalMergeType
-      } = D;
+      const {Document,Packer,Paragraph,Table,TableRow,TableCell,
+             TextRun,WidthType,BorderStyle,VerticalAlign,AlignmentType} = window.docx;
 
       const anio = new Date().getFullYear();
       const hoy = new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
 
-      // ── Borde fino negro ──
-      const bk = {style:BorderStyle.SINGLE,size:4,color:'000000'};
-      const B = {top:bk,bottom:bk,left:bk,right:bk};
+      const bk = {style:BorderStyle.SINGLE,size:6,color:'000000'};
+      const B  = {top:bk,bottom:bk,left:bk,right:bk};
 
-      // ── Helper: celda normal ──
-      const mk = (text, opts={}) => new TableCell({
+      // Celda genérica
+      const C = (text, opts={}) => new TableCell({
         children:[new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing:{before:40,after:40},
+          spacing:{before:30,after:30},
           children:[new TextRun({
-            text:String(text||''),
-            bold:!!opts.bold,
-            size:opts.size||18,
-            font:'Arial'
+            text:String(text||''), bold:!!opts.bold,
+            size:opts.size||18, font:'Arial'
           })]
         })],
         verticalAlign: VerticalAlign.CENTER,
-        columnSpan: opts.span||1,
-        verticalMerge: opts.vStart ? VerticalMergeType.RESTART : undefined,
-        shading: opts.bg ? {fill:opts.bg,type:'solid'} : undefined,
-        borders: B,
-        margins:{top:60,bottom:60,left:120,right:120},
+        columnSpan: opts.span||undefined,
+        rowSpan:    opts.rows||undefined,
+        shading:    opts.bg ? {fill:opts.bg,type:'solid'} : undefined,
+        borders:    B,
+        margins:{top:60,bottom:60,left:100,right:100},
         width: opts.w ? {size:opts.w,type:WidthType.DXA} : undefined
       });
 
-      // ── Helper: celda continuación de merge vertical ──
-      const cont = () => new TableCell({
-        children:[new Paragraph({children:[new TextRun({text:''})],spacing:{before:0,after:0}})],
-        verticalMerge: VerticalMergeType.CONTINUE,
-        borders: B,
-        margins:{top:60,bottom:60,left:120,right:120}
-      });
-
-      // ── Anchos de columna en DXA (twips) ──
-      // Total ~11500 DXA para página apaisada A4 con márgenes
-      // N°=600, ÚltimaFecha=1600, 8 cols fecha=1162 c/u
-      const W_NUM  = 600;
-      const W_ULTI = 1600;
-      const W_SLOT = 1175; // cada sub-columna fecha (8 en total)
-
       const rows = [];
 
-      // ════════════════════════════════
-      // FILA 1 CABECERA
-      // N° (vmerge restart) | Última fecha (vmerge restart) | "Asignado a" x4 (span 2 cada uno)
-      // ════════════════════════════════
-      rows.push(new TableRow({
-        tableHeader: true,
-        children:[
-          mk('Núm. de terr.', {bold:true,size:16,bg:'BFBFBF',vStart:true,w:W_NUM}),
-          mk('Última fecha en que se completó*', {bold:true,size:14,bg:'BFBFBF',vStart:true,w:W_ULTI}),
-          mk('Asignado a', {bold:true,size:16,bg:'BFBFBF',span:2}),
-          mk('Asignado a', {bold:true,size:16,bg:'BFBFBF',span:2}),
-          mk('Asignado a', {bold:true,size:16,bg:'BFBFBF',span:2}),
-          mk('Asignado a', {bold:true,size:16,bg:'BFBFBF',span:2}),
-        ]
-      }));
+      // ── FILA 1: cabecera ──
+      // N°(rowSpan:2) | Última(rowSpan:2) | "Asignado a"(span:2) x4
+      rows.push(new TableRow({tableHeader:true, children:[
+        C('Núm. de terr.',{bold:true,size:15,bg:'BFBFBF',rows:2,w:620}),
+        C('Última fecha en que se completó*',{bold:true,size:13,bg:'BFBFBF',rows:2,w:1700}),
+        C('Asignado a',{bold:true,size:15,bg:'BFBFBF',span:2}),
+        C('Asignado a',{bold:true,size:15,bg:'BFBFBF',span:2}),
+        C('Asignado a',{bold:true,size:15,bg:'BFBFBF',span:2}),
+        C('Asignado a',{bold:true,size:15,bg:'BFBFBF',span:2}),
+      ]}));
 
-      // ════════════════════════════════
-      // FILA 2 SUB-CABECERA
-      // cont | cont | (Fecha asignó | Fecha completó) x4
-      // ════════════════════════════════
-      const subHdr = txt => new TableCell({
-        children:[new Paragraph({
-          alignment:AlignmentType.CENTER,
-          spacing:{before:30,after:30},
-          children:[new TextRun({text:txt,bold:true,size:14,font:'Arial'})]
-        })],
-        verticalAlign:VerticalAlign.CENTER,
-        verticalMerge: VerticalMergeType.RESTART,
-        shading:{fill:'D9D9D9',type:'solid'},
-        borders:B,
-        margins:{top:40,bottom:40,left:80,right:80}
-      });
+      // ── FILA 2: sub-cabecera fechas (SIN N° ni Última — ya cubiertos por rowSpan) ──
+      rows.push(new TableRow({tableHeader:true, children:[
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'D9D9D9'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'D9D9D9'}),
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'D9D9D9'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'D9D9D9'}),
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'D9D9D9'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'D9D9D9'}),
+        C('Fecha en que\nse asignó',  {bold:true,size:13,bg:'D9D9D9'}),
+        C('Fecha en que\nse completó',{bold:true,size:13,bg:'D9D9D9'}),
+      ]}));
 
-      rows.push(new TableRow({
-        tableHeader:true,
-        children:[
-          cont(), cont(),
-          subHdr('Fecha en que\nse asignó'),
-          subHdr('Fecha en que\nse completó'),
-          subHdr('Fecha en que\nse asignó'),
-          subHdr('Fecha en que\nse completó'),
-          subHdr('Fecha en que\nse asignó'),
-          subHdr('Fecha en que\nse completó'),
-          subHdr('Fecha en que\nse asignó'),
-          subHdr('Fecha en que\nse completó'),
-        ]
-      }));
-
-      // ════════════════════════════════
-      // FILAS DE DATOS — 2 filas por territorio
-      // ════════════════════════════════
+      // ── FILAS DE DATOS ──
       for(let i=1;i<=33;i++){
         const {slots,ultimaFecha} = _getSlotsDoc(i);
 
-        // FILA A: N°(merge) | última(merge) | enc1(span2) | enc2(span2) | enc3(span2) | enc4(span2)
-        rows.push(new TableRow({
-          children:[
-            mk(i,           {bold:true,size:20,vStart:true,w:W_NUM}),
-            mk(ultimaFecha, {size:17,vStart:true,w:W_ULTI}),
-            mk(slots[0].enc,{size:16,span:2}),
-            mk(slots[1].enc,{size:16,span:2}),
-            mk(slots[2].enc,{size:16,span:2}),
-            mk(slots[3].enc,{size:16,span:2}),
-          ]
-        }));
+        // Fila A: N°(rowSpan:2) | UltimaFecha(rowSpan:2) | enc(span:2) x4
+        rows.push(new TableRow({children:[
+          C(i,            {bold:true,size:20,rows:2,w:620}),
+          C(ultimaFecha,  {size:17,rows:2,w:1700}),
+          C(slots[0].enc, {size:16,span:2}),
+          C(slots[1].enc, {size:16,span:2}),
+          C(slots[2].enc, {size:16,span:2}),
+          C(slots[3].enc, {size:16,span:2}),
+        ]}));
 
-        // FILA B: cont | cont | (f.asig | f.comp) x4
-        rows.push(new TableRow({
-          children:[
-            cont(), cont(),
-            mk(slots[0].fechaAsig,{size:16}),
-            mk(slots[0].fechaComp,{size:16}),
-            mk(slots[1].fechaAsig,{size:16}),
-            mk(slots[1].fechaComp,{size:16}),
-            mk(slots[2].fechaAsig,{size:16}),
-            mk(slots[2].fechaComp,{size:16}),
-            mk(slots[3].fechaAsig,{size:16}),
-            mk(slots[3].fechaComp,{size:16}),
-          ]
-        }));
+        // Fila B: solo las 8 celdas de fechas
+        rows.push(new TableRow({children:[
+          C(slots[0].fechaAsig, {size:16}),
+          C(slots[0].fechaComp, {size:16}),
+          C(slots[1].fechaAsig, {size:16}),
+          C(slots[1].fechaComp, {size:16}),
+          C(slots[2].fechaAsig, {size:16}),
+          C(slots[2].fechaComp, {size:16}),
+          C(slots[3].fechaAsig, {size:16}),
+          C(slots[3].fechaComp, {size:16}),
+        ]}));
       }
 
-      // ════════════════════════════════
-      // DOCUMENTO
-      // ════════════════════════════════
-      const doc = new Document({
-        sections:[{
-          properties:{
-            page:{
-              size:{width:19840, height:12240}, // A4 apaisado
-              margin:{top:800,bottom:800,left:800,right:800}
-            }
-          },
-          children:[
-            // Título principal
-            new Paragraph({
-              alignment:AlignmentType.CENTER,
-              spacing:{after:40},
-              children:[new TextRun({
-                text:'REGISTRO DE ASIGNACIÓN DE TERRITORIO',
-                bold:true, size:28, font:'Arial'
-              })]
-            }),
-            // Mini tabla Año de servicio
-            new Table({
-              width:{size:3000,type:WidthType.DXA},
-              rows:[new TableRow({children:[
-                new TableCell({
-                  children:[new Paragraph({children:[new TextRun({text:'Año de servicio:',bold:true,size:20,font:'Arial'})]})],
-                  borders:B, margins:{top:60,bottom:60,left:120,right:120},
-                  width:{size:1600,type:WidthType.DXA}
-                }),
-                new TableCell({
-                  children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:String(anio),bold:true,size:20,font:'Arial'})]})],
-                  borders:B, margins:{top:60,bottom:60,left:120,right:120},
-                  width:{size:1000,type:WidthType.DXA}
-                })
-              ]})]
-            }),
-            new Paragraph({spacing:{after:120},children:[new TextRun({text:''})]}),
-            // Tabla principal
-            new Table({
-              width:{size:100,type:WidthType.PERCENTAGE},
-              columnWidths:[W_NUM,W_ULTI,W_SLOT,W_SLOT,W_SLOT,W_SLOT,W_SLOT,W_SLOT,W_SLOT,W_SLOT],
-              rows
-            }),
-            // Nota al pie
-            new Paragraph({
-              spacing:{before:160},
-              children:[new TextRun({
-                text:'*Cuando comience una nueva página, anote en esta columna la última fecha en que los territorios se completaron.',
-                italics:true, size:16, font:'Arial'
-              })]
-            })
-          ]
-        }]
-      });
+      const W = 1162; // ancho de cada sub-columna fecha
+      const doc = new Document({sections:[{
+        properties:{page:{
+          size:{width:19840,height:12240},
+          margin:{top:720,bottom:720,left:720,right:720}
+        }},
+        children:[
+          new Paragraph({
+            alignment:AlignmentType.CENTER,
+            spacing:{after:60},
+            children:[new TextRun({text:'REGISTRO DE ASIGNACIÓN DE TERRITORIO',bold:true,size:28,font:'Arial'})]
+          }),
+          new Table({
+            width:{size:3200,type:WidthType.DXA},
+            rows:[new TableRow({children:[
+              new TableCell({children:[new Paragraph({spacing:{before:40,after:40},children:[new TextRun({text:'Año de servicio:',bold:true,size:20,font:'Arial'})]})],borders:B,margins:{top:60,bottom:60,left:120,right:120},width:{size:1800,type:WidthType.DXA}}),
+              new TableCell({children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:40,after:40},children:[new TextRun({text:String(anio),bold:true,size:20,font:'Arial'})]})],borders:B,margins:{top:60,bottom:60,left:120,right:120},width:{size:1000,type:WidthType.DXA}})
+            ]})]
+          }),
+          new Paragraph({spacing:{after:160},children:[new TextRun({text:''})]}),
+          new Table({
+            width:{size:100,type:WidthType.PERCENTAGE},
+            columnWidths:[620,1700,W,W,W,W,W,W,W,W],
+            rows
+          }),
+          new Paragraph({
+            spacing:{before:160},
+            children:[new TextRun({text:'*Cuando comience una nueva página, anote en esta columna la última fecha en que los territorios se completaron.',italics:true,size:16,font:'Arial'})]
+          })
+        ]
+      }]});
 
       Packer.toBlob(doc).then(blob=>{
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href=url;
-        a.download=`registro_${anio}.docx`;
-        a.click();
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url; a.download=`registro_${anio}.docx`; a.click();
         setTimeout(()=>URL.revokeObjectURL(url),5000);
         toast('✅ Word generado correctamente');
       });
-
-    }catch(e){ console.error(e); toast('❌ Error Word: '+e.message); }
+    }catch(e){console.error(e);toast('❌ Error Word: '+e.message);}
   };
 
-  if(window.docx){ build(); return; }
-  const s = document.createElement('script');
-  s.src = 'https://unpkg.com/docx@8.5.0/build/index.umd.js';
-  s.onload = build;
-  s.onerror = ()=>toast('❌ No se pudo cargar la librería Word');
+  if(window.docx){build();return;}
+  const s=document.createElement('script');
+  s.src='https://unpkg.com/docx@8.5.0/build/index.umd.js';
+  s.onload=build; s.onerror=()=>toast('❌ No se pudo cargar la librería Word');
   document.head.appendChild(s);
 }
 
