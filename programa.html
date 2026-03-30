@@ -1807,9 +1807,36 @@ async function fetchClima(fechas){
   }
 }
 
+function parseDiaNum(texto){
+  // Extrae el número del día desde textos como "Lunes 30", "Martes\n31", "30", etc.
+  const nums=texto.trim().match(/\d+/g);
+  if(!nums||!nums.length)return NaN;
+  return parseInt(nums[nums.length-1]);
+}
+
 function parseFechaSubtitulo(){
   const sub=document.getElementById('subtitulo')?.innerText?.trim()||'';
   const meses={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
+  // Formato cruzando meses: "30 al 05 de Marzo / Abril" o "30 AL 05 DE MARZO / ABRIL"
+  const mCruz=sub.match(/(\d{1,2})\s+a[l]?\s+(\d{1,2})\s+de\s+(\w+)\s*[\/\-]\s*(\w+)(?:\s+(\d{4}))?/i);
+  if(mCruz){
+    const diaIni=parseInt(mCruz[1]),diaFin=parseInt(mCruz[2]);
+    const mes1=meses[mCruz[3].toLowerCase()],mes2=meses[mCruz[4].toLowerCase()];
+    if(!mes1||!mes2)return[];
+    const anio=mCruz[5]?parseInt(mCruz[5]):new Date().getFullYear();
+    const fechas=[];
+    // Días del primer mes (desde diaIni hasta fin de mes)
+    const diasMes1=new Date(anio,mes1,0).getDate();
+    for(let d=diaIni;d<=diasMes1;d++){
+      fechas.push(`${anio}-${String(mes1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+    }
+    // Días del segundo mes (desde 1 hasta diaFin)
+    for(let d=1;d<=diaFin;d++){
+      fechas.push(`${anio}-${String(mes2).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+    }
+    return fechas;
+  }
+  // Formato normal: "02 a 08 de Marzo"
   const m=sub.match(/(\d{1,2})\s+a[l]?\s+(\d{1,2})\s+de\s+(\w+)(?:\s+(\d{4}))?/i);
   if(!m)return[];
   const diaIni=parseInt(m[1]),diaFin=parseInt(m[2]);
