@@ -245,6 +245,25 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 .btn-confirm{background:var(--gm);color:white;font-family:'Lato',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px 20px;border-radius:30px;border:none;cursor:pointer;}
 .btn-confirm:hover{background:var(--acc);}
 
+/* ── Programas anteriores ── */
+.prog-hist-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s;}
+.prog-hist-card:hover{background:rgba(255,255,255,.08);border-color:rgba(224,195,74,.35);}
+.prog-hist-week{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--gd),var(--gm));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;text-align:center;line-height:1.2;}
+.prog-hist-info{flex:1;min-width:0;}
+.prog-hist-title{font-size:.88rem;font-weight:700;color:#e0e0e0;}
+.prog-hist-sub{font-size:.68rem;color:#888;margin-top:2px;}
+.prog-hist-badge{font-size:.65rem;font-weight:700;padding:2px 9px;border-radius:14px;background:rgba(64,145,108,.2);color:#a8e6c8;border:1px solid rgba(64,145,108,.3);white-space:nowrap;}
+.prog-hist-del{background:none;border:none;color:#555;cursor:pointer;font-size:1rem;padding:4px 6px;border-radius:6px;transition:all .15s;flex-shrink:0;}
+.prog-hist-del:hover{color:#f87171;background:rgba(248,113,113,.1);}
+/* Modal programa */
+.prog-modal-table{width:100%;border-collapse:collapse;font-size:.83rem;}
+.prog-modal-table thead th{background:var(--gm);color:#fff;padding:9px 12px;text-align:center;font-family:'Playfair Display',serif;font-size:.8rem;}
+.prog-modal-table tbody td{padding:8px 12px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07);color:#ccc;vertical-align:middle;}
+.prog-modal-table tbody tr:nth-child(odd){background:rgba(255,255,255,.03);}
+.prog-modal-table tbody tr:nth-child(even){background:rgba(255,255,255,.01);}
+.prog-modal-table td.pm-dia{font-family:'Playfair Display',serif;font-weight:700;color:#a8e6c8;background:rgba(45,106,79,.15) !important;}
+.pm-hora{display:inline-block;background:#1b4332;color:#fff;border-radius:14px;padding:2px 10px;font-size:.75rem;font-weight:700;}
+.pm-badge{display:inline-block;background:linear-gradient(135deg,#2d6a4f,#1b4332);color:#fff;border-radius:5px;padding:3px 8px;font-size:.75rem;font-weight:700;}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--gd);color:white;padding:12px 22px;border-radius:30px;font-size:.85rem;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.3);transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:9999;border-left:4px solid var(--gold);}
 .toast.show{transform:translateY(0);opacity:1;}
 
@@ -328,6 +347,7 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 <div class="tabs">
   <button class="tab-btn active" id="tbPrograma" onclick="switchTab('programa',this)">📋 Programa</button>
   <button class="tab-btn" id="tbHistorial" onclick="switchTab('historial',this)">📊 Historial</button>
+  <button class="tab-btn" id="tbProgramas" onclick="switchTab('programas',this)">📅 Programas anteriores</button>
   <button class="tab-btn" onclick="window.open('https://wladimirlopezh-ctrl.github.io/losmuermos/','_blank')" style="background:rgba(64,145,108,.2);color:#a8e6c8;border-color:rgba(64,145,108,.35)">🗺️ Mapa Territorios ↗</button>
 </div>
 
@@ -355,6 +375,41 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   </table>
 </div>
 </div><!-- /tab-programa -->
+
+<!-- TAB: Programas anteriores -->
+<div class="tab-panel" id="tab-programas">
+  <div class="hist-tab-wrap">
+    <div class="hist-tab-head">
+      <div>
+        <div class="hist-tab-title">📅 Programas anteriores</div>
+        <div class="hist-tab-sub">Semanas guardadas en Drive — consulta cualquier programa pasado</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span id="progHistCount" style="font-size:.68rem;color:#666"></span>
+        <button class="btn" style="background:rgba(224,195,74,.2);color:var(--gold);border:1px solid rgba(224,195,74,.4);font-size:.72rem" onclick="guardarEnHistorial()">💾 Archivar semana actual</button>
+        <button class="btn" style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);font-size:.72rem" onclick="renderProgHist()">🔄 Actualizar</button>
+      </div>
+    </div>
+    <div id="progHistBody" style="padding:14px 16px"><div class="hist-empty">Abre esta pestaña para cargar el historial.</div></div>
+  </div>
+</div><!-- /tab-programas -->
+
+<!-- MODAL: Ver programa anterior -->
+<div id="progModal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.7);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeProgModal()">
+  <div style="background:#2c2c2e;border-radius:18px;width:100%;max-width:900px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0">
+      <div>
+        <div id="progModalTitulo" style="font-family:'Playfair Display',serif;font-size:1.05rem;color:#e0e0e0;font-weight:700"></div>
+        <div id="progModalSub" style="font-size:.72rem;color:#888;margin-top:2px"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="imprimirProgModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#ccc;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.75rem;font-weight:600">🖨️ Imprimir</button>
+        <button onclick="closeProgModal()" style="background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1">✕</button>
+      </div>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:18px 22px" id="progModalBody"></div>
+  </div>
+</div>
 
 <!-- TAB: Historial -->
 <div class="tab-panel" id="tab-historial">
@@ -1478,6 +1533,7 @@ function switchTab(id, btn){
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
   if(id==='historial') renderHistorial();
+  if(id==='programas') renderProgHist();
 }
 
 // ══════════════════════════════════════════════
@@ -1883,6 +1939,164 @@ async function initClima(){
   await fetchClima(fechas);
   document.querySelectorAll('.weather-badge.loading').forEach(b=>b.remove());
   applyClimaToTable();
+}
+
+// ══════════════════════════════════════════════
+//  HISTORIAL DE PROGRAMAS SEMANALES
+// ══════════════════════════════════════════════
+const GD_FILE_HIST = 'historial_programas.json';
+let PROG_HIST = [];
+let progModalData = null;
+
+async function cargarHistorialDrive(){
+  return new Promise(resolve=>{
+    gdEnsureToken(async()=>{
+      try{
+        const data = await gdLoadFile(GD_FILE_HIST);
+        if(data && Array.isArray(data.historial)) PROG_HIST = data.historial;
+        else PROG_HIST = [];
+      }catch(e){ PROG_HIST = []; }
+      resolve();
+    });
+  });
+}
+
+async function guardarHistorialDrive(){
+  await gdSaveFile(GD_FILE_HIST, JSON.stringify({historial: PROG_HIST}, null, 2));
+}
+
+function guardarEnHistorial(){
+  gdEnsureToken(async()=>{
+    toast('⏳ Archivando semana actual…');
+    await cargarHistorialDrive();
+    const titulo = document.getElementById('titulo').innerText.trim();
+    const subtitulo = document.getElementById('subtitulo').innerText.trim();
+    const rows = getRows();
+    const existe = PROG_HIST.findIndex(p => p.subtitulo === subtitulo);
+    const entrada = {
+      id: 'ph_' + Date.now(),
+      titulo,
+      subtitulo,
+      rows,
+      guardadoEn: new Date().toLocaleString('es-CL',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    };
+    if(existe >= 0){
+      PROG_HIST[existe] = entrada;
+      toast('🔄 Semana actualizada en el historial');
+    } else {
+      PROG_HIST.unshift(entrada);
+      toast('✅ Semana archivada en el historial');
+    }
+    await guardarHistorialDrive();
+    renderProgHist();
+  });
+}
+
+async function eliminarProgHist(id){
+  if(!confirm('¿Eliminar esta semana del historial?')) return;
+  PROG_HIST = PROG_HIST.filter(p => p.id !== id);
+  await guardarHistorialDrive();
+  renderProgHist();
+  toast('🗑️ Semana eliminada del historial');
+}
+
+async function renderProgHist(){
+  const el = document.getElementById('progHistBody');
+  el.innerHTML = '<div class="hist-empty" style="padding:20px 0">⏳ Cargando historial desde Drive…</div>';
+  await cargarHistorialDrive();
+  const cnt = document.getElementById('progHistCount');
+  if(!PROG_HIST.length){
+    el.innerHTML = '<div class="hist-empty">📭 No hay programas archivados aún.<br>Usa el botón <strong>💾 Archivar semana actual</strong> para guardar el programa de esta semana.</div>';
+    if(cnt) cnt.textContent = '';
+    return;
+  }
+  if(cnt) cnt.textContent = PROG_HIST.length + ' semana' + (PROG_HIST.length!==1?'s':'');
+  el.innerHTML = PROG_HIST.map(p => {
+    const match = p.subtitulo.match(/\d+/);
+    const numSem = match ? match[0] : '?';
+    const mesMatch = p.subtitulo.match(/de\s+(\w{3})/i);
+    const mes = mesMatch ? mesMatch[1].toUpperCase() : '';
+    const nFilas = p.rows ? p.rows.length : 0;
+    return '<div class="prog-hist-card" onclick="verProgHist(\'' + p.id + '\')">'
+      + '<div class="prog-hist-week">' + numSem + '<br>' + mes + '</div>'
+      + '<div class="prog-hist-info">'
+      + '<div class="prog-hist-title">' + p.subtitulo + '</div>'
+      + '<div class="prog-hist-sub">Guardado: ' + p.guardadoEn + ' · ' + nFilas + ' actividad' + (nFilas!==1?'es':'') + '</div>'
+      + '</div>'
+      + '<div class="prog-hist-badge">' + nFilas + ' filas</div>'
+      + '<button class="prog-hist-del" onclick="event.stopPropagation();eliminarProgHist(\'' + p.id + '\')" title="Eliminar">🗑️</button>'
+      + '</div>';
+  }).join('');
+}
+
+function verProgHist(id){
+  const p = PROG_HIST.find(x => x.id === id);
+  if(!p) return;
+  progModalData = p;
+  document.getElementById('progModalTitulo').textContent = p.titulo || 'Programa de Predicación';
+  document.getElementById('progModalSub').textContent = p.subtitulo + ' · Guardado: ' + p.guardadoEn;
+  const rows = p.rows || [];
+  const spans = new Array(rows.length).fill(0);
+  for(let i=0;i<rows.length;i++){
+    if(rows[i].dia!==''){let c=1,j=i+1;while(j<rows.length&&rows[j].dia===''){c++;j++;}spans[i]=c;}
+  }
+  let tbody = '';
+  rows.forEach((r,i)=>{
+    let diaCell = '';
+    if(spans[i]>0) diaCell = '<td class="pm-dia" rowspan="' + spans[i] + '" style="vertical-align:middle;text-align:center;font-size:.88rem">' + r.dia + '</td>';
+    tbody += '<tr>' + diaCell
+      + '<td><span class="pm-hora">' + r.hora + '</span></td>'
+      + '<td>' + r.enc.replace(/\n/g,'<br>') + '</td>'
+      + '<td>' + r.lugar + '</td>'
+      + '<td><span class="pm-badge">' + r.ter + '</span></td>'
+      + '</tr>';
+  });
+  document.getElementById('progModalBody').innerHTML =
+    '<div style="background:linear-gradient(135deg,#1b4332,#2d6a4f);border-radius:12px;padding:14px 18px;margin-bottom:16px;text-align:center">'
+    + '<div style="font-family:\'Playfair Display\',serif;font-size:1.2rem;color:#fff;font-weight:700">' + (p.titulo||'Programa de Predicación') + '</div>'
+    + '<div style="font-size:.78rem;color:rgba(183,228,199,.8);margin-top:4px;letter-spacing:1.5px;text-transform:uppercase">' + p.subtitulo + '</div>'
+    + '</div>'
+    + '<div style="overflow-x:auto;border-radius:10px;overflow:hidden">'
+    + '<table class="prog-modal-table"><thead><tr>'
+    + '<th>Día</th><th>Hora</th><th>Encargado</th><th>Lugar de Reunión</th><th>Territorio y Modalidad</th>'
+    + '</tr></thead><tbody>' + tbody + '</tbody></table></div>';
+  document.getElementById('progModal').style.display = 'flex';
+}
+
+function closeProgModal(){
+  document.getElementById('progModal').style.display = 'none';
+  progModalData = null;
+}
+
+function imprimirProgModal(){
+  if(!progModalData) return;
+  const p = progModalData;
+  const rows = p.rows || [];
+  const spans = new Array(rows.length).fill(0);
+  for(let i=0;i<rows.length;i++){
+    if(rows[i].dia!==''){let c=1,j=i+1;while(j<rows.length&&rows[j].dia===''){c++;j++;}spans[i]=c;}
+  }
+  let tbody='';
+  rows.forEach((r,i)=>{
+    let dc='';
+    if(spans[i]>0) dc='<td rowspan="' + spans[i] + '" style="font-family:Georgia,serif;font-weight:700;color:#1b4332;background:#b7e4c7;border-right:3px solid #2d6a4f;text-align:center;vertical-align:middle">' + r.dia + '</td>';
+    tbody+='<tr>' + dc + '<td style="text-align:center"><span style="background:#1b4332;color:#fff;border-radius:12px;padding:2px 10px;font-size:.8rem;font-weight:700">' + r.hora + '</span></td><td>' + r.enc.replace(/\n/g,'<br>') + '</td><td>' + r.lugar + '</td><td><span style="background:linear-gradient(135deg,#2d6a4f,#1b4332);color:#fff;border-radius:5px;padding:3px 8px;font-size:.8rem;font-weight:700">' + r.ter + '</span></td></tr>';
+  });
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + p.subtitulo + '</title>'
+    + '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Segoe UI",sans-serif;padding:20px;}'
+    + 'h1{font-family:Georgia,serif;color:#1b4332;font-size:1.4rem;text-align:center;margin-bottom:4px;}'
+    + '.sub{text-align:center;font-size:.8rem;color:#666;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;}'
+    + 'table{width:100%;border-collapse:collapse;}thead th{background:#2d6a4f;color:#fff;padding:9px 12px;text-align:center;font-size:.82rem;}'
+    + 'tbody td{padding:7px 11px;text-align:center;border-bottom:1px solid #cde9d7;font-size:.82rem;vertical-align:middle;}'
+    + 'tbody tr:nth-child(odd){background:#fff;}tbody tr:nth-child(even){background:#f2faf5;}'
+    + '@media print{@page{margin:8mm;size:A4 portrait;}}</style></head><body>'
+    + '<h1>' + (p.titulo||'Programa de Predicación') + '</h1>'
+    + '<div class="sub">' + p.subtitulo + '</div>'
+    + '<table><thead><tr><th>Día</th><th>Hora</th><th>Encargado</th><th>Lugar de Reunión</th><th>Territorio y Modalidad</th></tr></thead>'
+    + '<tbody>' + tbody + '</tbody></table>'
+    + '<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
 }
 
 // ── INIT ──
