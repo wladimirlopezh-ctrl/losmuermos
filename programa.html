@@ -726,10 +726,15 @@ async function syncTerrToMapa(){
           mapaDB[n].fechaAsig=d.fechaAsig;
         }
 
-        // Solo actualizar estado si el mapa no lo tiene o viene como asignado
-        if(!mapaDB[n].estado||d.estado==='asignado'){
-          mapaDB[n].estado=d.estado||mapaDB[n].estado||'asignado';
+        // Solo actualizar estado si el mapa no tiene estado aún,
+        // NUNCA sobreescribir 'completado' ni 'disponible' con 'asignado'
+        const estadoActualMapa=mapaDB[n].estado||'';
+        if(!estadoActualMapa){
+          mapaDB[n].estado=d.estado||'asignado';
+        } else if(estadoActualMapa!=='completado'&&estadoActualMapa!=='disponible'){
+          mapaDB[n].estado=d.estado||estadoActualMapa;
         }
+        // Si está 'completado' o 'disponible' en el mapa → no tocar
 
         // Actualizar campos secundarios solo si no existen
         if(!mapaDB[n].modalidad)mapaDB[n].modalidad=d.modalidad||'Casa en casa';
