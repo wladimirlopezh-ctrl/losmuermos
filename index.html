@@ -2037,20 +2037,47 @@ function renderCampReport(){
   </div>`;
 }
 
+function parseFecha(s){
+  // Parsea YYYY-MM-DD o DD-MM-YYYY de forma robusta
+  if(!s||s==='—')return null;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return new Date(s.slice(0,10)+'T12:00');
+  const p=s.split('-');
+  if(p.length===3&&p[2].length===4)return new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`);
+  const d=new Date(s);
+  return isNaN(d)?null:d;
+}
+
 function campTerWorked(c,n){
   const d=DB[n]; if(!d) return false;
-  // Solo cuenta si hay una devolución registrada en el historial dentro del rango de la campaña
+  const ini=new Date(c.inicio+'T00:00'), fin=new Date(c.fin+'T23:59');
+  const inRange=dt=>dt&&!isNaN(dt)&&dt>=ini&&dt<=fin;
+
+  // 1. Alguna entrada en historial con fecha dentro del rango
   const hist=d.historial||[];
-  if(hist.some(h=>dateInCamp(c,h.fecha))) return true;
-  // También cuenta si el estado es 'completado' y fue devuelto dentro del rango
-  if(d.estado==='completado' && dateInCamp(c,d.fechaDev||'')) return true;
+  if(hist.some(h=>inRange(parseFecha(h.fecha)))) return true;
+
+  // 2. Estado completado con fechaDev válida dentro del rango
+  if(d.estado==='completado'){
+    const fDev=parseFecha(d.fechaDev);
+    if(inRange(fDev)) return true;
+  }
+
+  // 3. Territorio asignado/urgente cuya fechaAsig cae dentro del rango
+  // (estaba siendo trabajado durante la campaña aunque no haya devolución aún)
+  const st=gs(n);
+  if((st==='asignado'||st==='urgente')&&d.encargado){
+    const fAsig=parseFecha(d.fechaAsig);
+    if(inRange(fAsig)) return true;
+  }
+
   return false;
 }
 
 function dateInCamp(c,dateStr){
   if(!dateStr) return false;
-  const d=new Date(dateStr);
-  return d>=new Date(c.inicio) && d<=new Date(c.fin);
+  const d=parseFecha(dateStr);
+  if(!d||isNaN(d)) return false;
+  return d>=new Date(c.inicio+'T00:00') && d<=new Date(c.fin+'T23:59');
 }
 
 function campPct(c){
@@ -2396,13 +2423,21 @@ function renderInfResumen(){
       const d=DB[n]||{};
       const histComp=(d.historial||[]).filter(h=>{
         if(!h.fecha)return false;
-        const hd=new Date(h.fecha+'T12:00');
-        return hd>=ini&&hd<=now;
+        const hd=parseFecha(h.fecha);
+        return hd&&hd>=ini&&hd<=now;
       });
       if(histComp.length>0){
         const ultimo=histComp[histComp.length-1];
         compCamp.push({n, enc:ultimo.enc||ultimo.encAnterior||'—', fecha:ultimo.fecha});
       } else {
+        // También contar completados con fechaDev dentro del rango
+        if(d.estado==='completado'){
+          const fDev=parseFecha(d.fechaDev);
+          if(fDev&&fDev>=ini&&fDev<=now){
+            compCamp.push({n, enc:d.encargado||'—', fecha:d.fechaDev});
+            continue;
+          }
+        }
         const st=gs(n);
         if(st==='asignado'||st==='urgente'){
           const diasAsig=d.fechaAsig?Math.round((now-new Date(d.fechaAsig+'T12:00'))/86400000):null;
