@@ -1135,7 +1135,7 @@ function renderPins(){
     const hoy=Date.now();const UMBRAL=60*24*60*60*1000;
     for(let n=1;n<=33;n++){
       const d=DB[n]||{};const st=gs(n);
-      if(st==='urgente')continue; // urgente ya tiene su propio color
+      if(st==='urgente'||st==='completado')continue; // urgente y completado tienen su propio color
       const hist=d.historial||[];
       const devsHist=hist.map(h=>parseF(h.fecha)).filter(x=>!isNaN(x));
       const fechaDevDirecta=parseF(d.fechaDev);
@@ -3300,7 +3300,8 @@ function getAlertData(){
     const ultimaDevStr=ultimaDevTs?new Date(ultimaDevTs).toLocaleDateString('es-CL'):null;
     // Sin predicar +2 meses: tuvo actividad pero última devolución fue hace >60 días
     // O nunca tuvo actividad registrada (ultimaDevTs===null) y está disponible o asignado
-    if(st!=='urgente'){
+    // Excluir completado y urgente — completado es un estado terminal válido
+    if(st!=='urgente'&&st!=='completado'){
       if(ultimaDevTs!==null){
         const dias=Math.round((HOY-ultimaDevTs)/86400000);
         if(dias>=60) sinPredicar.push({n,enc:d.encargado||'—',dias,fecha:ultimaDevStr,st});
@@ -4007,6 +4008,9 @@ function renderInfSinAsignar(){
   const sinAsignar=[];
   for(let n=1;n<=33;n++){
     const d=DB[n]||{};
+    const st=gs(n);
+    // Completados no aparecen en "sin asignación" — son un estado terminal válido
+    if(st==='completado') continue;
     const hist=d.historial||[];
     let tieneReciente=false;
     hist.forEach(h=>{const ts=parseF(h.fecha);if(!isNaN(ts)&&(ahora-ts)<=dosMesesMs)tieneReciente=true;});
@@ -4082,7 +4086,7 @@ function renderInfCalor(){
     {bg:'rgba(245,158,11,.45)',l:'61–90d'},{bg:'rgba(239,68,68,.38)',l:'91–180d'},
     {bg:'rgba(239,68,68,.75)',l:'>180d'},{bg:'#f1f5f9',l:'Sin datos'},
   ].map(l=>`<div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:var(--gray)"><div style="width:12px;height:12px;border-radius:2px;background:${l.bg};flex-shrink:0"></div>${l.l}</div>`).join('');
-  const sinTrab=datos.filter(t=>!t.dias||(t.dias>60)).sort((a,b)=>(b.dias||9999)-(a.dias||9999)).slice(0,5);
+  const sinTrab=datos.filter(t=>t.estado!=='completado'&&(!t.dias||(t.dias>60))).sort((a,b)=>(b.dias||9999)-(a.dias||9999)).slice(0,5);
   return`<div class="dbc" style="margin-bottom:12px">
     <div class="dbc-t">🌡️ Mapa de calor — días desde última actividad</div>
     <div style="font-size:.62rem;color:var(--gray);margin-bottom:8px">Asignados muestran encargado · Toca para ver detalle</div>
