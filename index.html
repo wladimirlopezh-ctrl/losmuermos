@@ -2062,13 +2062,10 @@ function campTerWorked(c,n){
     if(inRange(fDev)) return true;
   }
 
-  // 3. Territorio asignado/urgente cuya fechaAsig cae dentro del rango
-  // (estaba siendo trabajado durante la campaña aunque no haya devolución aún)
-  const st=gs(n);
-  if((st==='asignado'||st==='urgente')&&d.encargado){
-    const fAsig=parseFecha(d.fechaAsig);
-    if(inRange(fAsig)) return true;
-  }
+  // 3. fechaAsig dentro del rango — territorio fue asignado/trabajado durante la campaña
+  // (cubre casos donde la devolución no quedó registrada en el historial)
+  const fAsig=parseFecha(d.fechaAsig);
+  if(inRange(fAsig)) return true;
 
   return false;
 }
