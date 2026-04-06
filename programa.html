@@ -989,8 +989,65 @@ function addRow(){
   if(!hora||!enc){toast('⚠️ Hora y Encargado son obligatorios');return;}
   const dia=document.getElementById('f-dia').value.trim();
   const rows=getRows();
-  rows.push({dia,hora,enc,lugar:document.getElementById('f-lugar').value.trim(),ter:document.getElementById('f-territorio').value.trim()});
+  const nuevaFila={dia,hora,enc,lugar:document.getElementById('f-lugar').value.trim(),ter:document.getElementById('f-territorio').value.trim()};
+
+  // Extraer número de día para ordenar (ej: "Lunes 30" → 30, "Martes\n03" → 3)
+  const parseDiaNum2=d=>{const m=(d||'').match(/\d+/g);return m?parseInt(m[m.length-1]):999;};
+  const parseHora=h=>{const p=(h||'00:00').split(':');return parseInt(p[0])*60+(parseInt(p[1])||0);};
+
+  // Expandir filas: rellenar día vacío con el día de la fila anterior
+  let lastDia='';
+  const rowsConDia=rows.map(r=>{
+    if(r.dia) lastDia=r.dia;
+    return{...r,_dia:lastDia};
+  });
+
+  const numNuevo=parseDiaNum2(dia||'999');
+  const horaNum=parseHora(hora);
+
+  // Encontrar posición de inserción
+  let insertIdx=rowsConDia.length; // default: al final
+  for(let i=0;i<rowsConDia.length;i++){
+    const numI=parseDiaNum2(rowsConDia[i]._dia);
+    const horaI=parseHora(rowsConDia[i].hora);
+    if(numI>numNuevo||(numI===numNuevo&&horaI>horaNum)){
+      insertIdx=i;
+      break;
+    }
+  }
+
+  // Si la nueva fila tiene día y la fila siguiente pertenece al mismo día,
+  // la nueva fila no debe repetir el día (ya existe el rowspan)
+  // Si la nueva fila se inserta como primera de su día, debe llevar el día
+  // Si hay una fila anterior con el mismo día, la nueva no lleva día
+  const prevSameDia=insertIdx>0&&parseDiaNum2(rowsConDia[insertIdx-1]?._dia)===numNuevo;
+  if(prevSameDia) nuevaFila.dia='';
+
+  // La fila que venía con el día del nuevo grupo, si ahora queda precedida por la nueva fila
+  // y ambas son del mismo día, la siguiente fila pierde su etiqueta de día
+  rows.splice(insertIdx,0,nuevaFila);
+
+  // Re-normalizar: el primer elemento de cada grupo de días debe llevar el nombre del día
+  // Reconstruir días correctamente
+  const grupos={};
+  rows.forEach((r,i)=>{
+    const n=parseDiaNum2(r.dia||'');
+    if(r.dia&&n!==999){
+      if(!grupos[n])grupos[n]={idx:i,dia:r.dia};
+    }
+  });
+  // Si la nueva fila tiene día y se insertó antes de otra del mismo día, limpiar duplicado
+  let lastNum=-1;
+  rows.forEach((r,i)=>{
+    const n=parseDiaNum2(r.dia||'');
+    if(r.dia&&n!==999){
+      if(n===lastNum) rows[i].dia=''; // duplicado — limpiar
+      else lastNum=n;
+    }
+  });
+
   render(rows);saveLocal();closeModal();toast('✅ Fila agregada');
+  setTimeout(initClima,100);
 }
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
 
