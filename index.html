@@ -306,6 +306,22 @@ body.dark .camp-item.active-camp{border-color:#16a34a;background:#052e16;}
 .camp-pct{font-size:.8rem;font-weight:900;color:var(--gd);line-height:1;}
 .camp-modal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
 .camp-modal.open{display:flex;}
+.retro-modal{display:none;position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.retro-modal.open{display:flex;}
+.retro-box{background:var(--w);border-radius:14px;padding:0;width:96%;max-width:480px;border-top:4px solid #f59e0b;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+.retro-head{padding:15px 18px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.retro-head h3{font-family:'Playfair Display',serif;font-size:.95rem;margin:0;display:flex;align-items:center;gap:6px;}
+.retro-body{padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+.retro-note{font-size:.67rem;padding:8px 11px;border-radius:8px;background:#fef9c3;color:#92400e;border:1px solid #fde68a;line-height:1.5;}
+.retro-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.retro-sep{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray);margin:4px 0 -4px;border-bottom:1px solid var(--bdr);padding-bottom:5px;}
+.retro-footer{padding:12px 18px;border-top:1px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+.retro-add-btn{width:100%;margin-top:2px;padding:7px;border-radius:8px;border:1.5px dashed var(--bdr);background:transparent;color:var(--gray);font-size:.72rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.retro-add-btn:hover{border-color:var(--indigo);color:var(--indigo);background:rgba(99,102,241,.04);}
+.retro-entry{background:var(--bg);border:1px solid var(--bdr);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.retro-entry .retro-remove{position:absolute;top:8px;right:9px;background:none;border:none;cursor:pointer;font-size:.78rem;color:#ef4444;padding:2px 5px;border-radius:5px;}
+.retro-entry .retro-remove:hover{background:#fee2e2;}
+.retro-entry-num{font-size:.63rem;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.6px;margin-bottom:-2px;}
 .camp-box{background:var(--w);border-radius:14px;padding:0;width:96%;max-width:680px;border-top:3px solid var(--gold);box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column;}
 body.dark .camp-box{background:var(--w);}
 .camp-box-head{padding:16px 20px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
@@ -592,6 +608,7 @@ body.dark .pub-suggest{background:rgba(45,106,79,.12);border-color:rgba(45,106,7
     <button class="btn" id="darkBtn" onclick="toggleDark()" title="Modo oscuro/claro">🌙</button>
     <button class="btn" id="dashBtn" onclick="toggleDash()" title="Informe">📋 Informe</button>
     <button class="btn" id="campBtn" onclick="openCampModal()" title="Campañas">🏕 Campañas</button>
+    <button class="btn" id="retroBtn" onclick="openRetroModal()" title="Ingresar completados atrasados" style="background:#fef9c3;color:#92400e;border-color:#fde68a">⏮ Atrasados</button>
     <button class="btn warn" id="editBtn" onclick="toggleEditMode()">✏️ Mover pines</button>
     <button class="btn" id="gistBtn" onclick="openGistModal()" title="Publicar datos para visualizadores">
       🌐 Publicar <span class="sync-dot" id="gistDot" title="Sin configurar"></span>
@@ -759,6 +776,36 @@ body.dark .pub-suggest{background:rgba(45,106,79,.12);border-color:rgba(45,106,7
   </div>
 </div>
 
+
+<!-- ── MODAL INGRESO RETROACTIVO ── -->
+<div class="retro-modal" id="retroModal">
+  <div class="retro-box">
+    <div class="retro-head">
+      <h3>⏮ Ingresar completados atrasados</h3>
+      <button class="btn" onclick="closeRetroModal()" style="padding:3px 9px;font-size:.7rem">✕</button>
+    </div>
+    <div class="retro-body" id="retro_body">
+      <div class="retro-note">
+        📋 Usa este formulario para registrar ciclos que ya ocurrieron pero no fueron ingresados a tiempo. Cada entrada se agrega al historial del territorio sin modificar su estado actual.
+      </div>
+      <div>
+        <div class="fg" style="margin-bottom:0">
+          <label>Territorio</label>
+          <select id="retro_ter" onchange="updateRetroTerInfo()" style="font-weight:700">
+            <option value="">— Selecciona —</option>
+          </select>
+        </div>
+        <div id="retro_ter_info" style="font-size:.65rem;color:var(--gray);padding:4px 2px;display:none"></div>
+      </div>
+      <div id="retro_entries_container"></div>
+      <button class="retro-add-btn" id="retro_add_btn" onclick="addRetroEntry()" style="display:none">＋ Agregar otro ciclo para este territorio</button>
+    </div>
+    <div class="retro-footer">
+      <button class="bsm" onclick="closeRetroModal()" style="background:#f1f5f9;color:#475569">Cancelar</button>
+      <button class="bsm" id="retro_save_btn" onclick="saveRetroEntries()" style="background:#f59e0b;color:#fff;display:none">⏮ Guardar histórico</button>
+    </div>
+  </div>
+</div>
 
 <div class="camp-modal" id="campModal">
   <div class="camp-box">
@@ -1258,6 +1305,7 @@ function renderDetail(n){
     ${d.mzPendientes&&d.mzPendientes.length?`<div class="dr"><span class="dk">⚠️ Pendientes</span><span class="dv" style="color:#d97706">${d.mzPendientes.join(', ')}</span></div>`:''}
     ${d.obs?`<div class="dr"><span class="dk">Obs.</span><span class="dv">${d.obs}</span></div>`:''}
     ${canFinish?`<button class="btn-finish" onclick="openDevModal(${n})" style="margin-top:8px">✅ Registrar completado</button>`:''}
+    <button class="btn-finish" onclick="openRetroModalForTer(${n})" style="margin-top:${canFinish?'4px':'8px'};background:transparent;border:1.5px solid #f59e0b;color:#92400e">⏮ Ingresar ciclo atrasado</button>
     <div style="display:flex;gap:4px;margin-top:6px">
       <button class="btn" style="flex:1;font-size:.66rem;padding:4px 6px" onclick="openAssign(${n})">✏️ Editar</button>
       <button class="btn" style="font-size:.66rem;padding:4px 9px;color:#ef4444" onclick="clearT(${n})">🗑</button>
@@ -1492,6 +1540,162 @@ function saveDevolucion(){
   gistAutoPublish();
 }
 document.getElementById('devModal').addEventListener('click',e=>{if(e.target===document.getElementById('devModal'))closeDevModal();});
+
+// ── INGRESO RETROACTIVO ──
+let retroEntries = []; // [{enc, fechaAsig, fecha, estado, obs, tipo}]
+
+function openRetroModal(){
+  retroEntries = [];
+  // Poblar selector de territorios
+  const sel = document.getElementById('retro_ter');
+  sel.innerHTML = '<option value="">— Selecciona un territorio —</option>';
+  for(let i=1;i<=33;i++){
+    const d = DB[i]||{};
+    const label = `Territorio ${i}${d.encargado?' · '+d.encargado:''}`;
+    sel.innerHTML += `<option value="${i}">${label}</option>`;
+  }
+  sel.value = '';
+  document.getElementById('retro_ter_info').style.display='none';
+  document.getElementById('retro_entries_container').innerHTML='';
+  document.getElementById('retro_add_btn').style.display='none';
+  document.getElementById('retro_save_btn').style.display='none';
+  document.getElementById('retroModal').classList.add('open');
+}
+function closeRetroModal(){document.getElementById('retroModal').classList.remove('open');}
+document.getElementById('retroModal').addEventListener('click',e=>{if(e.target===document.getElementById('retroModal'))closeRetroModal();});
+
+function updateRetroTerInfo(){
+  const n = parseInt(document.getElementById('retro_ter').value);
+  const info = document.getElementById('retro_ter_info');
+  const addBtn = document.getElementById('retro_add_btn');
+  const saveBtn = document.getElementById('retro_save_btn');
+  const container = document.getElementById('retro_entries_container');
+  retroEntries = [];
+  container.innerHTML = '';
+  if(!n){info.style.display='none';addBtn.style.display='none';saveBtn.style.display='none';return;}
+  const d = DB[n]||{};
+  const hist = (d.historial||[]);
+  const st = gs(n);
+  info.style.display='';
+  info.innerHTML = `Estado actual: <strong>${SL[st]}</strong>${d.encargado?' · Encargado: <strong>'+d.encargado+'</strong>':''} · ${hist.length} ciclo(s) registrado(s)`;
+  addBtn.style.display='';
+  saveBtn.style.display='';
+  // Agregar primera entrada automáticamente
+  addRetroEntry();
+}
+
+function addRetroEntry(){
+  const n = parseInt(document.getElementById('retro_ter').value);
+  if(!n) return;
+  const idx = retroEntries.length;
+  retroEntries.push({enc:'',fechaAsig:'',fecha:'',estado:'completado',obs:'',tipo:'completo'});
+  const container = document.getElementById('retro_entries_container');
+  const div = document.createElement('div');
+  div.className = 'retro-entry';
+  div.id = `retro_entry_${idx}`;
+  div.innerHTML = `
+    <div class="retro-entry-num">Ciclo ${idx+1}</div>
+    ${idx>0?`<button class="retro-remove" onclick="removeRetroEntry(${idx})" title="Eliminar">✕</button>`:''}
+    <div class="retro-row">
+      <div class="fg" style="margin:0">
+        <label>Encargado</label>
+        <input id="re_enc_${idx}" placeholder="Nombre publicador" oninput="retroEntries[${idx}].enc=this.value"/>
+      </div>
+      <div class="fg" style="margin:0">
+        <label>Estado del ciclo</label>
+        <select id="re_est_${idx}" onchange="retroEntries[${idx}].estado=this.value">
+          <option value="completado">✅ Completado</option>
+          <option value="disponible">🟢 Devuelto disponible</option>
+        </select>
+      </div>
+    </div>
+    <div class="retro-row">
+      <div class="fg" style="margin:0">
+        <label>Fecha asignación</label>
+        <input type="date" id="re_fasig_${idx}" oninput="retroEntries[${idx}].fechaAsig=this.value"/>
+      </div>
+      <div class="fg" style="margin:0">
+        <label>Fecha devolución</label>
+        <input type="date" id="re_fdev_${idx}" oninput="retroEntries[${idx}].fecha=this.value"/>
+      </div>
+    </div>
+    <div class="fg" style="margin:0">
+      <label>Observaciones <span style="font-weight:400;color:var(--gray)">(opcional)</span></label>
+      <input id="re_obs_${idx}" placeholder="ej: zona inundada, no contestaron..." oninput="retroEntries[${idx}].obs=this.value"/>
+    </div>`;
+  container.appendChild(div);
+}
+
+function removeRetroEntry(idx){
+  const div = document.getElementById(`retro_entry_${idx}`);
+  if(div) div.remove();
+  retroEntries[idx] = null; // mark as removed
+  // Renumerar visualmente
+  const surviving = document.querySelectorAll('.retro-entry');
+  surviving.forEach((el,i)=>{
+    const numEl = el.querySelector('.retro-entry-num');
+    if(numEl) numEl.textContent = `Ciclo ${i+1}`;
+  });
+}
+
+function saveRetroEntries(){
+  const n = parseInt(document.getElementById('retro_ter').value);
+  if(!n){alert('Selecciona un territorio');return;}
+  // Leer valores actuales de los inputs (por si no dispararon oninput)
+  const active = retroEntries.map((e,idx)=>{
+    if(!e) return null;
+    const enc = document.getElementById(`re_enc_${idx}`)?.value.trim()||'';
+    const fechaAsig = document.getElementById(`re_fasig_${idx}`)?.value||'';
+    const fecha = document.getElementById(`re_fdev_${idx}`)?.value||'';
+    const estado = document.getElementById(`re_est_${idx}`)?.value||'completado';
+    const obs = document.getElementById(`re_obs_${idx}`)?.value.trim()||'';
+    return {enc,fechaAsig,fecha,estado,obs};
+  }).filter(Boolean);
+
+  if(!active.length){alert('No hay ciclos para guardar');return;}
+  for(let i=0;i<active.length;i++){
+    if(!active[i].fecha){alert(`El ciclo ${i+1} no tiene fecha de devolución`);return;}
+  }
+
+  if(!DB[n]) DB[n]={monthsWorked:{}};
+  if(!DB[n].historial) DB[n].historial=[];
+  if(!DB[n].monthsWorked) DB[n].monthsWorked={};
+
+  let added = 0;
+  active.forEach(e=>{
+    DB[n].historial.push({
+      enc: e.enc||'—',
+      fecha: e.fecha,
+      obs: e.obs,
+      tipo: 'completo',
+      estado: e.estado,
+      estadoLabel: e.estado==='completado'?'Completado':'Disponible',
+      mzPendientes: [],
+      mzTrabajadas: MZ[n]||[],
+      encAnterior: e.enc||'',
+      fechaAsigAnterior: e.fechaAsig||'',
+      retroactivo: true
+    });
+    if(e.fecha) DB[n].monthsWorked[e.fecha.slice(0,7)]=true;
+    added++;
+  });
+
+  save(); renderPins(); updateAll();
+  if(sel===n) renderDetail(n);
+  gistAutoPublish();
+  closeRetroModal();
+  toast(`⏮ ${added} ciclo(s) ingresado(s) al historial del Territorio ${n}`);
+}
+
+function openRetroModalForTer(n){
+  openRetroModal();
+  // Preseleccionar el territorio y cargar la primera entrada
+  setTimeout(()=>{
+    document.getElementById('retro_ter').value=n;
+    updateRetroTerInfo();
+  },50);
+}
+
 function fullBackup(){return {db:DB,camps:CAMPS,activeCampId:activeCampId||null,pins:PIN_POS,rural:RURAL,meet:MEET_PINS};}
 function applyBackup(data){
   if(data.db){
