@@ -38,12 +38,10 @@ body.dark .btn.gd:hover{background:#22263a;}
 body.dark .fb{color:#94a3b8;}
 body.dark .fb:hover,.fb.on{background:#22263a;border-color:var(--bdr);}
 body.dark .map-area{background:#080a10;}
-body.dark .mbox,.body.dark .drive-box{background:var(--w);}
-body.dark .mbox{background:var(--w);}
+body.dark .mbox,.body.dark .drive-box{background:#1e2235;}
+body.dark .mbox{background:#1e2235;}
 body.dark .drive-box{background:var(--w);}
-body.dark .fg input,.body.dark .fg select{background:#22263a;border-color:var(--bdr);color:var(--dark);}
-body.dark .fg input{background:#22263a;border-color:var(--bdr);color:var(--dark);}
-body.dark .fg select{background:#22263a;border-color:var(--bdr);color:var(--dark);}
+body.dark .drive-box{background:var(--w);}
 body.dark .bar{background:#22263a;}
 body.dark .pb{border-bottom-color:#22263a;}
 body.dark .ui{border-bottom-color:#22263a;}
@@ -259,16 +257,90 @@ body.dark .dash-act-row{border-bottom-color:#22263a;}
 .tip{position:fixed;background:#1e2235;color:#fff;border-radius:8px;padding:7px 11px;font-size:.7rem;z-index:9999;pointer-events:none;box-shadow:0 5px 18px rgba(0,0,0,.3);min-width:125px;}
 .tip b{font-family:'Playfair Display',serif;font-size:.88rem;display:block;margin-bottom:2px;}
 
-.mover{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);align-items:center;justify-content:center;}
+/* ── MODAL BASE SYSTEM ── */
+.mover{display:none;position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.45);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
 .mover.open{display:flex;}
-.mbox{background:var(--w);border-radius:12px;padding:20px;width:92%;max-width:390px;border-top:3px solid var(--gold);box-shadow:0 18px 50px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;}
-.mbox h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:13px;}
-.fg{margin-bottom:8px;}
-.fg label{display:block;font-size:.63rem;font-weight:700;color:var(--gray);letter-spacing:.4px;margin-bottom:2px;text-transform:uppercase;}
-.fg input,.fg select{width:100%;padding:6px 8px;background:#f8fafc;border:1.5px solid var(--bdr);border-radius:6px;font-size:.8rem;color:var(--dark);outline:none;font-family:'DM Sans',sans-serif;}
-.fg input:focus,.fg select:focus{border-color:var(--gd);}
-.mbtns{display:flex;gap:6px;justify-content:flex-end;margin-top:13px;}
-.bsm{padding:6px 13px;border-radius:7px;border:none;cursor:pointer;font-weight:700;font-size:.74rem;font-family:'DM Sans',sans-serif;}
+.mbox{background:#fff;border-radius:18px;width:92%;max-width:420px;box-shadow:0 24px 70px rgba(0,0,0,.18);max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;}
+body.dark .mbox{background:#1e2235;}
+/* Modal header */
+.mbox-head{padding:20px 22px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;background:#fff;z-index:1;border-radius:18px 18px 0 0;}
+body.dark .mbox-head{background:#1e2235;border-bottom-color:#2a2f45;}
+.mbox-head h3{margin:0;font-size:.9rem;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:8px;}
+body.dark .mbox-head h3{color:#f1f5f9;}
+.mbox-head-sub{font-size:.68rem;font-weight:500;color:#64748b;margin-top:1px;}
+.mbox-close{width:28px;height:28px;border-radius:8px;border:1.5px solid #e2e8f0;background:transparent;cursor:pointer;font-size:.8rem;color:#64748b;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.mbox-close:hover{background:#f8fafc;color:#0f172a;}
+body.dark .mbox-close{border-color:#2a2f45;color:#94a3b8;}
+body.dark .mbox-close:hover{background:#2a2f45;color:#f1f5f9;}
+/* Modal body */
+.mbox-body{padding:18px 22px;display:flex;flex-direction:column;gap:14px;flex:1;}
+/* Territory badge in modal */
+.mbox-ter-badge{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.mbox-ter-badge .ter-num{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;flex-shrink:0;}
+.mbox-ter-badge .ter-info{flex:1;min-width:0;}
+.mbox-ter-badge .ter-name{font-size:.78rem;font-weight:700;color:#1e40af;}
+.mbox-ter-badge .ter-meta{font-size:.63rem;color:#3b82f6;margin-top:1px;}
+body.dark .mbox-ter-badge{background:linear-gradient(135deg,#1e2b45,#1e3a5f);border-color:#1d4ed8;}
+body.dark .mbox-ter-badge .ter-name{color:#93c5fd;}
+body.dark .mbox-ter-badge .ter-meta{color:#60a5fa;}
+/* Field group */
+.fg{display:flex;flex-direction:column;gap:4px;margin:0;}
+.fg label{font-size:.63rem;font-weight:700;color:#64748b;letter-spacing:.5px;text-transform:uppercase;}
+body.dark .fg label{color:#94a3b8;}
+.fg input,.fg select{width:100%;box-sizing:border-box;padding:9px 11px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.8rem;color:#0f172a;outline:none;font-family:'DM Sans',sans-serif;transition:border .15s,background .15s;}
+.fg input:focus,.fg select:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.08);}
+body.dark .fg input,body.dark .fg select{background:#252b40;border-color:#2a2f45;color:#f1f5f9;}
+body.dark .fg input:focus,body.dark .fg select:focus{border-color:#3b82f6;background:#1e2235;}
+/* Two-col row */
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* Publisher dropdown item */
+.pub-option-selected{display:flex;align-items:center;gap:8px;padding:9px 11px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;transition:all .15s;position:relative;}
+.pub-option-selected:hover,.pub-option-selected.open{border-color:#3b82f6;background:#fff;}
+body.dark .pub-option-selected{background:#252b40;border-color:#2a2f45;color:#f1f5f9;}
+.pub-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.64rem;font-weight:700;flex-shrink:0;}
+.pub-name-sel{font-size:.8rem;font-weight:600;color:#0f172a;flex:1;}
+body.dark .pub-name-sel{color:#f1f5f9;}
+.pub-chevron{font-size:.65rem;color:#94a3b8;transition:transform .2s;}
+.pub-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.12);z-index:10;overflow:hidden;max-height:160px;overflow-y:auto;}
+.pub-dropdown.open{display:block;}
+body.dark .pub-dropdown{background:#1e2235;border-color:#2a2f45;}
+.pub-dropdown-item{padding:8px 12px;font-size:.78rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s;}
+.pub-dropdown-item:hover{background:#f0f9ff;}
+body.dark .pub-dropdown-item:hover{background:#252b40;}
+/* Option cards (complete/partial) */
+.opt-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.opt-card{border:2px solid #e2e8f0;border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;transition:all .18s;background:#fff;}
+.opt-card:hover{border-color:#94a3b8;}
+.opt-card.selected-comp{border-color:#22c55e;background:#f0fdf4;}
+.opt-card.selected-parc{border-color:#f59e0b;background:#fffbeb;}
+.opt-card.selected-nowork{border-color:#ef4444;background:#fef2f2;}
+body.dark .opt-card{border-color:#2a2f45;background:#252b40;}
+body.dark .opt-card.selected-comp{border-color:#22c55e;background:rgba(34,197,94,.08);}
+body.dark .opt-card.selected-parc{border-color:#f59e0b;background:rgba(245,158,11,.08);}
+body.dark .opt-card.selected-nowork{border-color:#ef4444;background:rgba(239,68,68,.08);}
+.opt-card-ico{font-size:1.1rem;margin-bottom:3px;}
+.opt-card-label{font-size:.62rem;font-weight:700;color:#334155;line-height:1.3;}
+body.dark .opt-card-label{color:#cbd5e1;}
+.opt-card-hint{font-size:.55rem;color:#94a3b8;margin-top:2px;line-height:1.2;}
+/* Coverage bar */
+.cov-bar-wrap{background:#f1f5f9;border-radius:99px;height:8px;overflow:hidden;margin-top:4px;}
+body.dark .cov-bar-wrap{background:#252b40;}
+.cov-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .4s;}
+.cov-pct{font-size:.72rem;font-weight:700;color:#15803d;text-align:right;margin-top:2px;}
+/* Manzana pills */
+.mz-btn{height:30px;padding:0 10px;border-radius:7px;border:1.5px solid #e2e8f0;background:#f8fafc;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:#64748b;cursor:pointer;transition:all .15s;}
+.mz-btn:hover{border-color:#f59e0b;color:#d97706;}
+.mz-btn.pendiente{background:#fef3c7;border-color:#f59e0b;color:#d97706;}
+body.dark .mz-btn{background:#252b40;border-color:#2a2f45;color:#94a3b8;}
+body.dark .mz-btn.pendiente{background:#3d2f10;border-color:#f59e0b;color:#fbbf24;}
+/* Modal footer */
+.mbtns{display:flex;gap:8px;justify-content:flex-end;padding:14px 22px;border-top:1px solid #f1f5f9;flex-shrink:0;}
+body.dark .mbtns{border-top-color:#2a2f45;}
+.bsm{padding:8px 16px;border-radius:9px;border:none;cursor:pointer;font-weight:700;font-size:.74rem;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.bsm:hover{opacity:.9;transform:translateY(-1px);}
+/* Finish button */
+.btn-finish{width:100%;padding:9px;border-radius:9px;border:none;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-weight:700;font-size:.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .18s;box-shadow:0 2px 8px rgba(99,102,241,.3);}
+.btn-finish:hover{background:linear-gradient(135deg,#4f46e5,#4338ca);box-shadow:0 4px 14px rgba(99,102,241,.4);transform:translateY(-1px);}
 
 .btn.gd{background:#fff;color:#444;border-color:#ddd;display:flex;align-items:center;gap:5px;}
 .btn.gd:hover{background:#f8f8f8;box-shadow:0 1px 4px rgba(0,0,0,.12);}
@@ -304,8 +376,55 @@ body.dark .camp-item.active-camp{border-color:#16a34a;background:#052e16;}
 .camp-name{font-size:.72rem;font-weight:700;color:var(--dark);flex:1;}
 .camp-dates{font-size:.6rem;color:var(--gray);}
 .camp-pct{font-size:.8rem;font-weight:900;color:var(--gd);line-height:1;}
-.camp-modal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.camp-modal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.45);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
 .camp-modal.open{display:flex;}
+.camp-box{background:#fff;border-radius:18px;padding:0;width:96%;max-width:680px;box-shadow:0 24px 70px rgba(0,0,0,.2);max-height:92vh;display:flex;flex-direction:column;}
+body.dark .camp-box{background:#1e2235;}
+.camp-box-head{padding:18px 22px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+body.dark .camp-box-head{border-bottom-color:#2a2f45;}
+.camp-box-head h3{font-size:.9rem;font-weight:700;margin:0;color:#0f172a;display:flex;align-items:center;gap:8px;}
+body.dark .camp-box-head h3{color:#f1f5f9;}
+.camp-tabs{display:flex;gap:4px;padding:12px 16px 0;flex-shrink:0;border-bottom:1px solid #f1f5f9;}
+body.dark .camp-tabs{border-bottom-color:#2a2f45;}
+.camp-tab{padding:6px 14px;border-radius:8px 8px 0 0;font-size:.72rem;font-weight:600;cursor:pointer;color:#64748b;border:1.5px solid transparent;border-bottom:none;background:transparent;transition:all .15s;}
+.camp-tab.on{background:#fff;color:#0f172a;border-color:#e2e8f0;border-bottom-color:#fff;margin-bottom:-1px;}
+body.dark .camp-tab.on{background:#1e2235;color:#f1f5f9;border-color:#2a2f45;border-bottom-color:#1e2235;}
+.camp-body{padding:16px 18px;overflow-y:auto;flex:1;}
+.camp-list-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid #e2e8f0;margin-bottom:8px;background:#fff;transition:border-color .15s;}
+.camp-list-item:hover{border-color:#94a3b8;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+body.dark .camp-list-item{background:#252b40;border-color:#2a2f45;}
+body.dark .camp-list-item:hover{border-color:#3b4563;}
+.camp-list-item.active-camp{border-color:#22c55e;background:#f0fdf4;}
+body.dark .camp-list-item.active-camp{border-color:#16a34a;background:rgba(34,197,94,.06);}
+.cli-name{font-weight:700;font-size:.8rem;color:#0f172a;}
+body.dark .cli-name{color:#f1f5f9;}
+.cli-dates{font-size:.64rem;color:#64748b;margin-top:2px;}
+.cli-acts{display:flex;gap:4px;}
+.camp-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:.6rem;font-weight:700;background:#fef9c3;color:#a16207;border:1px solid #fde68a;}
+.camp-badge.active{background:#dcfce7;color:#15803d;border-color:#86efac;}
+.camp-dates{font-size:.6rem;color:var(--gray);}
+.camp-pct{font-size:.8rem;font-weight:900;color:var(--gd);line-height:1;}
+.prog-wrap{background:#f1f5f9;border-radius:4px;height:5px;overflow:hidden;margin-top:3px;}
+body.dark .prog-wrap{background:#252b40;}
+.prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#3b82f6,#1d4ed8);transition:width .5s;}
+.rpt-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+.rpt-title{font-weight:700;font-size:.9rem;color:#0f172a;}
+body.dark .rpt-title{color:#f1f5f9;}
+.rpt-sub{font-size:.65rem;color:#64748b;margin-top:2px;}
+.rpt-kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.kpi{border-radius:10px;padding:10px 10px;border:1.5px solid #e2e8f0;text-align:center;background:#f8fafc;}
+body.dark .kpi{background:#252b40;border-color:#2a2f45;}
+.kpi-n{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;line-height:1;}
+.kpi-l{font-size:.6rem;color:#64748b;margin-top:3px;}
+.rpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;}
+.rpt-trow{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;font-size:.68rem;}
+.rpt-trow.worked{background:rgba(34,197,94,.1);color:#15803d;}
+.rpt-trow.nowork{background:rgba(239,68,68,.08);color:#dc2626;}
+body.dark .rpt-trow.worked{background:rgba(34,197,94,.12);color:#4ade80;}
+body.dark .rpt-trow.nowork{background:rgba(239,68,68,.1);color:#f87171;}
+.rpt-enc-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:.7rem;}
+.rpt-enc-row:last-child{border:none;}
+body.dark .rpt-enc-row{border-bottom-color:#2a2f45;}
 .retro-modal{display:none;position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
 .retro-modal.open{display:flex;}
 .retro-box{background:var(--w);border-radius:14px;padding:0;width:96%;max-width:480px;border-top:4px solid #f59e0b;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
@@ -322,43 +441,6 @@ body.dark .camp-item.active-camp{border-color:#16a34a;background:#052e16;}
 .retro-entry .retro-remove{position:absolute;top:8px;right:9px;background:none;border:none;cursor:pointer;font-size:.78rem;color:#ef4444;padding:2px 5px;border-radius:5px;}
 .retro-entry .retro-remove:hover{background:#fee2e2;}
 .retro-entry-num{font-size:.63rem;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.6px;margin-bottom:-2px;}
-.camp-box{background:var(--w);border-radius:14px;padding:0;width:96%;max-width:680px;border-top:3px solid var(--gold);box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column;}
-body.dark .camp-box{background:var(--w);}
-.camp-box-head{padding:16px 20px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.camp-box-head h3{font-family:'Playfair Display',serif;font-size:1rem;margin:0;}
-.camp-tabs{display:flex;gap:2px;padding:10px 14px 0;flex-shrink:0;border-bottom:1px solid var(--bdr);}
-.camp-tab{padding:5px 12px;border-radius:7px 7px 0 0;font-size:.72rem;font-weight:600;cursor:pointer;color:var(--gray);border:1.5px solid transparent;border-bottom:none;background:transparent;}
-.camp-tab.on{background:var(--w);color:var(--dark);border-color:var(--bdr);border-bottom-color:var(--w);margin-bottom:-1px;}
-body.dark .camp-tab.on{background:var(--w);border-color:var(--bdr);border-bottom-color:var(--w);}
-.camp-body{padding:14px 16px;overflow-y:auto;flex:1;}
-.camp-list-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--bdr);margin-bottom:6px;background:var(--w);}
-.camp-list-item:hover{border-color:#94a3b8;}
-body.dark .camp-list-item{background:#22263a;}
-.cli-name{font-weight:700;font-size:.78rem;flex:1;}
-.cli-dates{font-size:.64rem;color:var(--gray);}
-.cli-pct{font-size:.9rem;font-weight:900;color:var(--gd);min-width:38px;text-align:right;}
-.cli-acts{display:flex;gap:4px;}
-.rpt-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:10px;flex-wrap:wrap;}
-.rpt-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;}
-.rpt-sub{font-size:.65rem;color:var(--gray);margin-top:2px;}
-.rpt-kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;}
-.kpi{border-radius:8px;padding:8px 10px;border:1.5px solid var(--bdr);text-align:center;background:var(--w);}
-body.dark .kpi{background:#22263a;}
-.kpi-n{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;line-height:1;}
-.kpi-l{font-size:.6rem;color:var(--gray);margin-top:2px;}
-.rpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px;}
-.rpt-trow{display:flex;align-items:center;gap:5px;padding:3px 6px;border-radius:5px;font-size:.68rem;}
-.rpt-trow.worked{background:rgba(34,197,94,.1);color:#15803d;}
-.rpt-trow.nowork{background:rgba(239,68,68,.08);color:#dc2626;}
-body.dark .rpt-trow.worked{background:rgba(34,197,94,.15);color:#4ade80;}
-body.dark .rpt-trow.nowork{background:rgba(239,68,68,.12);color:#f87171;}
-.rpt-enc-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:.7rem;}
-.rpt-enc-row:last-child{border:none;}
-body.dark .rpt-enc-row{border-bottom-color:#22263a;}
-.prog-wrap{background:#f1f5f9;border-radius:4px;height:6px;overflow:hidden;margin-top:3px;}
-body.dark .prog-wrap{background:#22263a;}
-.prog-fill{height:100%;border-radius:4px;background:var(--gd);transition:width .5s;}
-
 /* DASHBOARD */
 .dash-panel{display:none;flex-direction:column;width:280px;flex-shrink:0;background:var(--w);border-left:1px solid var(--bdr);overflow-y:auto;}
 .dash-panel.open{display:flex;}
@@ -405,10 +487,10 @@ body.dark .dash-toggle{background:var(--w);color:#94a3b8;}
 body.dark .dash-toggle.active{background:var(--gd);color:#fff;}
 
 /* DEVOLUCIÓN / HISTORIAL */
-.dev-modal{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.dev-modal{display:none;position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,.45);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
 .dev-modal.open{display:flex;}
-.dev-box{background:var(--w);border-radius:14px;padding:20px;width:92%;max-width:400px;border-top:3px solid var(--green);box-shadow:0 20px 60px rgba(0,0,0,.25);}
-body.dark .dev-box{background:var(--w);}
+.dev-box{background:#fff;border-radius:18px;width:92%;max-width:430px;box-shadow:0 24px 70px rgba(0,0,0,.18);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+body.dark .dev-box{background:#1e2235;}
 .dev-box h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:14px;}
 .hist-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;}
 .hist-item:last-child{border:none;}
@@ -705,73 +787,193 @@ body.dark .pub-suggest{background:rgba(45,106,79,.12);border-color:rgba(45,106,7
 
 <div class="mover" id="modal">
   <div class="mbox">
-    <h3 id="mtitle">➕ Asignar territorio</h3>
-    <div class="fg"><label>Territorio</label><select id="mn"><option value="">— Seleccionar —</option></select></div>
-    <div class="fg"><label>Manzana (vacío = todo)</label><input id="mmz" placeholder="Ej: A  o  A, B"/></div>
-    <div class="fg"><label>Encargado</label><input id="menc" placeholder="Nombre del publicador"/></div>
-    <div class="fg"><label>Modalidad</label>
-      <select id="mmod"><option>Casa en casa</option><option>Informal / testimonio</option><option>Ambas</option></select></div>
-    <div class="fg"><label>Fecha asignación</label><input type="date" id="mfa"/></div>
-    <div class="fg"><label>Fecha completado</label><input type="date" id="mfd"/></div>
-    <div class="fg"><label>Estado</label>
-      <select id="mest"><option value="asignado">🟡 Asignado</option><option value="completado">✅ Completado</option><option value="disponible">🟢 Disponible</option></select></div>
-    <div class="fg"><label>Observación</label><input id="mobs" placeholder="Opcional"/></div>
+    <div class="mbox-head">
+      <div>
+        <h3 id="mtitle">➕ Asignar territorio</h3>
+        <div class="mbox-head-sub" id="mbox_sub"></div>
+      </div>
+      <button class="mbox-close" onclick="closeM()">✕</button>
+    </div>
+    <div class="mbox-body">
+      <!-- Territory selector (shown when no preN) -->
+      <div class="fg" id="mter_row">
+        <label>Territorio</label>
+        <select id="mn" onchange="onMTerChange()">
+          <option value="">— Seleccionar —</option>
+        </select>
+      </div>
+      <!-- Territory badge (shown when preN given) -->
+      <div class="mbox-ter-badge" id="mter_badge" style="display:none">
+        <div class="ter-num" id="mter_badge_num">–</div>
+        <div class="ter-info">
+          <div class="ter-name" id="mter_badge_name">Territorio</div>
+          <div class="ter-meta" id="mter_badge_meta">Sin datos previos</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Asignar a</label>
+        <div style="position:relative">
+          <div class="pub-option-selected" id="pub_sel_box" onclick="togglePubDropdown()">
+            <div class="pub-avatar" id="pub_avatar">?</div>
+            <span class="pub-name-sel" id="pub_name_display">Selecciona un publicador</span>
+            <span class="pub-chevron" id="pub_chevron">▼</span>
+          </div>
+          <div class="pub-dropdown" id="pub_dropdown"></div>
+          <input type="hidden" id="menc"/>
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Fecha asignación</label>
+          <input type="date" id="mfa"/>
+        </div>
+        <div class="fg">
+          <label>Devolver antes de</label>
+          <input type="date" id="mdevbefore"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Modalidad</label>
+        <select id="mmod">
+          <option>Casa en casa</option>
+          <option>Informal / testimonio</option>
+          <option>Ambas</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Manzana <span style="font-weight:400;text-transform:none;font-size:.6rem">(vacío = todo el territorio)</span></label>
+        <input id="mmz" placeholder="Ej: A  o  A, B"/>
+      </div>
+      <div class="fg" id="mobs_row">
+        <label>Notas <span style="font-weight:400;text-transform:none;font-size:.6rem">(opcional)</span></label>
+        <input id="mobs" placeholder="Indicaciones para el publicador..."/>
+      </div>
+      <!-- Advanced (hidden by default) -->
+      <div id="madvanced" style="display:none">
+        <div class="fg">
+          <label>Fecha completado</label>
+          <input type="date" id="mfd"/>
+        </div>
+        <div class="fg">
+          <label>Estado</label>
+          <select id="mest">
+            <option value="asignado">🟡 Asignado</option>
+            <option value="completado">✅ Completado</option>
+            <option value="disponible">🟢 Disponible</option>
+          </select>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button onclick="toggleMAdvanced()" id="madvanced_btn" style="background:none;border:none;font-size:.64rem;color:#94a3b8;cursor:pointer;text-decoration:underline">+ opciones avanzadas</button>
+      </div>
+    </div>
     <div class="mbtns">
       <button class="bsm" onclick="closeM()" style="background:#f1f5f9;color:#475569">Cancelar</button>
-      <button class="bsm" onclick="saveM()" style="background:var(--gd);color:#fff">Guardar</button>
+      <button class="bsm" onclick="saveM()" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff">Asignar territorio</button>
     </div>
   </div>
 </div>
 <div class="dev-modal" id="devModal">
-  <div class="dev-box" style="max-width:430px">
-    <h3 id="dev_title">✅ Registrar territorio completado</h3>
-    <input type="hidden" id="dev_n"/>
-    <div class="fg"><label>Territorio</label><div id="dev_ter" style="font-size:.82rem;font-weight:700;padding:5px 0;color:var(--gd)"></div></div>
-    <div class="fg"><label>Encargado</label><input id="dev_enc" placeholder="Nombre del publicador"/></div>
-    <div class="fg"><label>Fecha de completado</label><input type="date" id="dev_fecha"/></div>
-
-    <!-- Selector de tipo de devolución -->
-    <div class="fg">
-      <label>¿Cómo se devuelve?</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
-        <div id="dev_opt_completo" onclick="setDevTipo('completo')"
-          style="border:2px solid var(--indigo);border-radius:8px;padding:8px;cursor:pointer;text-align:center;background:rgba(99,102,241,.08)">
-          <div style="font-size:.85rem">✅</div>
-          <div style="font-size:.68rem;font-weight:700;color:var(--indigo)">Terminado completo</div>
-          <div style="font-size:.58rem;color:var(--gray)">Todas las manzanas</div>
-        </div>
-        <div id="dev_opt_parcial" onclick="setDevTipo('parcial')"
-          style="border:2px solid var(--bdr);border-radius:8px;padding:8px;cursor:pointer;text-align:center">
-          <div style="font-size:.85rem">⚠️</div>
-          <div style="font-size:.68rem;font-weight:700;color:#d97706">Manzanas pendientes</div>
-          <div style="font-size:.58rem;color:var(--gray)">Algunas sin trabajar</div>
+  <div class="dev-box">
+    <div class="mbox-head">
+      <div>
+        <h3 id="dev_title">📋 Registrar informe</h3>
+        <div class="mbox-head-sub" id="dev_ter"></div>
+      </div>
+      <button class="mbox-close" onclick="closeDevModal()">✕</button>
+    </div>
+    <div class="mbox-body" style="overflow-y:auto">
+      <input type="hidden" id="dev_n"/>
+      <!-- ¿Se completó? options -->
+      <div class="fg">
+        <label>¿Se completó?</label>
+        <div class="opt-cards">
+          <div class="opt-card selected-comp" id="dev_opt_completo" onclick="setDevTipo('completo')">
+            <div class="opt-card-ico">✅</div>
+            <div class="opt-card-label">Sí, totalmente</div>
+            <div class="opt-card-hint">Todas las manzanas</div>
+          </div>
+          <div class="opt-card" id="dev_opt_parcial" onclick="setDevTipo('parcial')">
+            <div class="opt-card-ico">⚠️</div>
+            <div class="opt-card-label">Parcial</div>
+            <div class="opt-card-hint">Algunas sin trabajar</div>
+          </div>
+          <div class="opt-card" id="dev_opt_nowork" onclick="setDevTipo('nowork')">
+            <div class="opt-card-ico">↩️</div>
+            <div class="opt-card-label">Devolver sin trabajar</div>
+            <div class="opt-card-hint">No se pudo trabajar</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Panel manzanas pendientes (visible solo si parcial) -->
-    <div id="dev_mz_panel" style="display:none">
-      <div class="fg" style="margin-bottom:4px">
+      <!-- Cobertura aproximada (visible en completo/parcial) -->
+      <div id="dev_cov_panel" class="fg">
+        <label>Cobertura aproximada</label>
+        <input type="range" id="dev_cov_range" min="0" max="100" value="100"
+          oninput="document.getElementById('dev_cov_pct').textContent=this.value+'%'"
+          style="width:100%;accent-color:#22c55e;cursor:pointer;"/>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+          <div class="cov-bar-wrap" style="flex:1;margin-right:8px">
+            <div class="cov-bar-fill" id="dev_cov_bar" style="width:100%"></div>
+          </div>
+          <span class="cov-pct" id="dev_cov_pct">100%</span>
+        </div>
+      </div>
+
+      <!-- Manzanas pendientes (solo parcial) -->
+      <div id="dev_mz_panel" style="display:none" class="fg">
         <label>Manzanas que <strong>NO</strong> se trabajaron</label>
-        <div style="font-size:.62rem;color:var(--gray);margin-bottom:6px">Marca las que quedaron pendientes para reasignar</div>
+        <div style="font-size:.62rem;color:#64748b;margin-bottom:5px">Marca las que quedaron pendientes</div>
         <div id="dev_mz_grid" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+        <div id="dev_pendiente_info" style="display:none;font-size:.68rem;padding:6px 9px;border-radius:8px;background:#fffbeb;color:#92400e;border:1px solid #fde68a;margin-top:5px">
+          ⚠️ Las manzanas seleccionadas quedarán registradas como pendientes.
+        </div>
       </div>
-      <div id="dev_pendiente_info" style="display:none;font-size:.68rem;padding:6px 9px;border-radius:7px;background:#fef9c3;color:#92400e;border:1px solid #fde68a;margin-bottom:6px">
-        ⚠️ Las manzanas seleccionadas quedarán registradas como pendientes para reasignar.
-      </div>
-    </div>
 
-    <div class="fg"><label>Observaciones</label><input id="dev_obs" placeholder="Opcional — ej: casa esquina no abrió, zona inundada..."/></div>
-    <div class="fg">
-      <label>Estado final del territorio</label>
-      <select id="dev_estado">
-        <option value="disponible">🟢 Disponible (listo para reasignar)</option>
-        <option value="completado">✅ Completado (ciclo cerrado)</option>
-      </select>
+      <!-- Casas visitadas (completo/parcial) -->
+      <div id="dev_stats_panel" class="fg-row" style="display:none">
+        <div class="fg">
+          <label>Casas visitadas</label>
+          <input type="number" id="dev_casas" placeholder="0" min="0" style="text-align:center"/>
+        </div>
+        <div class="fg">
+          <label>No en casa</label>
+          <input type="number" id="dev_nec" placeholder="0" min="0" style="text-align:center"/>
+        </div>
+        <div class="fg">
+          <label>Revisitas</label>
+          <input type="number" id="dev_rev" placeholder="0" min="0" style="text-align:center"/>
+        </div>
+      </div>
+
+      <!-- Encargado -->
+      <div class="fg">
+        <label>Encargado</label>
+        <input id="dev_enc" placeholder="Nombre del publicador"/>
+      </div>
+
+      <div class="fg">
+        <label>Fecha de completado</label>
+        <input type="date" id="dev_fecha"/>
+      </div>
+
+      <!-- Estado final -->
+      <div class="fg">
+        <label>Estado final del territorio</label>
+        <select id="dev_estado">
+          <option value="disponible">🟢 Disponible (listo para reasignar)</option>
+          <option value="completado">✅ Completado (ciclo cerrado)</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label>Observaciones <span style="font-weight:400;text-transform:none;font-size:.6rem">(opcional)</span></label>
+        <input id="dev_obs" placeholder="ej: casa esquina no abrió, zona inundada..."/>
+      </div>
     </div>
     <div class="mbtns">
       <button class="bsm" onclick="closeDevModal()" style="background:#f1f5f9;color:#475569">Cancelar</button>
-      <button class="bsm" id="dev_save_btn" onclick="saveDevolucion()" style="background:var(--indigo);color:#fff">✅ Registrar completado</button>
+      <button class="bsm" id="dev_save_btn" onclick="saveDevolucion()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff">Enviar informe</button>
     </div>
   </div>
 </div>
@@ -811,7 +1013,7 @@ body.dark .pub-suggest{background:rgba(45,106,79,.12);border-color:rgba(45,106,7
   <div class="camp-box">
     <div class="camp-box-head">
       <h3>🏕 Campañas de Predicación</h3>
-      <button class="btn" onclick="closeCampModal()" style="padding:3px 9px;font-size:.7rem">✕</button>
+      <button class="mbox-close" onclick="closeCampModal()">✕</button>
     </div>
     <div class="camp-tabs">
       <div class="camp-tab on" id="ctab1" onclick="switchCampTab(1)">📋 Lista</div>
@@ -1402,17 +1604,95 @@ function setFilter(f,btn){filt=f;document.querySelectorAll('.fb').forEach(b=>b.c
 
 function openAssign(preN){
   const n=preN??sel;
-  document.getElementById('mtitle').textContent=n?`✏️ Territorio ${n}`:'➕ Asignar territorio';
-  document.getElementById('mn').value=n||'';
+  document.getElementById('mtitle').textContent=n?`✏️ Editar Territorio ${n}`:'➕ Asignar territorio';
+  // Populate territory selector
+  const mn=document.getElementById('mn');
+  if(mn.options.length<=1){
+    for(let i=1;i<=33;i++){
+      const o=document.createElement('option');o.value=i;o.textContent=`Territorio ${i}`;mn.appendChild(o);
+    }
+  }
+  if(n){
+    mn.value=n;
+    document.getElementById('mter_row').style.display='none';
+    document.getElementById('mter_badge').style.display='flex';
+    document.getElementById('mter_badge_num').textContent=n;
+    const d=DB[n]||{};
+    document.getElementById('mter_badge_name').textContent=`Territorio ${n}${MZ[n]?' · '+MZ[n].length+' manzana'+( MZ[n].length>1?'s':''):''}`;
+    const st=gs(n);
+    document.getElementById('mter_badge_meta').textContent=d.encargado?`Encargado: ${d.encargado} · ${SL[st]}`:SL[st];
+    document.getElementById('mbox_sub').textContent='';
+  } else {
+    document.getElementById('mter_row').style.display='';
+    document.getElementById('mter_badge').style.display='none';
+    document.getElementById('mbox_sub').textContent='';
+  }
   const d=n&&DB[n]?DB[n]:{};
-  document.getElementById('mmz').value=d.manzana||'';document.getElementById('menc').value=d.encargado||'';
+  // Build publisher dropdown from all known publishers
+  const pubs=new Set();
+  for(let i=1;i<=33;i++){
+    if(DB[i]?.encargado) pubs.add(DB[i].encargado);
+    (DB[i]?.historial||[]).forEach(h=>{if(h.enc&&h.enc!=='—')pubs.add(h.enc);});
+  }
+  const pubArr=[...pubs].sort();
+  const dd=document.getElementById('pub_dropdown');
+  dd.innerHTML=`<div class="pub-dropdown-item" onclick="selectPub('')" style="color:#94a3b8">— Sin asignar —</div>`
+    +pubArr.map(p=>`<div class="pub-dropdown-item" onclick="selectPub('${p.replace(/'/g,'\\\'')}')">`
+      +`<div class="pub-avatar" style="width:22px;height:22px;font-size:.55rem">${p.slice(0,2).toUpperCase()}</div>${p}</div>`).join('');
+  selectPub(d.encargado||'');
+  document.getElementById('mmz').value=d.manzana||'';
   document.getElementById('mmod').value=d.modalidad||'Casa en casa';
   document.getElementById('mfa').value=d.fechaAsig||new Date().toISOString().slice(0,10);
+  // Set devolver before 4 months out
+  const devB=new Date(); devB.setMonth(devB.getMonth()+4);
+  document.getElementById('mdevbefore').value=d.fechaDev||devB.toISOString().slice(0,10);
   document.getElementById('mfd').value=d.fechaDev||'';
   document.getElementById('mest').value=d.estado||'asignado';
   document.getElementById('mobs').value=d.obs||'';
+  document.getElementById('madvanced').style.display='none';
+  document.getElementById('madvanced_btn').textContent='+ opciones avanzadas';
   document.getElementById('modal').classList.add('open');
 }
+function onMTerChange(){
+  const n=parseInt(document.getElementById('mn').value);
+  if(!n) return;
+  const d=DB[n]||{};
+  if(d.encargado) selectPub(d.encargado);
+  document.getElementById('mbox_sub').textContent=d.encargado?`Actualmente: ${d.encargado}`:'';
+}
+let pubDropOpen=false;
+function togglePubDropdown(){
+  pubDropOpen=!pubDropOpen;
+  document.getElementById('pub_dropdown').classList.toggle('open',pubDropOpen);
+  document.getElementById('pub_chevron').style.transform=pubDropOpen?'rotate(180deg)':'';
+  document.getElementById('pub_sel_box').classList.toggle('open',pubDropOpen);
+}
+function selectPub(name){
+  document.getElementById('menc').value=name;
+  document.getElementById('pub_name_display').textContent=name||'Selecciona un publicador';
+  document.getElementById('pub_avatar').textContent=name?name.slice(0,2).toUpperCase():'?';
+  document.getElementById('pub_avatar').style.background=name?'linear-gradient(135deg,#6366f1,#8b5cf6)':'#94a3b8';
+  document.getElementById('pub_dropdown').classList.remove('open');
+  document.getElementById('pub_chevron').style.transform='';
+  document.getElementById('pub_sel_box').classList.remove('open');
+  pubDropOpen=false;
+}
+function toggleMAdvanced(){
+  const adv=document.getElementById('madvanced');
+  const btn=document.getElementById('madvanced_btn');
+  const open=adv.style.display==='none';
+  adv.style.display=open?'':'none';
+  btn.textContent=open?'- opciones avanzadas':'+ opciones avanzadas';
+}
+// Close pub dropdown when clicking outside
+document.addEventListener('click',e=>{
+  if(pubDropOpen&&!e.target.closest('#pub_sel_box')&&!e.target.closest('#pub_dropdown')){
+    document.getElementById('pub_dropdown').classList.remove('open');
+    document.getElementById('pub_chevron').style.transform='';
+    document.getElementById('pub_sel_box').classList.remove('open');
+    pubDropOpen=false;
+  }
+});
 function closeM(){document.getElementById('modal').classList.remove('open');}
 function saveM(){
   const n=parseInt(document.getElementById('mn').value);if(!n){alert('Selecciona un territorio');return;}
@@ -1422,7 +1702,7 @@ function saveM(){
   DB[n].modalidad=document.getElementById('mmod').value;
   DB[n].fechaAsig=document.getElementById('mfa').value;
   DB[n].fechaDev=document.getElementById('mfd').value;
-  DB[n].estado=document.getElementById('mest').value;
+  DB[n].estado=document.getElementById('mest').value||'asignado';
   DB[n].obs=document.getElementById('mobs').value.trim();
   if(!DB[n].monthsWorked)DB[n].monthsWorked={};
   save();closeM();renderPins();updateAll();if(sel===n)renderDetail(n);
@@ -1443,13 +1723,18 @@ let devMzPendientes = new Set();
 function openDevModal(n){
   devTipo='completo'; devMzPendientes=new Set();
   document.getElementById('dev_n').value=n;
-  document.getElementById('dev_ter').textContent=`Territorio ${n} — ${DB[n]?.encargado||'Sin encargado'}`;
-  document.getElementById('dev_enc').value=DB[n]?.encargado||'';
+  const d=DB[n]||{};
+  document.getElementById('dev_title').textContent='📋 Registrar informe';
+  document.getElementById('dev_ter').textContent=`Territorio ${n}${d.encargado?' · '+d.encargado:''}`;
+  document.getElementById('dev_enc').value=d.encargado||'';
   document.getElementById('dev_fecha').value=new Date().toISOString().slice(0,10);
   document.getElementById('dev_obs').value='';
   document.getElementById('dev_estado').value='disponible';
+  document.getElementById('dev_cov_range').value=100;
+  document.getElementById('dev_cov_pct').textContent='100%';
+  document.getElementById('dev_cov_bar').style.width='100%';
   setDevTipo('completo');
-  // Renderizar manzanas
+  // Manzanas
   const mzDiv=document.getElementById('dev_mz_grid');
   mzDiv.innerHTML=(MZ[n]||[]).map(m=>`<div class="mz-btn" id="devmz_${m}" onclick="toggleMzPendiente('${m}')">${m}</div>`).join('');
   document.getElementById('devModal').classList.add('open');
@@ -1458,24 +1743,33 @@ function closeDevModal(){document.getElementById('devModal').classList.remove('o
 
 function setDevTipo(tipo){
   devTipo=tipo; devMzPendientes=new Set();
-  // Resetear selección visual
   document.querySelectorAll('.mz-btn').forEach(b=>b.classList.remove('pendiente'));
-  const completo=document.getElementById('dev_opt_completo');
-  const parcial=document.getElementById('dev_opt_parcial');
-  const panel=document.getElementById('dev_mz_panel');
-  const info=document.getElementById('dev_pendiente_info');
-  if(tipo==='completo'){
-    completo.style.border='2px solid var(--indigo)';completo.style.background='rgba(99,102,241,.08)';
-    parcial.style.border='2px solid var(--bdr)';parcial.style.background='';
-    panel.style.display='none';
+  const cards={completo:'dev_opt_completo',parcial:'dev_opt_parcial',nowork:'dev_opt_nowork'};
+  const selCls={completo:'selected-comp',parcial:'selected-parc',nowork:'selected-nowork'};
+  Object.entries(cards).forEach(([t,id])=>{
+    const el=document.getElementById(id);
+    el.className='opt-card'+(t===tipo?' '+selCls[t]:'');
+  });
+  document.getElementById('dev_mz_panel').style.display=tipo==='parcial'?'':'none';
+  document.getElementById('dev_cov_panel').style.display=tipo==='nowork'?'none':'';
+  document.getElementById('dev_pendiente_info').style.display='none';
+  if(tipo==='nowork'){
     document.getElementById('dev_estado').value='disponible';
-  } else {
-    parcial.style.border='2px solid #f59e0b';parcial.style.background='rgba(245,158,11,.08)';
-    completo.style.border='2px solid var(--bdr)';completo.style.background='';
-    panel.style.display='';
-    info.style.display='none';
+    document.getElementById('dev_cov_range').value=0;
+    document.getElementById('dev_cov_pct').textContent='0%';
+    document.getElementById('dev_cov_bar').style.width='0%';
+  } else if(tipo==='completo'){
     document.getElementById('dev_estado').value='disponible';
+    document.getElementById('dev_cov_range').value=100;
+    document.getElementById('dev_cov_pct').textContent='100%';
+    document.getElementById('dev_cov_bar').style.width='100%';
   }
+  // Sync range input → bar
+  document.getElementById('dev_cov_range').oninput=function(){
+    const v=this.value;
+    document.getElementById('dev_cov_pct').textContent=v+'%';
+    document.getElementById('dev_cov_bar').style.width=v+'%';
+  };
 }
 
 function toggleMzPendiente(m){
@@ -1493,7 +1787,7 @@ function saveDevolucion(){
   const obs=document.getElementById('dev_obs').value.trim();
   const estado=document.getElementById('dev_estado').value;
   if(!fecha){alert('Ingresa la fecha de completado');return;}
-  if(devTipo==='parcial'&&devMzPendientes.size===0){alert('Selecciona al menos una manzana pendiente, o elige "Terminado completo"');return;}
+  if(devTipo==='parcial'&&devMzPendientes.size===0){alert('Selecciona al menos una manzana pendiente, o elige otra opción');return;}
   if(!DB[n])DB[n]={monthsWorked:{}};
   if(!DB[n].historial)DB[n].historial=[];
 
@@ -1508,7 +1802,7 @@ function saveDevolucion(){
     estado,
     estadoLabel: devTipo==='parcial'
       ? `Parcial — pendientes: ${mzPend.join(', ')}`
-      : (estado==='completado'?'Completado':'Disponible'),
+      : (devTipo==='nowork'?'Devuelto sin trabajar':(estado==='completado'?'Completado':'Disponible')),
     mzPendientes: mzPend,
     mzTrabajadas: mzTrab,
     encAnterior:DB[n].encargado||'',
