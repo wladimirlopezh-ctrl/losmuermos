@@ -2025,10 +2025,34 @@ async function cargarHistorialDrive(){
   return new Promise(resolve=>{
     gdEnsureToken(async()=>{
       try{
-        const data = await gdLoadFile(GD_FILE_HIST);
-        if(data && Array.isArray(data.historial)) PROG_HIST = data.historial;
-        else PROG_HIST = [];
-      }catch(e){ PROG_HIST = []; }
+        // Buscar en carpeta configurada
+        const q1=`name='${GD_FILE_HIST}' and '${GD_FOLDER_ID}' in parents and trashed=false`;
+        const r1=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q1)}&fields=files(id,name,modifiedTime)`,{headers:{Authorization:'Bearer '+gdToken}});
+        const d1=await r1.json();
+        // Buscar en todo Drive como fallback
+        const q2=`name='${GD_FILE_HIST}' and trashed=false`;
+        const r2=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q2)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime+desc`,{headers:{Authorization:'Bearer '+gdToken}});
+        const d2=await r2.json();
+        const file=(d1.files&&d1.files.length)?d1.files[0]:(d2.files&&d2.files.length?d2.files[0]:null);
+        if(!file){
+          console.warn('[Historial] historial_programas.json no encontrado en Drive');
+          PROG_HIST=[];resolve();return;
+        }
+        const r=await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,{headers:{Authorization:'Bearer '+gdToken}});
+        const text=await r.text();
+        let data;
+        try{ data=JSON.parse(text); }catch(pe){
+          console.error('[Historial] JSON inválido:',text.substring(0,200));
+          PROG_HIST=[];resolve();return;
+        }
+        if(Array.isArray(data)) PROG_HIST=data; // formato antiguo: array directo
+        else if(data && Array.isArray(data.historial)) PROG_HIST=data.historial;
+        else{ console.warn('[Historial] Formato inesperado:',data); PROG_HIST=[]; }
+        console.log('[Historial] Cargados',PROG_HIST.length,'programas');
+      }catch(e){
+        console.error('[Historial] Error al cargar:',e);
+        PROG_HIST=[];
+      }
       resolve();
     });
   });
@@ -2075,8 +2099,13 @@ async function eliminarProgHist(id){
 
 async function renderProgHist(){
   const el = document.getElementById('progHistBody');
-  el.innerHTML = '<div class="hist-empty" style="padding:20px 0">⏳ Cargando historial desde Drive…</div>';
-  await cargarHistorialDrive();
+  el.innerHTML = '<div class="hist-empty" style="padding:20px 0">⏳ Conectando con Drive…</div>';
+  try{
+    await cargarHistorialDrive();
+  }catch(e){
+    el.innerHTML = '<div class="hist-empty">❌ Error al conectar con Drive.<br><small>Verifica tu conexión y recarga la página.</small></div>';
+    return;
+  }
   const cnt = document.getElementById('progHistCount');
   if(!PROG_HIST.length){
     el.innerHTML = '<div class="hist-empty">📭 No hay programas archivados aún.<br>Usa el botón <strong>💾 Archivar semana actual</strong> para guardar el programa de esta semana.</div>';
