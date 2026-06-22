@@ -2403,7 +2403,9 @@ let RURAL = JSON.parse(localStorage.getItem('lm_rural')||'[]');
     });
     try{localStorage.setItem('lm_t4',JSON.stringify(DB));}catch(e){}
     try{localStorage.setItem('lm_rural',JSON.stringify(RURAL));}catch(e){}
-    localStorage.setItem('lm_seed_programa',SEED_VER);
+    try{localStorage.setItem('lm_seed_programa',SEED_VER);}catch(e){}
+    // Aviso visible al cargar los datos del programa (confirma que NO es caché)
+    setTimeout(function(){ try{ if(typeof toast==='function') toast('📥 Datos del programa cargados ('+Object.keys(SEED.db).length+' territorios, '+SEED.rural.length+' rurales)',6000); }catch(e){} }, 1800);
   }catch(e){ console.warn('Seed programa falló:',e); }
 })();
 
