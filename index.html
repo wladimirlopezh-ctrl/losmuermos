@@ -38,9 +38,7 @@ body.dark .btn.gd:hover{background:#22263a;}
 body.dark .fb{color:#94a3b8;}
 body.dark .fb:hover,.fb.on{background:#22263a;border-color:var(--bdr);}
 body.dark .map-area{background:#080a10;}
-body.dark .mbox,.body.dark .drive-box{background:#1e2235;}
 body.dark .mbox{background:#1e2235;}
-body.dark .drive-box{background:var(--w);}
 body.dark .drive-box{background:var(--w);}
 body.dark .bar{background:#22263a;}
 body.dark .pb{border-bottom-color:#22263a;}
@@ -1018,7 +1016,7 @@ body.dark .pub-suggest{background:rgba(45,106,79,.12);border-color:rgba(45,106,7
     <div class="camp-tabs">
       <div class="camp-tab on" id="ctab1" onclick="switchCampTab(1)">📋 Lista</div>
       <div class="camp-tab" id="ctab2" onclick="switchCampTab(2)">➕ Nueva</div>
-      <div class="camp-tab" id="ctab3" onclick="switchCampTab(3)" id="ctab3">📊 Informe</div>
+      <div class="camp-tab" id="ctab3" onclick="switchCampTab(3)">📊 Informe</div>
     </div>
     <div class="camp-body" id="campBody"></div>
   </div>
@@ -1183,7 +1181,7 @@ let editMode=false;
 const save=()=>{try{localStorage.setItem('lm_t4',JSON.stringify(DB));}catch{} autoSaveDrive();}
 const savePins=()=>{try{localStorage.setItem('lm_pins',JSON.stringify(PIN_POS));}catch{} autoSaveDrive();}
 const saveMeet=()=>{try{localStorage.setItem('lm_meet',JSON.stringify(MEET_PINS));}catch{} autoSaveDrive();}
-const saveCamps=()=>{try{localStorage.setItem('lm_camps',JSON.stringify(CAMPS));localStorage.setItem('lm_activeCamp',activeCampId||'');}catch(e){} autoSaveDrive();}; // redefinida abajo
+const saveCamps=()=>{try{localStorage.setItem('lm_camps',JSON.stringify(CAMPS));localStorage.setItem('lm_activeCamp',activeCampId||'');}catch(e){} autoSaveDrive();};
 const saveRural=()=>{try{localStorage.setItem('lm_rural',JSON.stringify(RURAL));}catch(e){} autoSaveDrive();};
 
 const gs=n=>{
@@ -5393,21 +5391,6 @@ function renderInfPublicadores(){
     </div>`;
 }
 
-// ── LUGARES DE REUNIÓN ──
-function openMeetModal(){
-  const isDark=document.body.classList.contains('dark');
-  const inner=document.getElementById('meetModalInner');
-  const body=document.getElementById('meetModalBody');
-  const inp=document.getElementById('meetNameInput');
-  if(inner) inner.style.background=isDark?'#1a1d27':'#fff';
-  if(body) body.style.background=isDark?'#0f1117':'#f8fafc';
-  if(inp){inp.style.background=isDark?'#1a1d27':'#fff';inp.style.color=isDark?'#e8edf5':'#1e293b';inp.style.borderColor=isDark?'#2a2f3e':'#cbd5e1';}
-  document.getElementById('meetModal').style.display='block';
-  renderMeetList();
-}
-function closeMeetModal(){
-  document.getElementById('meetModal').style.display='none';
-}
 // ── MEET PINS — emojis y tamaño ──
 const MEET_EMOJIS = ['🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏬','🏭','⛪','🕌','🛕','🏰','🏯','🗼'];
 const MEET_SIZE_MAP = {1:8, 2:11, 3:16, 4:22, 5:30}; // nivel → px base
@@ -5616,6 +5599,14 @@ function renderMeetPins(){
 }
 
 function openMeetModal(){
+  // Adaptar el modal al modo oscuro/claro
+  const isDark=document.body.classList.contains('dark');
+  const inner=document.getElementById('meetModalInner');
+  const body=document.getElementById('meetModalBody');
+  const inp=document.getElementById('meetNameInput');
+  if(inner) inner.style.background=isDark?'#1a1d27':'#fff';
+  if(body) body.style.background=isDark?'#0f1117':'#f8fafc';
+  if(inp){inp.style.background=isDark?'#1a1d27':'#fff';inp.style.color=isDark?'#e8edf5':'#1e293b';inp.style.borderColor=isDark?'#2a2f3e':'#cbd5e1';}
   document.getElementById('meetModal').style.display='';
   setTimeout(()=>{
     initMeetEmojiGrid();
@@ -5712,8 +5703,6 @@ function updateMeetPinPosition(grp, m){
       setTimeout(()=>toast(`🔴 ${urgentes.length} territorio${urgentes.length>1?'s':''} urgente${urgentes.length>1?'s':''} — más de 4 meses asignado${urgentes.length>1?'s':''}`, 7000), 2000);
     }
   }, 1500);
-  // Init móvil
-  initMobMenu();
 })();
 
 // ── PUBLICADORES — rotación y equidad ──
@@ -5817,7 +5806,6 @@ function renderPubPanel(){
 }
 
 
-function initMobMenu(){} // reservado para uso futuro
 
 function toggleMobPanel(side){
   const panel = document.getElementById(side==='L'?'panelL':'panelR');
