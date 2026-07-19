@@ -74,15 +74,7 @@ tbody tr:hover{background:#b6e8c3;}
 tbody td{padding:11px 14px;text-align:center;font-size:.88rem;color:var(--td);border-right:1px solid var(--row-border);border-bottom:1px solid var(--row-border);vertical-align:middle;line-height:1.45;}
 tbody td:last-child{border-right:none;}
 td.dia{font-family:'Playfair Display',serif;font-weight:600;font-size:.95rem;color:var(--gd);background:linear-gradient(180deg,var(--gl),#daf4e4) !important;border-right:3px solid var(--gm) !important;text-align:center;vertical-align:middle;}
-td.clima-col{background:linear-gradient(180deg,var(--gl),#daf4e4) !important;text-align:center;vertical-align:middle;padding:4px 6px !important;border-right:3px solid var(--gm) !important;}
 td[data-f="hora"]{border-left:3px solid var(--gm) !important;}
-.weather-badge{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:700;font-family:'Lato',sans-serif;padding:4px 10px;border-radius:20px;white-space:nowrap;letter-spacing:.2px;}
-.weather-badge.rain-high{background:rgba(59,130,246,.18);color:#1d4ed8;border:1px solid rgba(59,130,246,.35);}
-.weather-badge.rain-mid{background:rgba(148,163,184,.15);color:#475569;border:1px solid rgba(148,163,184,.3);}
-.weather-badge.rain-low{background:rgba(34,197,94,.12);color:#15803d;border:1px solid rgba(34,197,94,.25);}
-.weather-badge.rain-none{background:rgba(251,191,36,.12);color:#92400e;border:1px solid rgba(251,191,36,.25);}
-.weather-badge.loading{background:rgba(156,163,175,.1);color:#9ca3af;border:1px solid rgba(156,163,175,.2);animation:wblink .9s infinite;}
-@keyframes wblink{0%,100%{opacity:.5}50%{opacity:1}}
 .hora-pill{display:inline-block;background:var(--gd);color:var(--w);border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:700;letter-spacing:.5px;pointer-events:none;}
 .badge{display:inline-block;background:linear-gradient(135deg,var(--gm),var(--gd));color:var(--w);border-radius:6px;padding:4px 10px;font-size:.82rem;font-weight:700;line-height:1.4;pointer-events:none;}
 td.act-col{padding:4px;background:#f5fdf7 !important;}
@@ -110,13 +102,6 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 .semana-box{background:#2c2c2e;border-radius:16px;padding:28px;width:92%;max-width:400px;border-top:4px solid var(--gold);box-shadow:0 24px 60px rgba(0,0,0,.6);}
 .semana-box h3{color:var(--gold);font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:6px;}
 .semana-sub{font-size:.75rem;color:#888;margin-bottom:18px;}
-.semana-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
-.semana-opt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);cursor:pointer;transition:all .2s;}
-.semana-opt:hover{background:rgba(255,255,255,.05);border-color:rgba(224,195,74,.4);}
-.semana-opt.sel{background:rgba(224,195,74,.1);border-color:var(--gold);}
-.semana-opt-ico{font-size:1.2rem;flex-shrink:0;margin-top:1px;}
-.semana-opt-text{font-size:.82rem;color:#ccc;line-height:1.4;}
-.semana-opt-text strong{color:#fff;display:block;font-size:.85rem;margin-bottom:1px;}
 .semana-date-row{display:flex;align-items:center;gap:8px;margin-bottom:18px;}
 .semana-date-row label{font-size:.72rem;color:#999;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
 .semana-date-row input{flex:1;padding:8px 10px;background:#1c1c1e;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#e0e0e0;font-size:.88rem;outline:none;}
@@ -220,20 +205,6 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 .tfg select option{background:#2c2c2e;}
 .terr-modal-btns{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
 
-#previewModal{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.85);
-  flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
-#previewModal.open{display:flex;}
-.preview-box{position:relative;max-width:min(92vw,600px);max-height:82vh;border-radius:16px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7);display:flex;flex-direction:column;background:#1a1a1c;}
-.preview-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0;}
-.preview-header span{color:#ccc;font-size:.85rem;font-weight:600;letter-spacing:.5px;}
-.preview-header button{background:none;border:none;color:#aaa;font-size:1.3rem;cursor:pointer;line-height:1;padding:2px 6px;border-radius:6px;transition:all .15s;}
-.preview-header button:hover{background:rgba(255,255,255,.1);color:#fff;}
-.preview-scroll{overflow-y:auto;padding:16px;flex:1;}
-.preview-scroll img{width:100%;border-radius:8px;display:block;}
-.preview-actions{display:flex;gap:10px;padding:14px 20px;background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.08);justify-content:flex-end;flex-shrink:0;flex-wrap:wrap;}
-.preview-spin{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:60px 40px;color:#888;font-size:.9rem;}
-.preview-spin::before{content:'';width:42px;height:42px;border-radius:50%;border:4px solid rgba(255,255,255,.1);border-top-color:var(--gold,#e0c34a);animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
 .modal{background:var(--card,#1a2e22);border:1.5px solid rgba(255,255,255,.12);border-radius:16px;padding:28px 28px 22px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.5);position:relative;}
 .modal h2{font-family:'Playfair Display',serif;color:var(--gd);margin-bottom:20px;font-size:1.3rem;}
 .fg{margin-bottom:14px;}
@@ -272,8 +243,9 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
   html,body{margin:0;padding:0;background:white !important;width:100%;height:auto;}
   .toolbar,.drive-status,.theme-bar,.tabs,.tab-panel:not(#tab-programa),
-  .col-act,.act-col,#previewModal,#semanaModal,#histModal,
+  .col-act,.act-col,#semanaModal,#terrModal,#progModal,
   .zoom-ctrl,.viewer-alert-banner{display:none !important;}
+
   body{display:block !important;align-items:unset !important;}
   #tab-programa{display:block !important;width:100% !important;max-width:100% !important;}
   .card{
@@ -296,7 +268,6 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   tbody td{font-size:.75rem !important;padding:6px 8px !important;}
   .hora-pill{background:var(--gd) !important;color:#fff !important;font-size:.7rem !important;padding:2px 8px !important;}
   .badge{background:linear-gradient(135deg,var(--gm),var(--gd)) !important;color:#fff !important;font-size:.7rem !important;padding:3px 7px !important;}
-  .weather-badge{font-size:.58rem !important;padding:1px 5px !important;}
   tbody tr:nth-child(odd){background:#fff !important;}
   tbody tr:nth-child(even){background:var(--alt) !important;}
   @page{margin:8mm;size:A4 portrait;}
@@ -332,7 +303,6 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   <input type="file" id="inputJSON" accept=".json" style="display:none" onchange="importarJSON(event)"/>
   <button class="btn btn-drive-save" onclick="driveGuardar()">☁️ Guardar en Drive</button>
   <button class="btn btn-drive" onclick="driveCargar()">☁️ Cargar desde Drive</button>
-  <button class="btn" style="background:rgba(56,189,248,.18);color:#38bdf8;border:1px solid rgba(56,189,248,.3)" onclick="climaCache={};initClima()" title="Actualizar pronóstico del tiempo">🌤 Clima</button>
   <button class="btn" style="background:rgba(224,195,74,.18);color:var(--gold);border:1px solid rgba(224,195,74,.3)" onclick="openSemanaModal()">📅 Nueva semana</button>
   <button class="btn" style="background:rgba(66,133,244,.2);color:#8ab4f8;border:1px solid rgba(66,133,244,.35)" onclick="syncTerrToMapa()" title="Enviar territorios asignados al mapa">🗺️ Enviar programa al mapa de territorios</button>
 </div>
@@ -364,7 +334,6 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
     <thead>
       <tr>
         <th>Día</th>
-        <th id="thClima">Clima</th>
         <th>Hora</th>
         <th>Encargado</th>
         <th>Lugar de Reunión</th>
@@ -879,7 +848,6 @@ const defaultRows=[
 ];
 
 let editing=false;
-let DB={titulo:'Programa de Predicación',subtitulo:'02 a 08 de Marzo',rows:defaultRows};
 
 function getRows(){
   const trs=[...document.querySelectorAll('#tbody tr')];
@@ -928,15 +896,12 @@ function render(rows){
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr');
     let diaCell='';
-    let climaCell='';
     if(spans[i]>0){
       const diaHtml=r.dia.replace(/\n/g,' ');
       diaCell=`<td class="dia" data-f="dia" rowspan="${spans[i]}" ${ce}>${diaHtml}</td>`;
-      climaCell=`<td class="clima-col" data-clima-dia="${diaHtml.trim()}" rowspan="${spans[i]}"><span class="weather-badge loading">⏳</span></td>`;
     }
     tr.innerHTML=`
       ${diaCell}
-      ${climaCell}
       <td data-f="hora" ${ce}><span class="hora-pill">${r.hora}</span></td>
       <td data-f="enc" ${ce}>${r.enc.replace(/\n/g,'<br>')}</td>
       <td data-f="lugar" ${ce}>${r.lugar}</td>
@@ -960,7 +925,6 @@ function toggleEdit(){
     const btn=document.getElementById('btnEdit');
     btn.innerHTML='✏️ Editar programa';btn.style.background='';btn.style.color='';
     toast('✅ Edición finalizada');
-    climaCache={};setTimeout(initClima,100);
   }else{
     editing=true;
     document.body.classList.add('editing');
@@ -1063,7 +1027,6 @@ function addRow(){
   });
 
   render(rows);saveLocal();closeModal();toast('✅ Fila agregada');
-  setTimeout(initClima,100);
 }
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
 
@@ -1156,11 +1119,6 @@ async function copiarImagen(){
 }
 
 
-function parseDiaNum(textodia){
-  const m=(textodia||'').match(/\b(\d{1,2})\b/);
-  return m?parseInt(m[1]):NaN;
-}
-
 async function generarCanvas(){
   const t=currentTheme;
   const C={greenDark:t.dark,greenMid:t.mid,greenLight:t.light,greenAlt:t.alt,gold:t.gold,white:'#ffffff',textDark:'#1c1c1e',bgDark:t.bg1,bgMid:t.bg2};
@@ -1168,22 +1126,12 @@ async function generarCanvas(){
   const titulo=document.getElementById('titulo').innerText.trim();
   const subtitulo=document.getElementById('subtitulo').innerText.trim().toUpperCase();
 
-  // Recopilar clima
-  const climaDia={};
-  document.querySelectorAll('td.clima-col').forEach(td=>{
-    const badge=td.querySelector('.weather-badge:not(.loading)');
-    if(!badge)return;
-    const num=parseDiaNum(td.dataset.climaDia||'');
-    if(!isNaN(num))climaDia[num]=badge.textContent.trim();
-  });
-
   // ── Canvas cuadrado 1500×1500 @2x — formato que WhatsApp muestra completo ──
   const SCALE=2, W=1500, H=1500;
   const pad=60;
   const cardX=pad,cardY=pad,cardW=W-pad*2;
   const headerH=155,goldBarH=7,theadH=52;
-  const hasClima=Object.keys(climaDia).length>0;
-  const rowH=hasClima?62:56;
+  const rowH=56;
   const cardH=headerH+goldBarH+theadH+rows.length*rowH;
 
   const cv=document.createElement('canvas');cv.width=W*SCALE;cv.height=H*SCALE;
@@ -1216,10 +1164,10 @@ async function generarCanvas(){
   ctx.fillStyle=gbg;ctx.fillRect(cardX,y,cardW,goldBarH);y+=goldBarH;
 
   // Thead
-  const cols=[0.13,0.12,0.08,0.18,0.20,0.29];
+  const cols=[0.13,0.10,0.22,0.24,0.31];
   const colW=cols.map(f=>Math.round(cardW*f));
   ctx.save();ctx.fillStyle=C.greenMid;ctx.fillRect(cardX,y,cardW,theadH);ctx.restore();
-  const headers=['Día','Clima','Hora','Encargado','Lugar de Reunión','Territorio y Modalidad'];
+  const headers=['Día','Hora','Encargado','Lugar de Reunión','Territorio y Modalidad'];
   ctx.fillStyle=C.white;ctx.font=F.thead;ctx.textAlign='center';
   let cxh=cardX;headers.forEach((h,i)=>{ctx.fillText(h,cxh+colW[i]/2,y+30,colW[i]-8);cxh+=colW[i];});
   y+=theadH;
@@ -1238,7 +1186,7 @@ async function generarCanvas(){
     if(gi!==undefined){
       const dg=ctx.createLinearGradient(cardX,y+gi*rowH,cardX,y+gi*rowH+spans[gi]*rowH);
       dg.addColorStop(0,C.greenLight);dg.addColorStop(1,'#daf4e4');
-      ctx.fillStyle=dg;ctx.fillRect(cardX,rowY,colW[0]+colW[1],rowH);
+      ctx.fillStyle=dg;ctx.fillRect(cardX,rowY,colW[0],rowH);
     }
   });
 
@@ -1255,48 +1203,31 @@ async function generarCanvas(){
       ctx.fillStyle=C.greenDark;ctx.textAlign='center';ctx.font=F.dia;
       ctx.fillText(r.dia,cCX,mY+7,colW[0]-8);
       ctx.restore();
-      // Clima
-      const num=parseDiaNum(r.dia);
-      const wText=(!isNaN(num)&&climaDia[num])?climaDia[num]:null;
-      if(wText){
-        const wCX=cardX+colW[0]+colW[1]/2;
-        ctx.save();ctx.beginPath();ctx.rect(cardX+colW[0],gRowY,colW[1],diaH);ctx.clip();
-        ctx.font='12.5px sans-serif';
-        const wW=Math.min(ctx.measureText(wText).width+18,colW[1]-6);
-        const wX=wCX-wW/2,wY=mY-11,wH=22,wR=11;
-        const isRain=wText.includes('%')&&parseInt(wText.match(/\d+/)?.[0]||'0')>=30;
-        ctx.fillStyle=isRain?'rgba(59,130,246,.22)':'rgba(34,197,94,.18)';
-        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(wX,wY,wW,wH,wR);else roundRectFill(ctx,wX,wY,wW,wH,wR);
-        ctx.fill();ctx.fillStyle=isRain?'#1e40af':'#15803d';ctx.textAlign='center';
-        ctx.fillText(wText,wCX,wY+wH-4,colW[1]-6);
-        ctx.restore();
-      }
     }
     // Separadores verdes
-    if(gi!==undefined){ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]-3,rowY,3,rowH);}
-    ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]+colW[1]-3,rowY,3,rowH);
-    ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0]+colW[1],rowY+rowH-1,cardW-colW[0]-colW[1],1);
+    ctx.fillStyle=C.greenMid;ctx.fillRect(cardX+colW[0]-3,rowY,3,rowH);
+    ctx.fillStyle='#cde9d7';ctx.fillRect(cardX+colW[0],rowY+rowH-1,cardW-colW[0],1);
 
-    let cx2=cardX+colW[0]+colW[1];
+    let cx2=cardX+colW[0];
     // Hora pill
-    const hX=cx2+colW[2]/2,hY=rowY+rowH/2,pW=80,pH=30,pR=15;
+    const hX=cx2+colW[1]/2,hY=rowY+rowH/2,pW=80,pH=30,pR=15;
     ctx.save();ctx.fillStyle=C.greenDark;roundRectFill(ctx,hX-pW/2,hY-pH/2,pW,pH,pR);
     ctx.fillStyle=C.white;ctx.font=F.badge;ctx.textAlign='center';ctx.fillText(r.hora,hX,hY+7);ctx.restore();
-    cx2+=colW[2];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    cx2+=colW[1];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
     // Encargado
     ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
     const el=r.enc.split('\n');
-    if(el.length>1){ctx.fillText(el[0],cx2+colW[3]/2,rowY+rowH/2-9,colW[3]-8);ctx.fillText(el[1],cx2+colW[3]/2,rowY+rowH/2+11,colW[3]-8);}
-    else{ctx.fillText(r.enc,cx2+colW[3]/2,rowY+rowH/2+7,colW[3]-8);}
-    cx2+=colW[3];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    if(el.length>1){ctx.fillText(el[0],cx2+colW[2]/2,rowY+rowH/2-9,colW[2]-8);ctx.fillText(el[1],cx2+colW[2]/2,rowY+rowH/2+11,colW[2]-8);}
+    else{ctx.fillText(r.enc,cx2+colW[2]/2,rowY+rowH/2+7,colW[2]-8);}
+    cx2+=colW[2];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
     // Lugar
     ctx.fillStyle=C.textDark;ctx.font=F.body;ctx.textAlign='center';
-    ctx.fillText(r.lugar,cx2+colW[4]/2,rowY+rowH/2+7,colW[4]-8);
-    cx2+=colW[4];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
+    ctx.fillText(r.lugar,cx2+colW[3]/2,rowY+rowH/2+7,colW[3]-8);
+    cx2+=colW[3];ctx.fillStyle='#cde9d7';ctx.fillRect(cx2-1,rowY,1,rowH);
     // Territorio badge
-    const bX=cx2+colW[5]/2,bY=rowY+rowH/2;
+    const bX=cx2+colW[4]/2,bY=rowY+rowH/2;
     ctx.font=F.badge;
-    const bW=Math.min(ctx.measureText(r.ter).width+22,colW[5]-14),bH=28,bR=7;
+    const bW=Math.min(ctx.measureText(r.ter).width+22,colW[4]-14),bH=28,bR=7;
     const bg2=ctx.createLinearGradient(bX-bW/2,bY,bX+bW/2,bY);
     bg2.addColorStop(0,C.greenMid);bg2.addColorStop(1,C.greenDark);
     ctx.save();ctx.fillStyle=bg2;roundRectFill(ctx,bX-bW/2,bY-bH/2,bW,bH,bR);
@@ -1348,7 +1279,6 @@ function applyTheme(t, saveToDb=true) {
   document.body.style.background = `linear-gradient(160deg,${t.bg1} 0%,${t.bg2} 50%,${t.bg1} 100%)`;
   // Mark active swatch
   document.querySelectorAll('.theme-swatch').forEach(s => s.classList.toggle('active', s.dataset.id === t.id));
-  // El tema no rehace el DOM, el clima se conserva
 }
 
 function buildThemeBar() {
@@ -1430,8 +1360,6 @@ function applyFont(f){
   const rowsActuales=getRows();
   render(rowsActuales.length?rowsActuales:defaultRows);
   document.querySelectorAll('.font-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===f.id));
-  // Reaplicar clima si estaba cargado
-  if(Object.keys(climaCache).length) setTimeout(applyClimaToTable, 50);
 }
 
 function restoreEstilo(data){
@@ -1463,8 +1391,6 @@ function buildFontBar(){
 // ── NUEVA SEMANA ──
 const DIAS_SEMANA=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const MESES_ES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-let semOpt=1;
-
 function openSemanaModal(){
   const hoy=new Date();
   const dow=hoy.getDay();
@@ -1475,11 +1401,6 @@ function openSemanaModal(){
   document.getElementById('semanaModal').classList.add('open');
 }
 function closeSemanaModal(){document.getElementById('semanaModal').classList.remove('open');}
-function selectSemOpt(n){
-  semOpt=n;
-  document.getElementById('sopt1').classList.toggle('sel',n===1);
-  document.getElementById('sopt2').classList.toggle('sel',n===2);
-}
 
 // Plantilla fija de estructura semanal (horarios + lugares, sin datos personales)
 const PLANTILLA_SEMANAL=[
@@ -1536,7 +1457,6 @@ function generarSemana(){
   });
 
   render(newRows);saveLocal();closeSemanaModal();
-  climaCache={};setTimeout(initClima,200);
   toast(`✅ Semana ${dIni}–${dFin} de ${mesIni} generada`);
 }
 
@@ -1841,178 +1761,10 @@ function deleteTerrEntry(id){
   toast('🗑 Registro eliminado');
 }
 
-// ── Export / Import ──
-function exportTerrJSON(){
-  const blob=new Blob([JSON.stringify(TERR_DB,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.download='territorios_losmuermos.json';
-  a.href=URL.createObjectURL(blob);a.click();
-  toast('💾 Territorios exportados');
-}
-function importTerrJSON(e){
-  const file=e.target.files[0]; if(!file)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const parsed=JSON.parse(ev.target.result);
-      TERR_DB=Array.isArray(parsed)?parsed:[];
-      saveTerr(); renderTerr();
-      toast('✅ Territorios cargados');
-    }catch{toast('❌ Error al leer el archivo');}
-  };
-  r.readAsText(file);
-  e.target.value='';
-}
-
 // Close modal on backdrop
 document.getElementById('terrModal').addEventListener('click',e=>{
   if(e.target===document.getElementById('terrModal'))closeTerrModal();
 });
-
-// ── CLIMA (Open-Meteo) ──
-// Coordenadas Los Muermos, Chile
-const CLIMA_LAT=-41.4;
-const CLIMA_LON=-73.47;
-let climaCache={}; // {YYYY-MM-DD: {prob, mm, icon, label, cls}}
-
-function weatherIcon(prob,mm){
-  if(prob>=70)return'🌧️';
-  if(prob>=40)return'🌦️';
-  if(prob>=20||mm>0.5)return'⛅';
-  return'☀️';
-}
-function weatherCls(prob){
-  if(prob>=60)return'rain-high';
-  if(prob>=30)return'rain-mid';
-  if(prob>=10)return'rain-low';
-  return'rain-none';
-}
-function weatherLabel(prob,mm){
-  if(prob>=60)return`${weatherIcon(prob,mm)} ${prob}% lluvia`;
-  if(prob>=30)return`${weatherIcon(prob,mm)} ${prob}%`;
-  if(prob>=10)return`${weatherIcon(prob,mm)} ${prob}%`;
-  return`${weatherIcon(prob,mm)} Despejado`;
-}
-
-async function fetchClima(fechas){
-  if(!fechas.length)return;
-  if(location.protocol==='file:'){
-    document.querySelectorAll('.weather-badge.loading').forEach(b=>{
-      b.className='weather-badge rain-mid';b.textContent='⚠️ Abrir desde web';
-    });
-    return;
-  }
-  const sorted=[...fechas].sort();
-  const start=sorted[0],end=sorted[sorted.length-1];
-  try{
-    // Pedimos datos HORARIOS para evaluar clima a las 10:00 y 18:00 específicamente
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${CLIMA_LAT}&longitude=${CLIMA_LON}`
-      +`&hourly=precipitation_probability,precipitation&timezone=America%2FSantiago`
-      +`&start_date=${start}&end_date=${end}`;
-    const res=await fetch(url,{mode:'cors'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const times=data.hourly?.time||[];
-    const probs=data.hourly?.precipitation_probability||[];
-    const mms=data.hourly?.precipitation||[];
-
-    // Agrupar por fecha, quedándonos con el MAX de prob entre 10:00 y 18:00
-    const byDate={};
-    times.forEach((t,i)=>{
-      const [dateStr,timeStr]=t.split('T');
-      const hour=parseInt(timeStr);
-      // Solo considerar horarios de predicación: 10:00 y 18:00
-      if(hour!==10&&hour!==18)return;
-      if(!byDate[dateStr])byDate[dateStr]={prob:0,mm:0};
-      byDate[dateStr].prob=Math.max(byDate[dateStr].prob,probs[i]??0);
-      byDate[dateStr].mm+=mms[i]??0;
-    });
-
-    Object.entries(byDate).forEach(([d,v])=>{
-      const prob=Math.round(v.prob);const mm=Math.round(v.mm*10)/10;
-      climaCache[d]={prob,mm,icon:weatherIcon(prob,mm),label:weatherLabel(prob,mm),cls:weatherCls(prob)};
-    });
-    applyClimaToTable();
-  }catch(e){
-    console.warn('Clima no disponible:',e.message);
-    document.querySelectorAll('.weather-badge.loading').forEach(b=>{
-      b.className='weather-badge rain-mid';b.textContent='⚠️ Sin conexión';
-    });
-  }
-}
-
-function parseDiaNum(texto){
-  // Extrae el número del día desde textos como "Lunes 30", "Martes\n31", "30", etc.
-  const nums=texto.trim().match(/\d+/g);
-  if(!nums||!nums.length)return NaN;
-  return parseInt(nums[nums.length-1]);
-}
-
-function parseFechaSubtitulo(){
-  const sub=document.getElementById('subtitulo')?.innerText?.trim()||'';
-  const meses={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
-  // Formato cruzando meses: "30 al 05 de Marzo / Abril" o "30 AL 05 DE MARZO / ABRIL"
-  const mCruz=sub.match(/(\d{1,2})\s+a[l]?\s+(\d{1,2})\s+de\s+(\w+)\s*[\/\-]\s*(\w+)(?:\s+(\d{4}))?/i);
-  if(mCruz){
-    const diaIni=parseInt(mCruz[1]),diaFin=parseInt(mCruz[2]);
-    const mes1=meses[mCruz[3].toLowerCase()],mes2=meses[mCruz[4].toLowerCase()];
-    if(!mes1||!mes2)return[];
-    const anio=mCruz[5]?parseInt(mCruz[5]):new Date().getFullYear();
-    const fechas=[];
-    // Días del primer mes (desde diaIni hasta fin de mes)
-    const diasMes1=new Date(anio,mes1,0).getDate();
-    for(let d=diaIni;d<=diasMes1;d++){
-      fechas.push(`${anio}-${String(mes1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-    }
-    // Días del segundo mes (desde 1 hasta diaFin)
-    for(let d=1;d<=diaFin;d++){
-      fechas.push(`${anio}-${String(mes2).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-    }
-    return fechas;
-  }
-  // Formato normal: "02 a 08 de Marzo"
-  const m=sub.match(/(\d{1,2})\s+a[l]?\s+(\d{1,2})\s+de\s+(\w+)(?:\s+(\d{4}))?/i);
-  if(!m)return[];
-  const diaIni=parseInt(m[1]),diaFin=parseInt(m[2]);
-  const mes=meses[m[3].toLowerCase()];if(!mes)return[];
-  const anio=m[4]?parseInt(m[4]):new Date().getFullYear();
-  const fechas=[];
-  for(let d=diaIni;d<=diaFin;d++){
-    fechas.push(`${anio}-${String(mes).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-  }
-  return fechas;
-}
-
-function diaNumToFecha(diaInnerText,fechas){
-  const num=parseInt(diaInnerText.trim().split(/\s+/).pop());
-  if(isNaN(num))return null;
-  return fechas.find(f=>parseInt(f.split('-')[2])===num)||null;
-}
-
-function applyClimaToTable(){
-  if(!Object.keys(climaCache).length)return;
-  const fechas=parseFechaSubtitulo();if(!fechas.length)return;
-  document.querySelectorAll('td.clima-col').forEach(td=>{
-    const textodia=td.dataset.climaDia||'';
-    const num=parseDiaNum(textodia);
-    if(isNaN(num))return;
-    const fecha=fechas.find(f=>parseInt(f.split('-')[2])===num);
-    if(!fecha||!climaCache[fecha])return;
-    const c=climaCache[fecha];
-    td.innerHTML=`<div class="weather-badge ${c.cls}" title="Precipitación: ${c.mm}mm">${c.label}</div>`;
-  });
-}
-
-async function initClima(){
-  const fechas=parseFechaSubtitulo();if(!fechas.length)return;
-  // Mostrar loading en celdas clima
-  document.querySelectorAll('td.clima-col').forEach(td=>{
-    td.innerHTML='<span class="weather-badge loading">⏳</span>';
-  });
-  await fetchClima(fechas);
-  document.querySelectorAll('.weather-badge.loading').forEach(b=>b.remove());
-  applyClimaToTable();
-}
 
 // ══════════════════════════════════════════════
 //  HISTORIAL DE PROGRAMAS SEMANALES
@@ -2212,8 +1964,6 @@ document.getElementById('thAct').style.display='none';
 
 (async()=>{
   driveSetStatus('Listo. Usa los botones de Drive para sincronizar.','#888');
-  // Cargar clima automáticamente al iniciar
-  setTimeout(initClima, 300);
 })();
 </script>
 </body>
