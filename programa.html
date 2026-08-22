@@ -81,6 +81,26 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
 .btn-del{background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;opacity:.35;transition:opacity .2s,transform .2s;padding:4px 6px;border-radius:4px;}
 .btn-del:hover{opacity:1;transform:scale(1.2);}
 
+th.done-col-th{width:64px;}
+td.done-col{width:64px;padding:6px !important;}
+.chk-done{width:22px;height:22px;accent-color:var(--gm);cursor:pointer;}
+tr.row-done td{opacity:.5;}
+tr.row-done .badge{background:linear-gradient(135deg,#6b7280,#4b5563);text-decoration:line-through;}
+tr.row-done .hora-pill{text-decoration:line-through;}
+
+th.obs-col-th{width:150px;}
+td.obs-col{padding:5px !important;background:#fffdf5 !important;}
+.obs-input{width:100%;padding:6px 8px;border:1.5px solid rgba(224,195,74,.35);border-radius:6px;font-family:'Lato',sans-serif;font-size:.78rem;color:#5a4a1e;background:#fffef8;outline:none;transition:border .2s,background .2s;}
+.obs-input:focus{border-color:var(--gold);background:#fff;}
+.obs-input.has-obs{border-color:var(--gold);background:#fff6da;font-weight:600;}
+
+.done-summary{padding:12px 22px;text-align:center;font-size:.82rem;color:#4a5c50;background:var(--alt);border-top:1px solid var(--row-border);line-height:1.6;}
+.done-summary strong{color:var(--gd);}
+.done-summary .done-list{display:block;font-size:.74rem;color:#7a8c80;margin-top:2px;}
+.done-summary .pending-list{display:block;font-size:.74rem;color:#92720f;margin-top:6px;}
+.done-summary .pending-list b{color:#5a4a1e;}
+.done-summary:empty{display:none;}
+
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;}
 .overlay.open{display:flex;}
 /* ══ TAB NAVIGATION ══ */
@@ -243,7 +263,7 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
   *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
   html,body{margin:0;padding:0;background:white !important;width:100%;height:auto;}
   .toolbar,.drive-status,.theme-bar,.tabs,.tab-panel:not(#tab-programa),
-  .col-act,.act-col,#semanaModal,#terrModal,#progModal,
+  .col-act,.act-col,.done-col,.done-col-th,.obs-col,.obs-col-th,.done-summary,#semanaModal,#terrModal,#progModal,
   .zoom-ctrl,.viewer-alert-banner{display:none !important;}
 
   body{display:block !important;align-items:unset !important;}
@@ -338,11 +358,14 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
         <th>Encargado</th>
         <th>Lugar de Reunión</th>
         <th>Territorio y Modalidad</th>
+        <th class="done-col-th" title="Marca el territorio como trabajado">Hecho</th>
+        <th class="obs-col-th" title="Anota hasta dónde se llegó si no se terminó, para que el próximo encargado sepa dónde continuar">Obs.</th>
         <th class="col-act" id="thAct"></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
   </table>
+  <div id="doneSummary" class="done-summary"></div>
 </div>
 </div><!-- /tab-programa -->
 
@@ -358,6 +381,7 @@ td.act-col{padding:4px;background:#f5fdf7 !important;}
         <span id="progHistCount" style="font-size:.68rem;color:#666"></span>
         <button class="btn" style="background:rgba(224,195,74,.2);color:var(--gold);border:1px solid rgba(224,195,74,.4);font-size:.72rem" onclick="guardarEnHistorial()">💾 Archivar semana actual</button>
         <button class="btn" style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);font-size:.72rem" onclick="renderProgHist()">🔄 Actualizar</button>
+        <button class="btn" style="background:rgba(56,189,248,.15);color:#38bdf8;border:1px solid rgba(56,189,248,.3);font-size:.72rem" onclick="exportarHistorialJSON()">📤 Exportar historial completo</button>
       </div>
     </div>
     <div id="progHistBody" style="padding:14px 16px"><div class="hist-empty">Abre esta pestaña para cargar el historial.</div></div>
@@ -866,9 +890,13 @@ function getRows(){
       enc:tr.querySelector('[data-f="enc"]').innerText.trim(),
       lugar:tr.querySelector('[data-f="lugar"]').innerText.trim(),
       ter:tr.querySelector('[data-f="ter"]').innerText.trim(),
+      done:!!tr.querySelector('.chk-done')?.checked,
+      obs:tr.querySelector('.obs-input')?.value.trim()||'',
     };
   });
 }
+
+function escAttr(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 
 function normalizeRows(rows){
   const result=[];
@@ -895,6 +923,7 @@ function render(rows){
   const ce=editing?'contenteditable="true"':'';
   rows.forEach((r,i)=>{
     const tr=document.createElement('tr');
+    if(r.done)tr.classList.add('row-done');
     let diaCell='';
     if(spans[i]>0){
       const diaHtml=r.dia.replace(/\n/g,' ');
@@ -906,11 +935,41 @@ function render(rows){
       <td data-f="enc" ${ce}>${r.enc.replace(/\n/g,'<br>')}</td>
       <td data-f="lugar" ${ce}>${r.lugar}</td>
       <td data-f="ter" ${ce}><span class="badge">${r.ter}</span></td>
+      <td class="done-col"><input type="checkbox" class="chk-done" ${r.done?'checked':''} onchange="toggleDone(this)" title="Marcar territorio como trabajado"/></td>
+      <td class="obs-col"><input type="text" class="obs-input${r.obs?' has-obs':''}" value="${escAttr(r.obs)}" placeholder="Ej: hasta manzana C" oninput="onObsInput(this)" title="Hasta dónde se llegó, para que el próximo encargado sepa dónde continuar"/></td>
       <td class="act-col" style="display:${editing?'':'none'}">
         <button class="btn-del" onclick="delRow(${i})">✕</button>
       </td>`;
     tbody.appendChild(tr);
   });
+  updateDoneSummary();
+}
+
+function toggleDone(checkbox){
+  checkbox.closest('tr').classList.toggle('row-done',checkbox.checked);
+  updateDoneSummary();
+  saveLocal();
+}
+
+function onObsInput(input){
+  input.classList.toggle('has-obs',input.value.trim()!=='');
+  updateDoneSummary();
+  saveLocal();
+}
+
+function updateDoneSummary(){
+  const el=document.getElementById('doneSummary');
+  if(!el)return;
+  const rows=getRows().filter(r=>r.ter&&r.ter.trim());
+  if(!rows.length){el.innerHTML='';return;}
+  const hechos=rows.filter(r=>r.done);
+  const pct=Math.round(hechos.length/rows.length*100);
+  const lista=hechos.map(r=>r.ter).join(' · ');
+  const pendientes=rows.filter(r=>r.obs&&!r.done);
+  const listaPend=pendientes.map(r=>`<b>${r.ter}:</b> ${r.obs}`).join(' &nbsp;·&nbsp; ');
+  el.innerHTML=`✅ <strong>${hechos.length}/${rows.length}</strong> territorios trabajados esta semana (${pct}%)`
+    +(lista?`<span class="done-list">${lista}</span>`:'')
+    +(listaPend?`<span class="pending-list">📍 Continúa la próxima semana: ${listaPend}</span>`:'');
 }
 
 function toggleEdit(){
@@ -1839,6 +1898,19 @@ function guardarEnHistorial(){
     await guardarHistorialDrive();
     renderProgHist();
   });
+}
+
+async function exportarHistorialJSON(){
+  toast('⏳ Cargando historial completo…');
+  await cargarHistorialDrive();
+  if(!PROG_HIST.length){toast('⚠️ No hay semanas archivadas todavía');return;}
+  const ordenado=[...PROG_HIST].sort((a,b)=>(a.subtitulo||'').localeCompare(b.subtitulo||''));
+  const blob=new Blob([JSON.stringify(ordenado,null,2)],{type:'application/json'});
+  const link=document.createElement('a');
+  link.download='historial_programas_completo.json';
+  link.href=URL.createObjectURL(blob);
+  link.click();
+  toast(`✅ ${PROG_HIST.length} semanas exportadas`);
 }
 
 async function eliminarProgHist(id){
