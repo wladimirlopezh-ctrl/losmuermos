@@ -965,11 +965,11 @@ function updateDoneSummary(){
   const hechos=rows.filter(r=>r.done);
   const pct=Math.round(hechos.length/rows.length*100);
   const lista=hechos.map(r=>r.ter).join(' · ');
-  const pendientes=rows.filter(r=>r.obs&&!r.done);
+  const pendientes=rows.filter(r=>r.obs&&r.obs.trim()&&!r.done);
   const listaPend=pendientes.map(r=>`<b>${r.ter}:</b> ${r.obs}`).join(' &nbsp;·&nbsp; ');
   el.innerHTML=`✅ <strong>${hechos.length}/${rows.length}</strong> territorios trabajados esta semana (${pct}%)`
     +(lista?`<span class="done-list">${lista}</span>`:'')
-    +(listaPend?`<span class="pending-list">📍 Continúa la próxima semana: ${listaPend}</span>`:'');
+    +(listaPend?`<span class="pending-list">📍 Continúa la próxima semana: ${listaPend}<br><button class="btn" style="margin-top:8px;background:rgba(224,195,74,.2);color:var(--gold);border:1px solid rgba(224,195,74,.4);font-size:.72rem;padding:6px 14px" onclick="compartirInformeObs()">📋 Enviar informe a capitanes</button></span>`:'');
 }
 
 function toggleEdit(){
@@ -1175,6 +1175,132 @@ async function copiarImagen(){
       toast('✅ Imagen descargada');
     },'image/jpeg',0.95);
   }catch(e){toast('❌ Error al generar imagen');}
+}
+
+// ── INFORME DE OBSERVACIONES (territorios pendientes → capitanes) ──
+function getPendientesObs(){
+  return getRows().filter(r=>r.ter&&r.ter.trim()&&r.obs&&r.obs.trim()&&!r.done);
+}
+
+function wrapTextLines(ctx,text,maxWidth){
+  const words=String(text).split(/\s+/);
+  const lines=[];
+  let cur='';
+  words.forEach(w=>{
+    const test=cur?cur+' '+w:w;
+    if(ctx.measureText(test).width>maxWidth&&cur){lines.push(cur);cur=w;}
+    else cur=test;
+  });
+  if(cur)lines.push(cur);
+  return lines;
+}
+
+async function generarCanvasObs(){
+  const pend=getPendientesObs();
+  const t=currentTheme;
+  const C={greenDark:t.dark,greenMid:t.mid,greenLight:t.light,greenAlt:t.alt,gold:t.gold,white:'#ffffff',textDark:'#1c1c1e',bgDark:t.bg1,bgMid:t.bg2};
+  const subtitulo=document.getElementById('subtitulo').innerText.trim().toUpperCase();
+
+  const SCALE=2, W=1100;
+  const pad=50;
+  const cardX=pad,cardY=pad,cardW=W-pad*2;
+  const headerH=110,goldBarH=6,footerH=54;
+  const innerW=cardW-56;
+
+  const measureCv=document.createElement('canvas');
+  const mctx=measureCv.getContext('2d');
+  mctx.font='16px sans-serif';
+  const rowsInfo=pend.map(r=>{
+    const lines=wrapTextLines(mctx,'📍 '+r.obs,innerW);
+    const h=54+lines.length*20;
+    return{r,lines,h};
+  });
+  const listH=pend.length?rowsInfo.reduce((s,x)=>s+x.h,0):70;
+  const cardH=headerH+goldBarH+listH+footerH;
+  const H=cardY+cardH+pad;
+
+  const cv=document.createElement('canvas');cv.width=W*SCALE;cv.height=H*SCALE;
+  const ctx=cv.getContext('2d');ctx.scale(SCALE,SCALE);
+
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,C.bgDark);bg.addColorStop(0.5,C.bgMid);bg.addColorStop(1,C.bgDark);
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=24;ctx.shadowOffsetY=6;
+  roundRect(ctx,cardX,cardY,cardW,cardH,16);ctx.fillStyle=C.white;ctx.fill();ctx.restore();
+  ctx.save();roundRect(ctx,cardX-3,cardY-3,cardW+6,cardH+6,19);ctx.strokeStyle=C.gold;ctx.lineWidth=4;ctx.stroke();ctx.restore();
+
+  ctx.save();ctx.beginPath();roundRectTop(ctx,cardX,cardY,cardW,headerH,16);
+  const hg=ctx.createLinearGradient(cardX,cardY,cardX+cardW,cardY+headerH);
+  hg.addColorStop(0,C.greenDark);hg.addColorStop(1,C.greenMid);ctx.fillStyle=hg;ctx.fill();ctx.restore();
+  ctx.fillStyle=C.white;ctx.font='bold 32px "Playfair Display",serif';ctx.textAlign='center';
+  ctx.fillText('📍 Territorios Pendientes',W/2,cardY+48);
+  ctx.fillStyle=C.greenLight;ctx.font='300 17px sans-serif';
+  ctx.fillText('SEMANA '+subtitulo,W/2,cardY+76);
+  ctx.fillStyle=C.gold;ctx.font='22px sans-serif';
+  ctx.textAlign='left';ctx.fillText('✦',cardX+20,cardY+52);
+  ctx.textAlign='right';ctx.fillText('✦',cardX+cardW-20,cardY+52);
+
+  let y=cardY+headerH;
+  const gbg=ctx.createLinearGradient(cardX,y,cardX+cardW,y);
+  gbg.addColorStop(0,'transparent');gbg.addColorStop(0.5,C.gold);gbg.addColorStop(1,'transparent');
+  ctx.fillStyle=gbg;ctx.fillRect(cardX,y,cardW,goldBarH);y+=goldBarH;
+
+  if(!pend.length){
+    ctx.fillStyle='#888';ctx.font='17px sans-serif';ctx.textAlign='center';
+    ctx.fillText('✅ No hay territorios pendientes esta semana',W/2,y+40);
+  }else{
+    rowsInfo.forEach((info,i)=>{
+      const {r,lines,h}=info;
+      ctx.fillStyle=i%2===0?C.white:C.greenAlt;ctx.fillRect(cardX,y,cardW,h);
+      ctx.fillStyle='#cde9d7';ctx.fillRect(cardX,y+h-1,cardW,1);
+      const bx=cardX+18,by=y+16;
+      ctx.font='bold 15px "Lato",sans-serif';
+      const bw=Math.min(ctx.measureText(r.ter).width+20,cardW*0.55),bh=25,br=6;
+      const bg2=ctx.createLinearGradient(bx,by,bx+bw,by);
+      bg2.addColorStop(0,C.greenMid);bg2.addColorStop(1,C.greenDark);
+      ctx.save();ctx.fillStyle=bg2;roundRectFill(ctx,bx,by,bw,bh,br);
+      ctx.fillStyle=C.white;ctx.textAlign='left';ctx.fillText(r.ter,bx+10,by+17,bw-16);ctx.restore();
+      ctx.fillStyle=C.greenDark;ctx.font='bold 14px sans-serif';ctx.textAlign='right';
+      ctx.fillText(r.enc.split('\n')[0],cardX+cardW-18,by+17,cardW*0.4);
+      ctx.fillStyle=C.textDark;ctx.font='15px sans-serif';ctx.textAlign='left';
+      lines.forEach((ln,li)=>ctx.fillText(ln,bx,by+46+li*20,innerW));
+      y+=h;
+    });
+  }
+
+  ctx.fillStyle='#999';ctx.font='italic 13px sans-serif';ctx.textAlign='center';
+  ctx.fillText('Para los capitanes de grupo — indica desde dónde continuar',W/2,y+32);
+
+  return cv;
+}
+
+async function compartirInformeObs(){
+  const pend=getPendientesObs();
+  if(!pend.length){toast('✅ No hay territorios pendientes esta semana');return;}
+  const toastEl=document.getElementById('toast');
+  toastEl.textContent='⏳ Generando informe…';toastEl.classList.add('show');
+  try{
+    const canvas=await generarCanvasObs();
+    canvas.toBlob(async blob=>{
+      const file=new File([blob],'informe_territorios_pendientes.jpg',{type:'image/jpeg'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({files:[file],title:'Territorios pendientes',text:'Informe para el grupo de capitanes'});
+          toast('✅ ¡Compartido!');return;
+        }catch(e){if(e.name==='AbortError'){toast('');return;}}
+      }
+      try{
+        await navigator.clipboard.write([new ClipboardItem({'image/jpeg':blob})]);
+        toast('✅ Imagen copiada — pégala en el chat de capitanes (Ctrl+V)');return;
+      }catch(e){}
+      const link=document.createElement('a');
+      link.download='informe_territorios_pendientes.jpg';
+      link.href=URL.createObjectURL(blob);
+      link.click();
+      toast('✅ Imagen descargada');
+    },'image/jpeg',0.95);
+  }catch(e){toast('❌ Error al generar informe');}
 }
 
 
