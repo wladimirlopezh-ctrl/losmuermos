@@ -411,7 +411,7 @@ td.obs-col{padding:5px !important;background:#fffdf5 !important;}
     <div class="hist-tab-head">
       <div>
         <div class="hist-tab-title">📊 Historial de territorios</div>
-        <div class="hist-tab-sub">Menos asignados en los últimos 2 meses — datos del Mapa</div>
+        <div class="hist-tab-sub">Menos trabajados en los últimos 2 meses — según los programas semanales archivados</div>
       </div>
       <button class="btn" style="background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);font-size:.72rem" onclick="renderHistorial()">🔄 Actualizar</button>
     </div>
@@ -1482,6 +1482,13 @@ function generarSemana(){
   if(!fechaStr){toast('⚠️ Selecciona una fecha');return;}
   const lunes=new Date(fechaStr+'T12:00');
   if(lunes.getDay()!==1){toast('⚠️ La fecha debe ser un lunes');return;}
+  const rowsActuales=getRows();
+  const sinArchivar=rowsActuales.some(r=>r.done||(r.obs&&r.obs.trim()));
+  if(sinArchivar){
+    const ok=confirm('⚠️ La semana actual tiene territorios marcados como "Hecho" u observaciones sin archivar.\n\nSi generas la nueva semana ahora, esas marcas se perderán para siempre.\n\n¿Ya archivaste la semana actual en "Programas anteriores"?\n\nPulsa Aceptar solo si ya la archivaste (o si no te importa perder las marcas).');
+    if(!ok)return;
+  }
+
   const domingo=new Date(lunes);domingo.setDate(lunes.getDate()+6);
   const dIni=String(lunes.getDate()).padStart(2,'0');
   const dFin=String(domingo.getDate()).padStart(2,'0');
@@ -1490,7 +1497,6 @@ function generarSemana(){
   document.getElementById('subtitulo').innerText=`${dIni} al ${dFin} de ${mesStr}`;
 
   // Intentar copiar lugares de la semana actual si tiene la estructura completa (11 filas)
-  const rowsActuales=getRows();
   const lugaresActuales={};
   if(rowsActuales.length===PLANTILLA_SEMANAL.length){
     rowsActuales.forEach((r,i)=>{ lugaresActuales[i]=r.lugar; });
@@ -1520,58 +1526,88 @@ function generarSemana(){
 }
 
 // ── HISTORIAL TERRITORIOS ──
-function renderHistorial(){
+function extraerTerritoriosDeTexto(ter){
+  if(!ter)return[];
+  const out=new Set();
+  const re=/Territorios?\s*([\d\s,y]+)/gi;
+  let m;
+  while((m=re.exec(ter))){
+    const nums=m[1].match(/\d+/g);
+    if(nums)nums.forEach(n=>{const v=parseInt(n);if(v>=1&&v<=33)out.add(v);});
+  }
+  return[...out];
+}
+
+function parseGuardadoEn(s){
+  const meses={ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,oct:9,nov:10,dic:11};
+  const m=(s||'').match(/(\d{1,2})\s+(\w{3})\.?\s+(\d{4})/i);
+  if(!m)return NaN;
+  const mes=meses[m[2].toLowerCase().slice(0,3)];
+  if(mes===undefined)return NaN;
+  return new Date(parseInt(m[3]),mes,parseInt(m[1]),12).getTime();
+}
+
+async function renderHistorial(){
   const el=document.getElementById('histBody');
-  el.innerHTML='<div class="hist-empty">Leyendo datos del mapa…</div>';
-  let mapaDB={};
-  try{const raw=localStorage.getItem('lm_t4');if(raw)mapaDB=JSON.parse(raw);}catch(e){}
-  if(!Object.keys(mapaDB).length){
-    el.innerHTML='<div class="hist-empty">⚠️ No se encontraron datos del mapa.<br>Asegúrate de abrir este archivo desde<br>el mismo dominio que el mapa (GitHub Pages).</div>';
+  el.innerHTML='<div class="hist-empty">⏳ Leyendo programas semanales archivados…</div>';
+  try{await cargarHistorialDrive();}catch(e){}
+  if(!PROG_HIST.length){
+    el.innerHTML='<div class="hist-empty">⚠️ No hay programas archivados todavía.<br>Ve a la pestaña "Programas anteriores" y archiva al menos una semana con <strong>💾 Archivar semana actual</strong>.</div>';
     return;
   }
   const ahora=Date.now();
   const dosMesesMs=60*24*3600*1000;
-  const parseF=s=>{if(!s||s==='—')return NaN;if(/^\d{4}-/.test(s))return new Date(s+'T12:00').getTime();const p=s.split('-');if(p.length===3)return new Date(`${p[2]}-${p[1]}-${p[0]}T12:00`).getTime();return new Date(s).getTime();};
-  const stLabel={'disponible':'🟢 Disponible','asignado':'🟡 Asignado','completado':'✅ Completado','urgente':'🔴 Urgente'};
-  const fdCorta=s=>{const ts=parseF(s);if(isNaN(ts))return'—';return new Date(ts).toLocaleDateString('es-CL',{day:'2-digit',month:'short'});};
 
-  const resultados=[];
-  for(let n=1;n<=33;n++){
-    const d=mapaDB[n]||{};
-    const hist=d.historial||[];
-    let asig2m=hist.filter(h=>{const ts=parseF(h.fecha);return!isNaN(ts)&&(ahora-ts)<=dosMesesMs;}).length;
-    const faTs=parseF(d.fechaAsig);
-    if(!isNaN(faTs)&&(ahora-faTs)<=dosMesesMs&&(d.estado==='asignado'||d.estado==='urgente'))asig2m++;
-    const ultimaFecha=hist.length?hist[hist.length-1].fecha:d.fechaDev||d.fechaAsig||null;
-    resultados.push({n,asig2m,ultimaFecha,encargado:d.encargado||'',estado:d.estado||'disponible'});
-  }
-  resultados.sort((a,b)=>{
-    if(a.asig2m!==b.asig2m)return a.asig2m-b.asig2m;
-    const ta=parseF(a.ultimaFecha)||0,tb=parseF(b.ultimaFecha)||0;
-    return ta-tb;
+  const info={};
+  for(let n=1;n<=33;n++)info[n]={n,asig2m:0,ultima:null,subtitulo:'',encargado:'',done:null};
+
+  PROG_HIST.forEach(p=>{
+    const ts=parseGuardadoEn(p.guardadoEn);
+    (p.rows||[]).forEach(r=>{
+      extraerTerritoriosDeTexto(r.ter).forEach(n=>{
+        const d=info[n];
+        if(!isNaN(ts)&&(!d.ultima||ts>d.ultima)){
+          d.ultima=ts;
+          d.subtitulo=p.subtitulo;
+          d.encargado=(r.enc||'').split('\n')[0];
+          d.done=(typeof r.done==='boolean')?r.done:null;
+        }
+        if(!isNaN(ts)&&(ahora-ts)<=dosMesesMs)d.asig2m++;
+      });
+    });
   });
 
+  const resultados=Object.values(info);
+  resultados.sort((a,b)=>{
+    if(a.asig2m!==b.asig2m)return a.asig2m-b.asig2m;
+    return(a.ultima||0)-(b.ultima||0);
+  });
+
+  const fdCorta=ts=>ts?new Date(ts).toLocaleDateString('es-CL',{day:'2-digit',month:'short'}):'—';
   const maxAsig=Math.max(...resultados.map(r=>r.asig2m),1);
   const nunca=resultados.filter(r=>r.asig2m===0);
   const pocos=resultados.filter(r=>r.asig2m>0&&r.asig2m<3);
 
   let html='';
-  const mkRow=(r,i,color)=>`<div class="hist-row">
+  const mkRow=(r,i,color)=>{
+    const doneTag=r.done===true?' ✅':r.done===false?' ⏳':'';
+    return`<div class="hist-row">
     <div class="hist-rank" style="background:${color==='red'?'rgba(239,68,68,.15)':'rgba(251,191,36,.15)'};color:${color==='red'?'#ef4444':'#fbbf24'}">${i+1}</div>
     <div class="hist-ter-num">${r.n}</div>
     <div class="hist-info">
-      <div class="hist-ter-name">Territorio ${r.n}${r.encargado?' · '+r.encargado:''}</div>
-      <div class="hist-ter-sub">${stLabel[r.estado]||'—'} · Último: ${fdCorta(r.ultimaFecha)}</div>
+      <div class="hist-ter-name">Territorio ${r.n}${r.encargado?' · '+r.encargado:''}${doneTag}</div>
+      <div class="hist-ter-sub">Última semana: ${r.subtitulo||'—'} · ${fdCorta(r.ultima)}</div>
     </div>
     <div class="hist-bar-wrap">
-      <div style="font-size:.6rem;color:#666;text-align:right">${r.asig2m} asig.</div>
+      <div style="font-size:.6rem;color:#666;text-align:right">${r.asig2m} vez${r.asig2m!==1?'es':''}</div>
       <div class="hist-bar-bg"><div class="hist-bar-fill" style="width:${Math.round(r.asig2m/maxAsig*100)}%;background:${color==='red'?'#ef4444':'#f59e0b'}"></div></div>
     </div>
   </div>`;
+  };
 
-  if(nunca.length){html+=`<div class="hist-section-title">🔴 Sin asignación en 2 meses (${nunca.length})</div>`;nunca.forEach((r,i)=>html+=mkRow(r,i,'red'));}
-  if(pocos.length){html+=`<div class="hist-section-title" style="margin-top:12px">🟡 Pocas asignaciones — 1 a 2 veces (${pocos.length})</div>`;pocos.forEach((r,i)=>html+=mkRow(r,i,'yellow'));}
-  if(!nunca.length&&!pocos.length)html='<div class="hist-empty">✅ Todos los territorios han sido asignados al menos 3 veces en los últimos 2 meses.</div>';
+  if(nunca.length){html+=`<div class="hist-section-title">🔴 Sin registro en 2 meses (${nunca.length})</div>`;nunca.forEach((r,i)=>html+=mkRow(r,i,'red'));}
+  if(pocos.length){html+=`<div class="hist-section-title" style="margin-top:12px">🟡 Pocos registros — 1 a 2 veces (${pocos.length})</div>`;pocos.forEach((r,i)=>html+=mkRow(r,i,'yellow'));}
+  if(!nunca.length&&!pocos.length)html='<div class="hist-empty">✅ Todos los territorios tienen al menos 3 registros en los últimos 2 meses.</div>';
   el.innerHTML=html;
 }
 
